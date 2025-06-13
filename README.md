@@ -15,6 +15,7 @@ It provides lightweight, efficient low‐level hardware access via STM32 Low‑L
   - [2. Project Layout](#2-project-layout)
   - [3. Configure Include Paths](#3-configure-include-paths)
   - [4. Define Platform Config](#4-define-platform-config)
+- [Examples](#examples)
 - [Building](#building)
   - [STM32CubeIDE](#stm32cubeide)
   - [Makefile / CMake](#makefile--cmake)
@@ -46,7 +47,9 @@ pdf/
 │   ├── Libs/          # External libraries
 │   │   └── VL53L0X
 │   └── Utility/       # Utility modules
-│       └── Led_animation
+│   │   └── Led_animation
+└── Examples/          
+    └── Blink_LED/     # Example: Custom CLI + LED blink
 ```
 
 ## Getting Started
@@ -107,6 +110,18 @@ Add preprocessor define in ordef for the framework to pick up configuration `pla
 
 ---
 
+## Examples
+
+`/Examples` folder contains preffered file structure with ready‑to‑build demos.  
+To test framework, build and upload `/Blink_LED` example, transmit over UART fallowing message. You should see onboard LED blinking
+
+```text
+project_led_blink:x,y,z 
+    x - LED number (1)
+    y - blink time (s) (1 ÷ 59)
+    z - blink frequency (Hz) (2 ÷ 100)
+```
+
 ## Building
 
 PDF supports build systems:
@@ -114,7 +129,7 @@ PDF supports build systems:
 ### STM32CubeIDE
 
 1. Generate project using CubeMX.
-1. Exclude generated `main.c` and comment out `stm32x_it.c` interupt callbacks.
+1. Exclude generated `main.c` and comment out `stm32x_it.c` interupt callbacks. See `/Examples`.
 2. Import `Framework/` as linked folder.
 3. Set include paths and preprocessor defines as described above.
 4. Clean and build.
