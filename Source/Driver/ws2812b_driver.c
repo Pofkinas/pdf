@@ -89,7 +89,6 @@ const static sWs2812bStaticDesc_t g_static_ws2812b_lut[eWs2812bDriver_Last] = {
         .dma_stream = eDmaDriver_Ws2812b_1,
         .total_led = WS2812B_1_LED_COUNT
     },
-    #define USE_DMA
     #endif
 
     #ifdef USE_WS2812B_2
@@ -99,7 +98,6 @@ const static sWs2812bStaticDesc_t g_static_ws2812b_lut[eWs2812bDriver_Last] = {
         .dma_stream = eDmaDriver_Ws2812b_2,
         .total_led = WS2812B_2_LED_COUNT
     },
-    #define USE_DMA
     #endif
 };
 /* clang-format on */

@@ -164,7 +164,6 @@ const static sPwmOcChannelDesc_t g_static_pwm_lut[ePwmDevice_Last] = {
     [ePwmDevice_Ws2812b_2] = {
         .periph = TIM5,
         .timer = eTimerDriver_TIM5,
-        .gpio_pin = eGpioPin_Ws2812B_2,
         .channel = LL_TIM_CHANNEL_CH1,
         .mode = LL_TIM_OCMODE_PWM1,
         .oc_state = LL_TIM_OCSTATE_ENABLE,

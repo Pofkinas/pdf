@@ -84,7 +84,7 @@ static const FixPoint1616_t g_default_offset_calibration_distance = (uint32_t) D
 
 /* clang-format off */
 static const sVl53l0xStaticDesc_t g_static_vl53l0x_lut[eVl53l0x_Last] = {
-    #ifdef USE_VL53L0_1
+    #ifdef USE_VL53L0X_1
     [eVl53l0x_1] = {
         .i2c = eI2c_1,
         .i2c_address = 0x62,
@@ -101,7 +101,7 @@ static const sVl53l0xStaticDesc_t g_static_vl53l0x_lut[eVl53l0x_Last] = {
     },
     #endif
 
-    #ifdef USE_VL53L0_2
+    #ifdef USE_VL53L0X_2
     [eVl53l0x_2] = {
         .i2c = eI2c_1,
         .i2c_address = 0x63,
@@ -126,7 +126,7 @@ static const sVl53l0xStaticDesc_t g_static_vl53l0x_lut[eVl53l0x_Last] = {
 
 /* clang-format off */
 static sVl53l0xDynamicDesc_t g_dynamic_vl53l0x[eVl53l0x_Last] = {
-    #ifdef USE_VL53L0_1
+    #ifdef USE_VL53L0X_1
     [eVl53l0x_1] = {
         .device = {.I2cDevAddr = VL53L0X_DEFAULT_ADDRESS, .comms_type = I2C, .comms_speed_khz = 100},
         .state = eVl53l0xState_Off,
@@ -139,7 +139,7 @@ static sVl53l0xDynamicDesc_t g_dynamic_vl53l0x[eVl53l0x_Last] = {
     },
     #endif
 
-    #ifdef USE_VL53L0_2
+    #ifdef USE_VL53L0X_2
     [eVl53l0x_2] = {
         .device = {.I2cDevAddr = VL53L0X_DEFAULT_ADDRESS, .comms_type = I2C, .comms_speed_khz = 100},
         .state = eVl53l0xState_Off,

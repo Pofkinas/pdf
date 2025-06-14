@@ -25,6 +25,9 @@
 /// -- I²C bus
 #define USE_I2C1                                  // Enable I2C1 peripheral
 
+/// -- DMA                                        
+#define USE_DMA                                   // Enable DMA support
+
 /// -- CLI
 #define ENABLE_CLI                                // Enable Command Line Interface (CLI) support
 #define INCLUDE_PROJECT_CLI                       // Include custom CLI commands from project_cli_lut.h
