@@ -83,7 +83,7 @@ ProjectName/
 Modify GCC Compiler include paths to match framework directory (relative to your project root):
 
 ```text
-../Application                                  # for platform_config.h
+../Application
 ../Framework/Source/API
 ../Framework/Source/APP
 ../Framework/Source/Driver
@@ -114,10 +114,10 @@ PDF supports build systems:
 ### STM32CubeIDE
 
 1. Generate project using CubeMX.
-1. Exclude generated `main.c` and comment out `stm32x_it.c` interupt callbacks.
-2. Import `Framework/` as linked folder.
-3. Set include paths and preprocessor defines as described above.
-4. Clean and build.
+2. Exclude from build generated `main.c` and comment out `stm32x_it.c` interupt callbacks.
+3. Exclude from build `/vl53l0x_i2c_platform.c`, `vl53l0x_i2c_win_serial_comms.c`, `/vl53l0x_platform_log.c` found in `/Source/Libs/VL53L0X/platform`.
+4. Set include paths and preprocessor defines as described above.
+5. Clean and build.
 
 ### Makefile / CMake
 
