@@ -55,6 +55,7 @@ typedef enum ePwmDevice {
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
+void PWM_Driver_DefinePerips (const sPwmOcChannelDesc_t *pwm_lut);
 bool PWM_Driver_InitAllDevices (void);
 bool PWM_Driver_Enable_Device (const ePwmDevice_t device);
 bool PWM_Driver_Disable_Device (const ePwmDevice_t device);

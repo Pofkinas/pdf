@@ -50,6 +50,7 @@ typedef enum eMotorRotation {
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
+void Motor_Driver_DefinePerips (const sMotorConstDesc_t *motor_lut);
 bool Motor_Driver_InitAllMotors (void);
 bool Motor_Driver_EnableMotor (const eMotorDriver_t motor);
 bool Motor_Driver_DisableMotor (const eMotorDriver_t motor);
