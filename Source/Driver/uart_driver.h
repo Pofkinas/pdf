@@ -42,6 +42,7 @@ typedef enum eUartDriver {
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
+void UART_Driver_DefinePerips (const sUartDesc_t *uart_lut);
 bool UART_Driver_Init (const eUartDriver_t uart, const eUartBaudrate_t baudrate);
 bool UART_Driver_SendByte (const eUartDriver_t uart, const uint8_t data);
 bool UART_Driver_SendBytes (const eUartDriver_t uart, uint8_t *data, const size_t size);

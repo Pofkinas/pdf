@@ -8,7 +8,10 @@
  * This file contains example feature flags and configuration settings for various modules and peripherals used in the application.
  *
  * @note This file should be used as a template for your platform configuration for file `project_config.h`in main directory (e.g. ProjectName/Application/).
+ * @note Make sure to change `#include platform_init.h` in `project_config.h`to your used platfrom.
  ***********************************************************************************************************************/
+
+#include "platform_init.h"
 
 //==============================================================================
 // FEATURE FLAGS
@@ -24,6 +27,7 @@
 
 /// -- I²C bus
 #define USE_I2C1                                  // Enable I2C1 peripheral
+#define USE_I2C2                                  // Enable I2C2 peripheral
 
 /// -- CLI
 #define ENABLE_CLI                                // Enable Command Line Interface (CLI) support
@@ -31,12 +35,20 @@
 
 /// -- LEDs
 #define USE_ONBOARD_LED                           // Enable on-board LED
-#define USE_PULSE_LED                               // Enable PWM controlled LEDs
+#define USE_PULSE_LED                             // Enable PWM controlled LEDs
 
 /// -- I/Os
 #define USE_START_BUTTON                          // Enable External Start button
 #define USE_TCRT5000_LEFT                         // Enable reflectance sensor
 #define USE_TCRT5000_RIGHT                        // Enable reflectance sensor
+
+#define USE_EXTI0                                 // Enable EXTI0 interrupt
+#define USE_EXTI1                                 // Enable EXTI1 interrupt
+#define USE_EXTI2                                 // Enable EXTI2 interrupt
+#define USE_EXTI3                                 // Enable EXTI3 interrupt
+#define USE_EXTI4                                 // Enable EXTI4 interrupt
+#define USE_EXTI9_5                               // Enable EXTI9_5 interrupt
+#define USE_EXTI15_10                             // Enable EXTI15_10 interrupt
 
 /// -- WS2812B LED strips
 #define USE_WS2812B_1                             // Enable LED strip
@@ -65,6 +77,8 @@
 
 #if defined(USE_UART_DEBUG) || defined(USE_UART_UROS_TX)
 #define USE_UART
+#define UART_1 eUartDriver_uRos
+#define UART_2 eUartDriver_Debug
 #endif
 
 #ifdef USE_UART_DEBUG
@@ -79,11 +93,17 @@
 // I2C BUS CONFIGURATION
 //------------------------------------------------------------------------------
 
-#if defined(USE_I2C1)
+#if defined(USE_I2C1) || defined(USE_I2C2)
 #define USE_I2C
 #endif
 
 #ifdef USE_I2C1
+#define I2C_1 eI2cDriver_I2c1
+#define I2C_MAX_DATA_SIZE 16
+#endif
+
+#ifdef USE_I2C2
+#define I2C_2 eI2cDriver_I2c2
 #define I2C_MAX_DATA_SIZE 16
 #endif
 
@@ -147,6 +167,11 @@
 #define TCRT_LEFT_ENABLE_DEBOUNCE true
 #define TCRT_LEFT_EXTI true
 #define TCRT5000_LEFT_TRIGGERED_EVENT 0x02U
+#endif
+
+#if defined(USE_EXTI0) || defined(USE_EXTI1) || defined(USE_EXTI2) || defined(USE_EXTI3) || \
+    defined(USE_EXTI4) || defined(USE_EXTI9_5) || defined(USE_EXTI15_10)
+#define USE_EXTI
 #endif
 
 #if defined(TCRT_RIGHT_ENABLE_DEBOUNCE) || defined(TCRT_LEFT_ENABLE_DEBOUNCE)
@@ -222,5 +247,13 @@
 
 #define CLI_COMMAND_MESSAGE_CAPACITY 20
 #define RESPONSE_MESSAGE_CAPACITY 128
+
+//==============================================================================
+// MISCELLANEOUS
+//------------------------------------------------------------------------------
+
+#if defined(USE_MOTOR) || defined(USE_WS2812B) || defined(USE_PWM_LED)
+#define USE_PWM
+#endif
 
 #endif /* FRAMEWORK_UTILITY_EXAMPLE_CONFIG_H_ */

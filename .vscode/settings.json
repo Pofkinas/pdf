@@ -21,6 +21,7 @@
         "pwm_driver.h": "c",
         "debug_api.h": "c",
         "stdio.h": "c",
-        "led_app.h": "c"
+        "led_app.h": "c",
+        "uart_driver.h": "c"
     }
 }

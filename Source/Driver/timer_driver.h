@@ -41,6 +41,7 @@ typedef enum eTimerDriver {
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
+void Timer_Driver_DefineTimers (const sTimerDesc_t *timer_lut);
 bool Timer_Driver_InitAllTimers (void);
 bool Timer_Driver_Start (const eTimerDriver_t timer);
 bool Timer_Driver_Stop (const eTimerDriver_t timer);
