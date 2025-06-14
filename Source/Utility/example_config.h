@@ -55,6 +55,9 @@
 #define USE_MOTOR_A                               // Enable Motor A
 #define USE_MOTOR_B                               // Enable Motor B
 
+/// -- LCD
+#define USE_LCD_1                                 // Enable LCD 1 (I2C) interface
+
 //==============================================================================
 // SYSTEM TIMING
 //------------------------------------------------------------------------------
@@ -225,5 +228,13 @@
 
 #define CLI_COMMAND_MESSAGE_CAPACITY 20
 #define RESPONSE_MESSAGE_CAPACITY 128
+
+//==============================================================================
+// LCD CONFIGURATION
+//------------------------------------------------------------------------------
+
+#if defined(USE_LCD_1)
+#define USE_LCD
+#endif
 
 #endif /* FRAMEWORK_UTILITY_EXAMPLE_CONFIG_H_ */
