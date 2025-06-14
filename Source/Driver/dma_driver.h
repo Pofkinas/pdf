@@ -58,6 +58,7 @@ typedef struct sDmaInit {
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
+void DMA_Driver_DefinePerips(const sDmaStaticDesc_t *dma_lut, const sDmaIsActiveFlags_t *is_active_flags_fp_lut, const sDmaClearFlags_t *clear_flags_fp_lut);
 bool DMA_Driver_Init(sDmaInit_t *data);
 bool DMA_Driver_ConfigureStream (const eDmaDriver_t stream, uint32_t *src_address, uint32_t *dst_address, const size_t size);
 bool DMA_Driver_EnableStream(const eDmaDriver_t stream);

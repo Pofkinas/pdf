@@ -4,9 +4,9 @@
  * Includes
  *********************************************************************************************************************/
 
-#include "stdbool.h"
-#include "stdint.h"
-#include "stddef.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>
 #include "framework_config.h"
 
 /**********************************************************************************************************************
@@ -53,6 +53,7 @@ typedef void (*led_driver_callback_t) (void *context, const eLedTransferState_t 
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
+void WS2812B_Driver_DefinePherips (const sWs2812bStaticDesc_t *ws2812b_lut);
 bool WS2812B_Driver_Init (const eWs2812bDriver_t device, led_driver_callback_t callback, void *callback_context);
 bool WS2812B_Driver_Set (const eWs2812bDriver_t device, uint8_t *led_data, size_t led_count);
 bool WS2812B_Driver_Reset (const eWs2812bDriver_t device);

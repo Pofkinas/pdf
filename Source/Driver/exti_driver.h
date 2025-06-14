@@ -45,6 +45,7 @@ typedef void (*exti_callback_t) (void *context);
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
+void Exti_Driver_DefinePerips (const sExtiStaticDesc_t *exti_lut);
 bool Exti_Driver_InitDevice (eExtiDriver_t exti_device, exti_callback_t exti_callback, void *callback_context);
 bool Exti_Driver_Disable_IT (const eExtiDriver_t exti_device);
 bool Exti_Driver_Enable_IT (const eExtiDriver_t exti_device);

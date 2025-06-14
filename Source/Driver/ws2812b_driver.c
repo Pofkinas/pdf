@@ -8,9 +8,6 @@
 
 #include <string.h>
 #include <math.h>
-#include "timer_driver.h"
-#include "pwm_driver.h"
-#include "dma_driver.h"
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -49,13 +46,6 @@ typedef enum eDmaBuffer_State {
     eDmaBuffer_State_Last
 } eDmaBuffer_State_t;
 
-typedef struct sWs2812bStaticDesc {
-    eTimerDriver_t timer;
-    ePwmDevice_t pwm_device;
-    eDmaDriver_t dma_stream;
-    size_t total_led;
-} sWs2812bStaticDesc_t;
-
 typedef struct sWs2812bDynamicDesc {
     eWs2812bDriver_t device;
     bool is_init;
@@ -80,31 +70,11 @@ typedef struct sWs2812bDynamicDesc {
 const static uint32_t g_ws2812b_latch_data[WS2812B_DMA_BUFFER_SIZE] = {0};
 const static uint8_t g_led_order_grb[3] = {1, 0, 2};
 
-/* clang-format off */
-const static sWs2812bStaticDesc_t g_static_ws2812b_lut[eWs2812bDriver_Last] = {
-    #ifdef USE_WS2812B_1
-    [eWs2812bDriver_1] = {
-        .timer = eTimerDriver_TIM5,
-        .pwm_device = ePwmDevice_Ws2812b_1,
-        .dma_stream = eDmaDriver_Ws2812b_1,
-        .total_led = WS2812B_1_LED_COUNT
-    },
-    #endif
-
-    #ifdef USE_WS2812B_2
-    [eWs2812bDriver_2] = {
-        .timer = eTimerDriver_TIM5,
-        .pwm_device = ePwmDevice_Ws2812b_2,
-        .dma_stream = eDmaDriver_Ws2812b_2,
-        .total_led = WS2812B_2_LED_COUNT
-    },
-    #endif
-};
-/* clang-format on */
-
 /**********************************************************************************************************************
  * Private variables
  *********************************************************************************************************************/
+
+static sWs2812bStaticDesc_t g_ws2812b_lut[eWs2812bDriver_Last];
 
 /* clang-format off */
 static sWs2812bDynamicDesc_t g_dynamic_ws2812b_lut[eWs2812bDriver_Last] = {
@@ -169,7 +139,7 @@ static void WS2812B_Driver_Dma_ISRHandler (void *isr_callback_context, const eDm
         return;
     }
 
-    DMA_Driver_ClearFlag(g_static_ws2812b_lut[context->device].dma_stream, flag);
+    DMA_Driver_ClearFlag(g_ws2812b_lut[context->device].dma_stream, flag);
 
     if (flag == eDmaDriver_Flags_TE) {
         g_dynamic_ws2812b_lut[context->device].led_driver_callback(g_dynamic_ws2812b_lut[context->device].callback_context, eLedTransferState_TransferError);
@@ -287,9 +257,9 @@ static void WS2812B_Driver_Latch (const eWs2812bDriver_t device) {
     g_dynamic_ws2812b_lut[device].sent_led_count = 0;
     g_dynamic_ws2812b_lut[device].led_to_set = LATCH_LED_TRANSFERS;
 
-    DMA_Driver_DisableStream(g_static_ws2812b_lut[device].dma_stream);
-    DMA_Driver_ConfigureStream(g_static_ws2812b_lut[device].dma_stream, (uint32_t *) g_ws2812b_latch_data, NULL, WS2812B_DMA_BUFFER_SIZE);
-    DMA_Driver_EnableStream(g_static_ws2812b_lut[device].dma_stream);
+    DMA_Driver_DisableStream(g_ws2812b_lut[device].dma_stream);
+    DMA_Driver_ConfigureStream(g_ws2812b_lut[device].dma_stream, (uint32_t *) g_ws2812b_latch_data, NULL, WS2812B_DMA_BUFFER_SIZE);
+    DMA_Driver_EnableStream(g_ws2812b_lut[device].dma_stream);
 
     return;
 }
@@ -299,9 +269,9 @@ static void WS2812B_Driver_Stop (const eWs2812bDriver_t device) {
         return;
     }
 
-    PWM_Driver_Disable_Device(g_static_ws2812b_lut[device].pwm_device);
-    DMA_Driver_DisableStream(g_static_ws2812b_lut[device].dma_stream);
-    DMA_Driver_ClearAllFlags(g_static_ws2812b_lut[device].dma_stream);
+    PWM_Driver_Disable_Device(g_ws2812b_lut[device].pwm_device);
+    DMA_Driver_DisableStream(g_ws2812b_lut[device].dma_stream);
+    DMA_Driver_ClearAllFlags(g_ws2812b_lut[device].dma_stream);
 
     g_dynamic_ws2812b_lut[device].led_driver_callback(g_dynamic_ws2812b_lut[device].callback_context, eLedTransferState_Complete);
 
@@ -314,6 +284,16 @@ static void WS2812B_Driver_Stop (const eWs2812bDriver_t device) {
 /**********************************************************************************************************************
  * Definitions of exported functions
  *********************************************************************************************************************/
+
+void WS2812B_Driver_DefinePherips (const sWs2812bStaticDesc_t *ws2812b_lut) {
+    if (ws2812b_lut == NULL) {
+        return;
+    }
+
+    g_ws2812b_lut = ws2812b_lut;
+
+    return;
+}
 
 bool WS2812B_Driver_Init (const eWs2812bDriver_t device, led_driver_callback_t callback, void *callback_context) {
     if ((device <= eWs2812bDriver_First) || (device >= eWs2812bDriver_Last)) {
@@ -333,8 +313,8 @@ bool WS2812B_Driver_Init (const eWs2812bDriver_t device, led_driver_callback_t c
     }
 
     sDmaInit_t dma_init_struct = {
-        .stream = g_static_ws2812b_lut[device].dma_stream,
-        .periph_or_src_addr = (uint32_t*) PWM_Driver_GetRegAddr(g_static_ws2812b_lut[device].pwm_device),
+        .stream = g_ws2812b_lut[device].dma_stream,
+        .periph_or_src_addr = (uint32_t*) PWM_Driver_GetRegAddr(g_ws2812b_lut[device].pwm_device),
         .mem_or_dest_addr = g_dynamic_ws2812b_lut[device].dma_buffer,
         .data_buffer_size = WS2812B_DMA_BUFFER_SIZE,
         .isr_callback = &WS2812B_Driver_Dma_ISRHandler,
@@ -345,8 +325,8 @@ bool WS2812B_Driver_Init (const eWs2812bDriver_t device, led_driver_callback_t c
         return false;
     }
 
-    g_dynamic_ws2812b_lut[device].high_time = (uint8_t) (DATA_TRANSFER_HIGH_TIME * Timer_Driver_GetResolution(g_static_ws2812b_lut[device].timer));
-    g_dynamic_ws2812b_lut[device].low_time = (uint8_t) (DATA_TRANSFER_LOW_TIME * Timer_Driver_GetResolution(g_static_ws2812b_lut[device].timer));
+    g_dynamic_ws2812b_lut[device].high_time = (uint8_t) (DATA_TRANSFER_HIGH_TIME * Timer_Driver_GetResolution(g_ws2812b_lut[device].timer));
+    g_dynamic_ws2812b_lut[device].low_time = (uint8_t) (DATA_TRANSFER_LOW_TIME * Timer_Driver_GetResolution(g_ws2812b_lut[device].timer));
 
     for (size_t led_bit = 0; led_bit < WS2812B_DMA_BUFFER_SIZE; led_bit++) {
         g_dynamic_ws2812b_lut[device].dma_buffer_reset[led_bit] = g_dynamic_ws2812b_lut[device].low_time;
@@ -370,7 +350,7 @@ bool WS2812B_Driver_Set (const eWs2812bDriver_t device, uint8_t *led_data, size_
         return false;
     }
 
-    if (led_count == 0 || led_count > g_static_ws2812b_lut[device].total_led) {
+    if (led_count == 0 || led_count > g_ws2812b_lut[device].total_led) {
         return false;
     }
 
@@ -387,7 +367,7 @@ bool WS2812B_Driver_Set (const eWs2812bDriver_t device, uint8_t *led_data, size_
     g_dynamic_ws2812b_lut[device].processed_led = 0;
     g_dynamic_ws2812b_lut[device].sent_led_count = 0;
 
-    if (!DMA_Driver_ConfigureStream(g_static_ws2812b_lut[device].dma_stream, g_dynamic_ws2812b_lut[device].dma_buffer, NULL, WS2812B_DMA_BUFFER_SIZE)) {
+    if (!DMA_Driver_ConfigureStream(g_ws2812b_lut[device].dma_stream, g_dynamic_ws2812b_lut[device].dma_buffer, NULL, WS2812B_DMA_BUFFER_SIZE)) {
         return false;
     }
     
@@ -397,19 +377,19 @@ bool WS2812B_Driver_Set (const eWs2812bDriver_t device, uint8_t *led_data, size_
 
     WS2812B_Driver_ProcessDmaBuffer(device);
 
-    if (!DMA_Driver_ClearAllFlags(g_static_ws2812b_lut[device].dma_stream)) {
+    if (!DMA_Driver_ClearAllFlags(g_ws2812b_lut[device].dma_stream)) {
         return false;
     }
 
-    if (!DMA_Driver_EnableItAll(g_static_ws2812b_lut[device].dma_stream)) {
+    if (!DMA_Driver_EnableItAll(g_ws2812b_lut[device].dma_stream)) {
         return false;
     }
 
-    if (!DMA_Driver_EnableStream(g_static_ws2812b_lut[device].dma_stream)) {
+    if (!DMA_Driver_EnableStream(g_ws2812b_lut[device].dma_stream)) {
         return false;
     }
 
-    if (!PWM_Driver_Enable_Device(g_static_ws2812b_lut[device].pwm_device)) {
+    if (!PWM_Driver_Enable_Device(g_ws2812b_lut[device].pwm_device)) {
         return false;
     }
 
@@ -431,26 +411,26 @@ bool WS2812B_Driver_Reset (const eWs2812bDriver_t device) {
         return false;
     }
 
-    g_dynamic_ws2812b_lut[device].led_to_set = g_static_ws2812b_lut[device].total_led;
+    g_dynamic_ws2812b_lut[device].led_to_set = g_ws2812b_lut[device].total_led;
     g_dynamic_ws2812b_lut[device].sent_led_count = 0;
     
-    if (!DMA_Driver_ConfigureStream(g_static_ws2812b_lut[device].dma_stream, g_dynamic_ws2812b_lut[device].dma_buffer_reset, NULL, WS2812B_DMA_BUFFER_SIZE)) {
+    if (!DMA_Driver_ConfigureStream(g_ws2812b_lut[device].dma_stream, g_dynamic_ws2812b_lut[device].dma_buffer_reset, NULL, WS2812B_DMA_BUFFER_SIZE)) {
         return false;
     }
 
-    if (!DMA_Driver_ClearAllFlags(g_static_ws2812b_lut[device].dma_stream)) {
+    if (!DMA_Driver_ClearAllFlags(g_ws2812b_lut[device].dma_stream)) {
         return false;
     }
 
-    if (!DMA_Driver_EnableItAll(g_static_ws2812b_lut[device].dma_stream)) {
+    if (!DMA_Driver_EnableItAll(g_ws2812b_lut[device].dma_stream)) {
         return false;
     }
 
-    if (!DMA_Driver_EnableStream(g_static_ws2812b_lut[device].dma_stream)) {
+    if (!DMA_Driver_EnableStream(g_ws2812b_lut[device].dma_stream)) {
         return false;
     }
 
-    if (!PWM_Driver_Enable_Device(g_static_ws2812b_lut[device].pwm_device)) {
+    if (!PWM_Driver_Enable_Device(g_ws2812b_lut[device].pwm_device)) {
         return false;
     }
 
@@ -468,7 +448,7 @@ uint16_t WS2812B_Driver_GetMinRefreshRate (const eWs2812bDriver_t device) {
         return 0;
     }
 
-    float transfer_time_ms = SINGLE_DATA_TRANSFER_TIME_NS * BITS_PER_LED * (g_static_ws2812b_lut[device].total_led + LATCH_LED_TRANSFERS) / 10000000;
+    float transfer_time_ms = SINGLE_DATA_TRANSFER_TIME_NS * BITS_PER_LED * (g_ws2812b_lut[device].total_led + LATCH_LED_TRANSFERS) / 10000000;
 
     if (transfer_time_ms < 1.0f) {
         return 1;

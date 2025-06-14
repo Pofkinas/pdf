@@ -6,8 +6,6 @@
 
 #ifdef USE_UART
 
-#include "stm32f4xx_ll_bus.h"
-#include "stm32f4xx_ll_usart.h"
 #include "ring_buffer.h"
 
 /**********************************************************************************************************************
@@ -17,21 +15,6 @@
 /**********************************************************************************************************************
  * Private typedef
  *********************************************************************************************************************/
-
-typedef struct sUartDesc {
-    USART_TypeDef *periph;
-    uint32_t baud;
-    uint32_t data_bits;
-    uint32_t stop_bits;
-    uint32_t parity;
-    uint32_t direction;
-    uint32_t flow_control;
-    uint32_t oversample;
-    uint32_t clock;
-    void (*enable_clock_fp) (uint32_t);
-    IRQn_Type nvic;
-    size_t ring_buffer_capacity;
-} sUartDesc_t;
 
 RingBuffer_Handle g_ring_buffer[eUartDriver_Last] = {
     #ifdef USE_UART_DEBUG
@@ -48,41 +31,6 @@ RingBuffer_Handle g_ring_buffer[eUartDriver_Last] = {
  *********************************************************************************************************************/
 
 /* clang-format off */
-const static sUartDesc_t g_static_uart_lut[eUartDriver_Last] = {
-    #ifdef USE_UART_DEBUG
-    [eUartDriver_Debug] = {
-        .periph = USART2,
-        .baud = 115200,
-        .data_bits = LL_USART_DATAWIDTH_8B,
-        .stop_bits = LL_USART_STOPBITS_1,
-        .parity = LL_USART_PARITY_NONE,
-        .direction = LL_USART_DIRECTION_TX_RX,
-        .flow_control = LL_USART_HWCONTROL_NONE,
-        .oversample = LL_USART_OVERSAMPLING_16,
-        .clock = LL_APB1_GRP1_PERIPH_USART2,
-        .enable_clock_fp = LL_APB1_GRP1_EnableClock,
-        .nvic = USART2_IRQn,
-        .ring_buffer_capacity = UART_DEBUG_BUFFER_CAPACITY
-    }
-    #endif
-
-    #ifdef USE_UART_UROS_TX
-    [eUartDriver_uRos] = {
-        .periph = USART1,
-        .baud = 115200,
-        .data_bits = LL_USART_DATAWIDTH_8B,
-        .stop_bits = LL_USART_STOPBITS_1,
-        .parity = LL_USART_PARITY_NONE,
-        .direction = LL_USART_DIRECTION_TX,
-        .flow_control = LL_USART_HWCONTROL_NONE,
-        .oversample = LL_USART_OVERSAMPLING_16,
-        .clock = LL_APB2_GRP1_PERIPH_USART1,
-        .enable_clock_fp = LL_APB2_GRP1_EnableClock,
-        .nvic = USART1_IRQn,
-    }
-    #endif
-};
-
 const static uint32_t g_static_baudrate_lut[eUartBaudrate_Last] = {
     [eUartBaudrate_4800] = 4800,
     [eUartBaudrate_9600] = 9600,
@@ -99,6 +47,8 @@ const static uint32_t g_static_baudrate_lut[eUartBaudrate_Last] = {
 /**********************************************************************************************************************
  * Private variables
  *********************************************************************************************************************/
+
+static sUartDesc_t g_uart_lut[eUartDriver_Last];
 
 /**********************************************************************************************************************
  * Exported variables and references
@@ -121,34 +71,44 @@ static void UARTx_ISRHandler (const eUartDriver_t uart) {
         return;
     }
 
-    if (!LL_USART_IsEnabled(g_static_uart_lut[uart].periph)) {
+    if (!LL_USART_IsEnabled(g_uart_lut[uart].periph)) {
         return;
     }
     
-    if (!LL_USART_IsActiveFlag_RXNE(g_static_uart_lut[uart].periph)) {
+    if (!LL_USART_IsActiveFlag_RXNE(g_uart_lut[uart].periph)) {
         return;
     }
     
-    Ring_Buffer_Push(g_ring_buffer[uart], LL_USART_ReceiveData8(g_static_uart_lut[uart].periph));
+    Ring_Buffer_Push(g_ring_buffer[uart], LL_USART_ReceiveData8(g_uart_lut[uart].periph));
     
     return;
 }
 
 void USART1_IRQHandler (void) {
     #ifdef USE_UART_UROS_TX
-    UARTx_ISRHandler(eUartDriver_uRos);
+    UARTx_ISRHandler(UART_1);
     #endif
 }
 
 void USART2_IRQHandler (void) {
     #ifdef USE_UART_DEBUG
-    UARTx_ISRHandler(eUartDriver_Debug);
+    UARTx_ISRHandler(UART_2);
     #endif
 }
 
 /**********************************************************************************************************************
  * Definitions of exported functions
  *********************************************************************************************************************/
+
+void UART_Driver_DefinePerips (const sUartDesc_t *uart_lut) {
+    if (uart_lut == NULL) {
+        return;
+    }
+
+    g_uart_lut = uart_lut;
+
+    return;
+}
 
 bool UART_Driver_Init (const eUartDriver_t uart, const eUartBaudrate_t baudrate) {
     if ((uart <= eUartDriver_First) || (uart >= eUartDriver_Last)) {
@@ -161,35 +121,35 @@ bool UART_Driver_Init (const eUartDriver_t uart, const eUartBaudrate_t baudrate)
 
     LL_USART_InitTypeDef uart_init_struct = {0};
 
-    g_static_uart_lut[uart].enable_clock_fp(g_static_uart_lut[uart].clock);
+    g_uart_lut[uart].enable_clock_fp(g_uart_lut[uart].clock);
 
     uart_init_struct.BaudRate = g_static_baudrate_lut[baudrate];
-    uart_init_struct.DataWidth = g_static_uart_lut[uart].data_bits;
-    uart_init_struct.StopBits = g_static_uart_lut[uart].stop_bits;
-    uart_init_struct.Parity = g_static_uart_lut[uart].parity;
-    uart_init_struct.TransferDirection = g_static_uart_lut[uart].direction;
-    uart_init_struct.HardwareFlowControl = g_static_uart_lut[uart].flow_control;
-    uart_init_struct.OverSampling = g_static_uart_lut[uart].oversample;
+    uart_init_struct.DataWidth = g_uart_lut[uart].data_bits;
+    uart_init_struct.StopBits = g_uart_lut[uart].stop_bits;
+    uart_init_struct.Parity = g_uart_lut[uart].parity;
+    uart_init_struct.TransferDirection = g_uart_lut[uart].direction;
+    uart_init_struct.HardwareFlowControl = g_uart_lut[uart].flow_control;
+    uart_init_struct.OverSampling = g_uart_lut[uart].oversample;
 
-    if (LL_USART_Init(g_static_uart_lut[uart].periph, &uart_init_struct) == ERROR) {
+    if (LL_USART_Init(g_uart_lut[uart].periph, &uart_init_struct) == ERROR) {
         return false;
     }
 
-    LL_USART_ConfigAsyncMode(g_static_uart_lut[uart].periph);
+    LL_USART_ConfigAsyncMode(g_uart_lut[uart].periph);
 
-    NVIC_EnableIRQ(g_static_uart_lut[uart].nvic);
+    NVIC_EnableIRQ(g_uart_lut[uart].nvic);
 
-    if (g_static_uart_lut[uart].direction == LL_USART_DIRECTION_RX || g_static_uart_lut[uart].direction == LL_USART_DIRECTION_TX_RX) {
-        LL_USART_EnableIT_RXNE(g_static_uart_lut[uart].periph);
+    if (g_uart_lut[uart].direction == LL_USART_DIRECTION_RX || g_uart_lut[uart].direction == LL_USART_DIRECTION_TX_RX) {
+        LL_USART_EnableIT_RXNE(g_uart_lut[uart].periph);
 
-        g_ring_buffer[uart] = Ring_Buffer_Init(g_static_uart_lut[uart].ring_buffer_capacity);
+        g_ring_buffer[uart] = Ring_Buffer_Init(g_uart_lut[uart].ring_buffer_capacity);
 
         if (g_ring_buffer[uart] == NULL) {
             return false;
         }
     }
 
-    LL_USART_Enable(g_static_uart_lut[uart].periph);
+    LL_USART_Enable(g_uart_lut[uart].periph);
 
     return true;
 }
@@ -199,13 +159,13 @@ bool UART_Driver_SendByte (const eUartDriver_t uart, const uint8_t data) {
         return false;
     }
 
-    if (!LL_USART_IsEnabled(g_static_uart_lut[uart].periph)) {
+    if (!LL_USART_IsEnabled(g_uart_lut[uart].periph)) {
         return false;
     }
 
-    while (!LL_USART_IsActiveFlag_TXE(g_static_uart_lut[uart].periph)) {}
+    while (!LL_USART_IsActiveFlag_TXE(g_uart_lut[uart].periph)) {}
 
-    LL_USART_TransmitData8(g_static_uart_lut[uart].periph, data);
+    LL_USART_TransmitData8(g_uart_lut[uart].periph, data);
     return true;
 }
 
@@ -232,7 +192,7 @@ bool UART_Driver_ReceiveByte (const eUartDriver_t uart, uint8_t *data) {
         return false;
     }
 
-    if (!LL_USART_IsEnabled(g_static_uart_lut[uart].periph)) {
+    if (!LL_USART_IsEnabled(g_uart_lut[uart].periph)) {
         return false;
     }
 

@@ -92,6 +92,7 @@ typedef enum eGpioPin {
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
+void GPIO_Driver_DefinePins (const sGpioDesc_t *gpio_lut);
 bool GPIO_Driver_InitAllPins (void);
 bool GPIO_Driver_WritePin (const eGpioPin_t gpio_pin, const bool pin_state);
 bool GPIO_Driver_ReadPin (const eGpioPin_t gpio_pin, bool *pin_state);

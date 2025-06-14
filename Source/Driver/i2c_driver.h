@@ -55,6 +55,7 @@ typedef void (*i2c_callback_t) (const eI2cDriver_Flags_t flag, void *context);
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
+void I2C_Driver_DefinePerips (const sI2cDesc_t *i2c_lut);
 bool I2C_Driver_Init (const eI2cDriver_t i2c, i2c_callback_t flag_callback, void *context);
 bool I2C_Driver_EnableIt (const eI2cDriver_t i2c);
 bool I2C_Driver_DisableIt (const eI2cDriver_t i2c);
