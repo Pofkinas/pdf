@@ -20,7 +20,8 @@
  * Private variables
  *********************************************************************************************************************/
 
-static sGpioDesc_t g_gpio_lut[eGpioPin_Last];
+static sGpioDesc_t g_gpio_lut[eGpio_Last];
+static bool g_is_pin_defined = false;
 static bool g_is_all_pin_initialized = false;
 
 /**********************************************************************************************************************
@@ -39,14 +40,18 @@ static bool g_is_all_pin_initialized = false;
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-void GPIO_Driver_DefinePins (const sGpioDesc_t *gpio_lut) {
-    if (gpio_lut == NULL) {
+void GPIO_Driver_DefinePin (const sGpioDesc_t *pin_desc, const eGpio_t gpio_pin) {
+    if (pin_desc == NULL) {
         return;
     }
 
-    g_gpio_lut = gpio_lut;
+    if ((gpio_pin <= eGpio_First) || (gpio_pin >= eGpio_Last)) {
+        return;
+    }
 
-    g_is_all_pin_initialized = false;
+    g_gpio_lut[gpio_pin] = *pin_desc;
+
+    g_is_pin_defined = true;
 
     return;
 }
@@ -56,7 +61,11 @@ bool GPIO_Driver_InitAllPins (void) {
         return true;
     }
 
-    if (eGpioPin_Last == 1) {
+    if (!g_is_pin_defined) {
+        return false;
+    }
+
+    if (eGpio_Last == 1) {
         return false;
     }
 
@@ -64,7 +73,7 @@ bool GPIO_Driver_InitAllPins (void) {
 
     g_is_all_pin_initialized = true;
 
-    for (eGpioPin_t pin = (eGpioPin_First + 1); pin < eGpioPin_Last; pin++) {
+    for (eGpio_t pin = eGpio_First; pin < eGpio_Last; pin++) {
         LL_AHB1_GRP1_EnableClock(g_gpio_lut[pin].clock);
         LL_GPIO_ResetOutputPin(g_gpio_lut[pin].port, g_gpio_lut[pin].pin);
         
@@ -83,8 +92,12 @@ bool GPIO_Driver_InitAllPins (void) {
     return g_is_all_pin_initialized;
 }
 
-bool GPIO_Driver_WritePin (const eGpioPin_t gpio_pin, const bool pin_state) {
-    if ((gpio_pin <= eGpioPin_First) || (gpio_pin >= eGpioPin_Last)) {
+bool GPIO_Driver_WritePin (const eGpio_t gpio_pin, const bool pin_state) {
+    if (!(g_is_pin_defined || g_is_all_pin_initialized)) {
+        return false;
+    }
+    
+    if ((gpio_pin <= eGpio_First) || (gpio_pin >= eGpio_Last)) {
         return false;
     }
 
@@ -101,8 +114,12 @@ bool GPIO_Driver_WritePin (const eGpioPin_t gpio_pin, const bool pin_state) {
     return true;
 }
 
-bool GPIO_Driver_ReadPin (const eGpioPin_t gpio_pin, bool *pin_state) {
-    if ((gpio_pin <= eGpioPin_First) || (gpio_pin >= eGpioPin_Last)) {
+bool GPIO_Driver_ReadPin (const eGpio_t gpio_pin, bool *pin_state) {
+    if (!(g_is_pin_defined || g_is_all_pin_initialized)) {
+        return false;
+    }
+    
+    if ((gpio_pin <= eGpio_First) || (gpio_pin >= eGpio_Last)) {
         return false;
     }
 
@@ -125,8 +142,12 @@ bool GPIO_Driver_ReadPin (const eGpioPin_t gpio_pin, bool *pin_state) {
     return true;
 }
 
-bool GPIO_Driver_TogglePin (const eGpioPin_t gpio_pin) {
-    if ((gpio_pin <= eGpioPin_First) || (gpio_pin >= eGpioPin_Last)) {
+bool GPIO_Driver_TogglePin (const eGpio_t gpio_pin) {
+    if (!(g_is_pin_defined || g_is_all_pin_initialized)) {
+        return false;
+    }
+
+    if ((gpio_pin <= eGpio_First) || (gpio_pin >= eGpio_Last)) {
         return false;
     }
 
@@ -135,8 +156,12 @@ bool GPIO_Driver_TogglePin (const eGpioPin_t gpio_pin) {
     return true;
 }
 
-bool GPIO_Driver_ResetPin (const eGpioPin_t gpio_pin) {
-    if ((gpio_pin <= eGpioPin_First) || (gpio_pin >= eGpioPin_Last)) {
+bool GPIO_Driver_ResetPin (const eGpio_t gpio_pin) {
+    if (!(g_is_pin_defined || g_is_all_pin_initialized)) {
+        return false;
+    }
+    
+    if ((gpio_pin <= eGpio_First) || (gpio_pin >= eGpio_Last)) {
         return false;
     }
 
