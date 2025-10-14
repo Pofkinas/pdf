@@ -4,7 +4,7 @@
 
 #include "led_api.h"
 
-#if defined(USE_LED) || defined(USE_PWM_LED)
+#if defined(ENABLE_LED) || defined(ENABLE_PWM_LED)
 
 #include "cmsis_os2.h"
 #include "gpio_driver.h"
@@ -24,21 +24,7 @@
  * Private typedef
  *********************************************************************************************************************/
 
-typedef struct sLedControlDesc {
-    eGpioPin_t led_pin;
-    bool is_inverted;
-    osTimerAttr_t blink_timer_attributes;
-    osMutexAttr_t blink_mutex_attributes;
-} sLedControlDesc_t;
-
-typedef struct sLedPwmControlDesc {
-    ePwmDevice_t pwm_device;
-    osTimerAttr_t pulse_timer_attributes;
-    osMutexAttr_t pulse_mutex_attributes;
-} sLedPwmControlDesc_t;
-
 typedef struct sLedBlinkDesc {
-    eLed_t led;
     osTimerId_t blink_timer;
     osMutexId_t blink_mutex;
     bool is_running;
@@ -48,7 +34,6 @@ typedef struct sLedBlinkDesc {
 } sLedBlinkDesc_t; 
 
 typedef struct sLedPulseDesc {
-    eLedPwm_t led;
     osTimerId_t pulse_timer;
     osMutexId_t pulse_mutex;
     bool is_running;
@@ -67,94 +52,42 @@ typedef struct sLedPulseDesc {
  * Private constants
  *********************************************************************************************************************/
 
-/* clang-format off */
-#ifdef USE_LED
-const static sLedControlDesc_t g_basic_led_control_static_lut[eLed_Last] = {
-    #ifdef USE_ONBOARD_LED
-    [eLed_OnboardLed] = {
-        .led_pin = eGpioPin_OnboardLed,
-        .is_inverted = USE_ONBOARD_LED_INVERTED,
-        .blink_timer_attributes = {.name = "LED_API_Onboard_LED_Timer", .attr_bits = 0, .cb_mem = NULL, .cb_size = 0},
-        .blink_mutex_attributes = {.name = "LED_API_Onboard_LED_Mutex", .attr_bits = osMutexRecursive | osMutexPrioInherit, .cb_mem = NULL, .cb_size = 0U},
-    }
-    #endif
-};
-#endif
-
-#ifdef USE_PWM_LED
-const static sLedPwmControlDesc_t g_pwm_led_control_static_lut[eLedPwm_Last] = {
-    #ifdef USE_PULSE_LED
-    [eLedPwm_PulseLed] = {
-        .pwm_device = ePwmDevice_PulseLed,
-        .pulse_timer_attributes = {.name = "LED_API_Pulse_LED_Timer", .attr_bits = 0, .cb_mem = NULL, .cb_size = 0},
-        .pulse_mutex_attributes = {.name = "LED_API_Pulse_LED_Mutex", .attr_bits = osMutexRecursive | osMutexPrioInherit, .cb_mem = NULL, .cb_size = 0U},
-    }
-    #endif
-};
-#endif
-/* clang-format on */
-
 /**********************************************************************************************************************
  * Prototypes of private functions
  *********************************************************************************************************************/
 
-#ifdef USE_LED
+#ifdef ENABLE_LED
 static void LED_API_Blink_Timer_Callback (void *arg);
 #endif
 
-#ifdef USE_PWM_LED
-static void LED_API_Pulse_timer_Callback (void *arg);
+#ifdef ENABLE_PWM_LED
+static void LED_API_Pulse_Timer_Callback (void *arg);
 #endif
 
 /**********************************************************************************************************************
  * Private variables
  *********************************************************************************************************************/
 
+#ifdef ENABLE_LED
 static bool g_is_led_initialized = false;
+#endif
+
+#ifdef ENABLE_PWM_LED
 static bool g_is_pwm_initialized = false;
+#endif
 
 osTimerId_t g_blink_timer = NULL;
 uint16_t g_blink_count = 0;
 
-/* clang-format off */
-#ifdef USE_LED
-static sLedBlinkDesc_t g_led_blink_lut[eLed_Last] = {
-    #ifdef USE_ONBOARD_LED
-    [eLed_OnboardLed] = {
-        .led = eLed_OnboardLed,
-        .blink_timer = NULL,
-        .blink_mutex = NULL,
-        .is_running = false,
-        .timer_callback = LED_API_Blink_Timer_Callback,
-        .total_blinks = 0,
-        .blink_count = 0,
-    },
-    #endif
-};
+#ifdef ENABLE_LED
+static sLedBlinkDesc_t g_led_blink_lut[eLed_Last] = {};
+static sLedDesc_t g_led_desc_lut[eLed_Last] = {};
 #endif
 
-#ifdef USE_PWM_LED
-static sLedPulseDesc_t g_led_pulse_lut[eLedPwm_Last] = {
-    #ifdef USE_PULSE_LED
-    [eLedPwm_PulseLed] = {
-        .led = eLedPwm_PulseLed,
-        .pulse_timer = NULL,
-        .pulse_mutex = NULL,
-        .is_running = false,
-        .timer_callback = LED_API_Pulse_timer_Callback,
-        .count_dir_up = true,
-        .timer_resolution = 0,
-        .duty_cycle_change = 0,
-        .total_pulses = 0,
-        .total_changes_per_pulse = 0,
-        .current_duty_cycle = 0,
-        .pulse_count = 0,
-        .change_count = 0
-    }
-    #endif
-};
+#ifdef ENABLE_PWM_LED
+static sLedPulseDesc_t g_led_pulse_lut[eLedPwm_Last] = {};
+static sLedPwmDesc_t g_pwm_led_desc_lut[eLedPwm_Last] = {};
 #endif
-/* clang-format on */
 
 /**********************************************************************************************************************
  * Exported variables and references
@@ -164,7 +97,7 @@ static sLedPulseDesc_t g_led_pulse_lut[eLedPwm_Last] = {
  * Definitions of private functions
  *********************************************************************************************************************/
 
-#ifdef USE_LED
+#ifdef ENABLE_LED
 static void LED_API_Blink_Timer_Callback (void *arg) {
     sLedBlinkDesc_t *led_blink_desc = (sLedBlinkDesc_t*) arg;
 
@@ -194,8 +127,8 @@ static void LED_API_Blink_Timer_Callback (void *arg) {
 }
 #endif
 
-#ifdef USE_PWM_LED
-static void LED_API_Pulse_timer_Callback (void *arg) {
+#ifdef ENABLE_PWM_LED
+static void LED_API_Pulse_Timer_Callback (void *arg) {
    sLedPulseDesc_t *led_pulse_desc = (sLedPulseDesc_t*) arg;
 
    if (!led_pulse_desc->is_running) {
@@ -208,7 +141,7 @@ static void LED_API_Pulse_timer_Callback (void *arg) {
 
    osMutexRelease(led_pulse_desc->pulse_mutex);
 
-   PWM_Driver_Change_Duty_Cycle(g_pwm_led_control_static_lut[led_pulse_desc->led].pwm_device, led_pulse_desc->current_duty_cycle);
+   PWM_Driver_Change_Duty_Cycle(g_pwm_led_desc_lut[led_pulse_desc->led].pwm_device, led_pulse_desc->current_duty_cycle);
 
    if (led_pulse_desc->change_count >= led_pulse_desc->total_changes_per_pulse) {
        if (led_pulse_desc->count_dir_up) {
@@ -232,7 +165,7 @@ static void LED_API_Pulse_timer_Callback (void *arg) {
    if (led_pulse_desc->pulse_count >= led_pulse_desc->total_pulses) {
        osTimerStop(led_pulse_desc->pulse_timer);
 
-       PWM_Driver_Change_Duty_Cycle(g_pwm_led_control_static_lut[led_pulse_desc->led].pwm_device, 0);
+       PWM_Driver_Change_Duty_Cycle(g_pwm_led_desc_lut[led_pulse_desc->led].pwm_device, 0);
 
        led_pulse_desc->is_running = false;
    }
@@ -254,52 +187,66 @@ bool LED_API_Init (void) {
         return false;
     }
 
-    if (eLed_Last != 1) {
-        g_is_led_initialized = true;
+    #ifdef ENABLE_PWM_LED
+    if (!PWM_Driver_InitAllDevices()) {
+        return false;
     }
 
-    if (eLedPwm_Last != 1) {
-        if (!PWM_Driver_InitAllDevices()) {
+    g_is_pwm_initialized = true;
+    #endif
+
+    g_is_led_initialized = true;
+
+    #ifdef ENABLE_LED
+    for (eLed_t led = (eLed_First + 1); led < eLed_Last; led++) {
+        const sLedDesc_t *desc = LED_Config_GetLedDesc(led);
+
+        if (desc == NULL) {
             return false;
         }
 
-        g_is_pwm_initialized = true;
-    }
-
-    #ifdef USE_LED
-    for (eLed_t led = (eLed_First + 1); led < eLed_Last; led++) {
+        g_led_desc_lut[led] = *desc;
+        
         if (g_led_blink_lut[led].blink_timer == NULL) {
-            g_led_blink_lut[led].blink_timer = osTimerNew(g_led_blink_lut[led].timer_callback, osTimerPeriodic, &g_led_blink_lut[led], &g_basic_led_control_static_lut[led].blink_timer_attributes);
+            g_led_blink_lut[led].blink_timer = osTimerNew(g_led_blink_lut[led].timer_callback, osTimerPeriodic, &g_led_blink_lut[led], &g_led_desc_lut[led].blink_timer_attributes);
         }
 
         if (g_led_blink_lut[led].blink_mutex == NULL) {
-            g_led_blink_lut[led].blink_mutex = osMutexNew(&g_basic_led_control_static_lut[led].blink_mutex_attributes);
+            g_led_blink_lut[led].blink_mutex = osMutexNew(&g_led_desc_lut[led].blink_mutex_attributes);
         }
     }
     #endif
 
-    #ifdef USE_PWM_LED
+    #ifdef ENABLE_PWM_LED
     for (eLedPwm_t led = (eLedPwm_First + 1); led < eLedPwm_Last; led++) {
-        if (g_led_pulse_lut[led].pulse_timer == NULL) {
-            g_led_pulse_lut[led].pulse_timer = osTimerNew(g_led_pulse_lut[led].timer_callback, osTimerPeriodic, &g_led_pulse_lut[led], &g_pwm_led_control_static_lut[led].pulse_timer_attributes);
-        }
+        const sLedPwmDesc_t *desc = LED_Config_GetPwmLedDesc(led);
 
-        if (g_led_pulse_lut[led].pulse_mutex == NULL) {
-            g_led_pulse_lut[led].pulse_mutex = osMutexNew(&g_pwm_led_control_static_lut[led].pulse_mutex_attributes);
-        }
-
-        if (!PWM_Driver_Enable_Device(g_pwm_led_control_static_lut[led].pwm_device)) {
+        if (desc == NULL) {
             return false;
         }
 
-        g_led_pulse_lut[led].timer_resolution = PWM_Driver_GetDeviceTimerResolution(g_pwm_led_control_static_lut[led].pwm_device);
+        g_pwm_led_desc_lut[led] = *desc;
+
+        if (g_led_pulse_lut[led].pulse_timer == NULL) {
+            g_led_pulse_lut[led].pulse_timer = osTimerNew(g_led_pulse_lut[led].timer_callback, osTimerPeriodic, &g_led_pulse_lut[led], &g_pwm_led_desc_lut[led].pulse_timer_attributes);
+        }
+
+        if (g_led_pulse_lut[led].pulse_mutex == NULL) {
+            g_led_pulse_lut[led].pulse_mutex = osMutexNew(&g_pwm_led_desc_lut[led].pulse_mutex_attributes);
+        }
+
+        if (!PWM_Driver_Enable_Device(g_pwm_led_desc_lut[led].pwm_device)) {
+            return false;
+        }
+
+        g_led_pulse_lut[led].timer_resolution = PWM_Driver_GetDeviceTimerResolution(g_pwm_led_desc_lut[led].pwm_device);
     }
     #endif
 
     return true;
 }
 
-#ifdef USE_LED
+#ifdef ENABLE_LED
 bool LED_API_TurnOn (const eLed_t led) {
     if (!g_is_led_initialized) {
         return false;
@@ -309,7 +256,7 @@ bool LED_API_TurnOn (const eLed_t led) {
         return false;
     }
 
-    return GPIO_Driver_WritePin(g_basic_led_control_static_lut[led].led_pin, !g_basic_led_control_static_lut[led].is_inverted);
+    return GPIO_Driver_WritePin(g_led_desc_lut[led].led_pin, !g_led_desc_lut[led].is_inverted);
 }
 
 bool LED_API_TurnOff (const eLed_t led) {
@@ -321,7 +268,7 @@ bool LED_API_TurnOff (const eLed_t led) {
         return false;
     }
     
-    return GPIO_Driver_WritePin(g_basic_led_control_static_lut[led].led_pin, g_basic_led_control_static_lut[led].is_inverted);
+    return GPIO_Driver_WritePin(g_led_desc_lut[led].led_pin, g_led_desc_lut[led].is_inverted);
 }
 
 bool LED_API_Toggle (const eLed_t led) {
@@ -333,7 +280,7 @@ bool LED_API_Toggle (const eLed_t led) {
         return false;
     }
 
-    return GPIO_Driver_TogglePin(g_basic_led_control_static_lut[led].led_pin);
+    return GPIO_Driver_TogglePin(g_led_desc_lut[led].led_pin);
 }
 
 bool LED_API_Blink (const eLed_t led, const uint8_t blink_time, const uint16_t blink_frequency) {
@@ -372,7 +319,7 @@ bool LED_API_Blink (const eLed_t led, const uint8_t blink_time, const uint16_t b
 }
 #endif
 
-#ifdef USE_PWM_LED
+#ifdef ENABLE_PWM_LED
 bool LED_API_Set_Brightness (const eLedPwm_t led, const uint8_t brightness) {
     if (!g_is_pwm_initialized) {
         return false;
@@ -386,7 +333,7 @@ bool LED_API_Set_Brightness (const eLedPwm_t led, const uint8_t brightness) {
         return false;
     }
 
-    return PWM_Driver_Change_Duty_Cycle(g_pwm_led_control_static_lut[led].pwm_device, brightness);
+    return PWM_Driver_Change_Duty_Cycle(g_pwm_led_desc_lut[led].pwm_device, brightness);
 }
 
 bool LED_API_Pulse (const eLedPwm_t led, const uint8_t pulsing_time, const uint16_t pulse_frequency) {
@@ -432,7 +379,7 @@ bool LED_API_Pulse (const eLedPwm_t led, const uint8_t pulsing_time, const uint1
 }
 #endif
 
-#ifdef USE_LED
+#ifdef ENABLE_LED
 bool LED_API_IsCorrectLed (const eLed_t led) {
     return (led > eLed_First) && (led < eLed_Last);
 }
@@ -446,7 +393,7 @@ bool LED_API_IsCorrectBlinkFrequency (const uint16_t blink_frequency) {
 }
 #endif
 
-#ifdef USE_PWM_LED
+#ifdef ENABLE_PWM_LED
 bool LED_API_IsCorrectPwmLed (const eLedPwm_t led) {
     return (led > eLedPwm_First) && (led < eLedPwm_Last);
 }

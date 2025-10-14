@@ -1,13 +1,21 @@
-#ifndef SOURCE_APP_LED_APP_H_
-#define SOURCE_APP_LED_APP_H_
+#ifndef CONFIG_LED_CONFIG_H_
+#define CONFIG_LED_CONFIG_H_
 /**********************************************************************************************************************
  * Includes
  *********************************************************************************************************************/
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "led_api.h"
+#include "cmsis_os2.h"
 #include "framework_config.h"
+
+#ifdef ENABLE_LED
+#include "gpio_config.h"
+#endif
+
+#ifdef ENABLE_PWM_LED
+#include "pwm_config.h"
+#endif
 
 /**********************************************************************************************************************
  * Exported definitions and macros
@@ -17,51 +25,38 @@
  * Exported types
  *********************************************************************************************************************/
 
-/* clang-format off */
-typedef enum eLedTask {
-    eLedTask_First = 0,
-    
+typedef struct sLedDesc {
+    eGpioPin_t led_pin;
+    bool is_inverted;
+    osTimerAttr_t blink_timer_attributes;
+    osMutexAttr_t blink_mutex_attributes;
+} sLedDesc_t;
+
+typedef struct sLedPwmDesc {
+    ePwmDevice_t pwm_device;
+    osTimerAttr_t pulse_timer_attributes;
+    osMutexAttr_t pulse_mutex_attributes;
+} sLedPwmDesc_t;
+
+typedef enum eLed {
+    eLed_First = 0,
+
     #ifdef ENABLE_LED
-    eLedTask_Set,
-    eLedTask_Reset,
-    eLedTask_Toggle,
-    eLedTask_Blink,
+    eLed_OnboardLed,
     #endif
+
+    eLed_Last
+} eLed_t;
+
+typedef enum eLedPwm {
+    eLedPwm_First = 0,
 
     #ifdef ENABLE_PWM_LED
-    eLedTask_Set_Brightness,
-    eLedTask_Pulse,
+    eLedPwm_PulseLed,
     #endif
-    
-    eLedTask_Last
-} eLedTask_t;
 
-typedef struct sLedCommandDesc {
-    eLedTask_t task;
-    void *data;
-} sLedCommandDesc_t;
-
-typedef struct sLedCommon {
-    eLed_t led;
-} sLedCommon_t;
-
-typedef struct sLedBlink {
-    eLed_t led;
-    uint8_t blink_time;
-    uint16_t blink_frequency;
-} sLedBlink_t;
-
-typedef struct sLedSetBrightness {
-    eLedPwm_t led;
-    uint8_t duty_cycle;
-} sLedSetBrightness_t;
-
-typedef struct sLedPulse {
-    eLedPwm_t led;
-    uint8_t pulse_time;
-    uint16_t pulse_frequency;
-} sLedPulse_t;
-/* clang-format on */
+    eLedPwm_Last
+} eLedPwm_t;
 
 /**********************************************************************************************************************
  * Exported variables
@@ -71,7 +66,12 @@ typedef struct sLedPulse {
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
-bool LED_APP_Init (void);
-bool LED_APP_Add_Task (sLedCommandDesc_t *task_to_message_queue);
+#if defined(ENABLE_LED)
+const sLedDesc_t *LED_Config_GetLedDesc (const eLed_t led);
+#endif
 
-#endif /* SOURCE_APP_LED_APP_H_ */
+#if defined(ENABLE_PWM_LED)
+const sLedPwmDesc_t *LED_Config_GetPwmLedDesc (const eLedPwm_t led);
+#endif
+
+#endif /* CONFIG_LED_CONFIG_H_ */

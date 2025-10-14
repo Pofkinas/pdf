@@ -4,7 +4,7 @@
 
 #include "led_app.h"
 
-#if defined(USE_LED) || defined(USE_PWM_LED)
+#if defined(ENABLE_LED) || defined(ENABLE_PWM_LED)
 
 #include <stddef.h>
 #include "cmsis_os2.h"
@@ -78,7 +78,7 @@ static void LED_APP_Thread (void *arg) {
             TRACE_ERR("No arguments\n");
         }
         switch (g_received_task.task) {
-            #ifdef USE_LED
+            #ifdef ENABLE_LED
             case eLedTask_Set: {
                 sLedCommon_t *arguments = (sLedCommon_t*) g_received_task.data;
 
@@ -221,7 +221,7 @@ static void LED_APP_Thread (void *arg) {
             } break;
             #endif
 
-            #ifdef USE_PWM_LED
+            #ifdef ENABLE_PWM_LED
             case eLedTask_Set_Brightness: {
                 sLedSetBrightness_t *arguments = (sLedSetBrightness_t*) g_received_task.data;
 

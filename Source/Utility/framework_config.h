@@ -6,7 +6,7 @@
 
 #ifndef PROJECT_CONFIG_H
 #include "example_config.h"
-#error "PROJECT_CONFIG_H not defined. Add -DPROJECT_CONFIG_H=\"platform_config.h\" to your build."
+#error "PROJECT_CONFIG_H not defined. Add -DPROJECT_CONFIG_H=\"project_config.h\" to your build."
 #endif
 
 #include PROJECT_CONFIG_H

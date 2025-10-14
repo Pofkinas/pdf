@@ -21,7 +21,6 @@
  *********************************************************************************************************************/
 
 static sGpioDesc_t g_gpio_lut[eGpio_Last];
-static bool g_is_pin_defined = false;
 static bool g_is_all_pin_initialized = false;
 
 /**********************************************************************************************************************
@@ -40,33 +39,9 @@ static bool g_is_all_pin_initialized = false;
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-void GPIO_Driver_DefinePin (const sGpioDesc_t *pin_desc, const eGpio_t gpio_pin) {
-    if (pin_desc == NULL) {
-        return;
-    }
-
-    if ((gpio_pin <= eGpio_First) || (gpio_pin >= eGpio_Last)) {
-        return;
-    }
-
-    g_gpio_lut[gpio_pin] = *pin_desc;
-
-    g_is_pin_defined = true;
-
-    return;
-}
-
 bool GPIO_Driver_InitAllPins (void) {
     if (g_is_all_pin_initialized) {
         return true;
-    }
-
-    if (!g_is_pin_defined) {
-        return false;
-    }
-
-    if (eGpio_Last == 1) {
-        return false;
     }
 
     LL_GPIO_InitTypeDef gpio_init_struct = {0};
@@ -74,6 +49,15 @@ bool GPIO_Driver_InitAllPins (void) {
     g_is_all_pin_initialized = true;
 
     for (eGpio_t pin = eGpio_First; pin < eGpio_Last; pin++) {
+        const sGpioDesc_t *desc = GPIO_Config_GetGpioDesc(pin);
+        
+        if (desc == NULL) {
+            g_is_all_pin_initialized = false;
+            return false;
+        }
+        
+        g_gpio_lut[pin] = *desc;
+
         LL_AHB1_GRP1_EnableClock(g_gpio_lut[pin].clock);
         LL_GPIO_ResetOutputPin(g_gpio_lut[pin].port, g_gpio_lut[pin].pin);
         
@@ -93,7 +77,7 @@ bool GPIO_Driver_InitAllPins (void) {
 }
 
 bool GPIO_Driver_WritePin (const eGpio_t gpio_pin, const bool pin_state) {
-    if (!(g_is_pin_defined || g_is_all_pin_initialized)) {
+    if (!g_is_all_pin_initialized) {
         return false;
     }
     
@@ -115,7 +99,7 @@ bool GPIO_Driver_WritePin (const eGpio_t gpio_pin, const bool pin_state) {
 }
 
 bool GPIO_Driver_ReadPin (const eGpio_t gpio_pin, bool *pin_state) {
-    if (!(g_is_pin_defined || g_is_all_pin_initialized)) {
+    if (!g_is_all_pin_initialized) {
         return false;
     }
     
@@ -143,7 +127,7 @@ bool GPIO_Driver_ReadPin (const eGpio_t gpio_pin, bool *pin_state) {
 }
 
 bool GPIO_Driver_TogglePin (const eGpio_t gpio_pin) {
-    if (!(g_is_pin_defined || g_is_all_pin_initialized)) {
+    if (! g_is_all_pin_initialized) {
         return false;
     }
 
@@ -157,7 +141,7 @@ bool GPIO_Driver_TogglePin (const eGpio_t gpio_pin) {
 }
 
 bool GPIO_Driver_ResetPin (const eGpio_t gpio_pin) {
-    if (!(g_is_pin_defined || g_is_all_pin_initialized)) {
+    if (!g_is_all_pin_initialized) {
         return false;
     }
     

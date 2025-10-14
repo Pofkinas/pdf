@@ -5,8 +5,7 @@
  *********************************************************************************************************************/
 
 #include <stdbool.h>
-#include <stdint.h>
-#include "framework_config.h"
+#include "gpio_config.h"
 
 /**********************************************************************************************************************
  * Exported definitions and macros
@@ -24,7 +23,6 @@
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
-void GPIO_Driver_DefinePin (const sGpioDesc_t pin_desc, const eGpio_t gpio_pin);
 bool GPIO_Driver_InitAllPins (void);
 bool GPIO_Driver_WritePin (const eGpio_t gpio_pin, const bool pin_state);
 bool GPIO_Driver_ReadPin (const eGpio_t gpio_pin, bool *pin_state);

@@ -2,7 +2,7 @@
  * Includes
  *********************************************************************************************************************/
 
-#include "gpio_config.h"
+#include "led_config.h"
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -17,18 +17,30 @@
  *********************************************************************************************************************/
 
 /* clang-format off */
-const static sGpioDesc_t g_static_gpio_lut[eGpio_Last] = {
-    [eGpio_OnboardLed] = {
-        .port = GPIOA,
-        .pin = LL_GPIO_PIN_5,
-        .mode = LL_GPIO_MODE_OUTPUT,
-        .speed = LL_GPIO_SPEED_FREQ_LOW,
-        .pull = LL_GPIO_PULL_NO,
-        .output = LL_GPIO_OUTPUT_PUSHPULL,
-        .clock = LL_AHB1_GRP1_PERIPH_GPIOA,
-        .alternate = LL_GPIO_AF_0
+#ifdef ENABLE_LED
+const static sLedDesc_t g_led_static_lut[eLed_Last] = {
+    #ifdef USE_ONBOARD_LED
+    [eLed_OnboardLed] = {
+        .led_pin = eGpioPin_OnboardLed,
+        .is_inverted = true,
+        .blink_timer_attributes = {.name = "Onboard_LED_Timer", .attr_bits = 0, .cb_mem = NULL, .cb_size = 0},
+        .blink_mutex_attributes = {.name = "Onboard_LED_Mutex", .attr_bits = osMutexRecursive | osMutexPrioInherit, .cb_mem = NULL, .cb_size = 0U},
     }
+    #endif
 };
+#endif
+
+#ifdef ENABLE_PWM_LED
+const static sLedPwmDesc_t g_pwm_led_static_lut[eLedPwm_Last] = {
+    #ifdef ENABLE_PWM_LED
+    [eLedPwm_PulseLed] = {
+        .pwm_device = ePwmDevice_PulseLed,
+        .pulse_timer_attributes = {.name = "Pulse_LED_Timer", .attr_bits = 0, .cb_mem = NULL, .cb_size = 0},
+        .pulse_mutex_attributes = {.name = "Pulse_LED_Mutex", .attr_bits = osMutexRecursive | osMutexPrioInherit, .cb_mem = NULL, .cb_size = 0U},
+    }
+    #endif
+};
+#endif
 /* clang-format on */
 
 /**********************************************************************************************************************
@@ -51,10 +63,22 @@ const static sGpioDesc_t g_static_gpio_lut[eGpio_Last] = {
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-const sGpioDesc_t *GPIO_Config_GetGpioDesc (const eGpio_t gpio_pin) {
-    if ((gpio_pin <= eGpio_First) || (gpio_pin >= eGpio_Last)) {
+#ifdef ENABLE_LED
+const sLedDesc_t *LED_Config_GetLedDesc (const eLed_t led) {
+    if ((led <= eLed_First) || (led >= eLed_Last)) {
         return NULL;
     }
 
-    return &g_static_gpio_lut[gpio_pin];
+    return &g_led_static_lut[led];
 }
+#endif
+
+#ifdef ENABLE_PWM_LED
+const sLedPwmDesc_t *LED_Config_GetPwmLedDesc (const eLedPwm_t led) {
+    if ((led <= eLedPwm_First) || (led >= eLedPwm_Last)) {
+        return NULL;
+    }
+
+    return &g_pwm_led_static_lut[led];
+}
+#endif
