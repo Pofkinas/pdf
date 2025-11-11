@@ -4,8 +4,12 @@
  * Includes
  *********************************************************************************************************************/
 
+#include "framework_config.h"
+
+#ifdef ENABLE_LED_ANIMATION
 #include <stdint.h>
 #include <stddef.h>
+#include "ws2812b_config.h"
 #include "ws2812b_api.h"
 #include "led_color.h"
 
@@ -38,4 +42,5 @@ typedef struct sSegmentFillData {
 
 void Animation_SegmentFill_Run (void *context);
 
+#endif /* ENABLE_LED_ANIMATION */
 #endif /* SOURCE_UTILITY_LED_ANIMATION_ANIMATION_SEGMENTFILL_H_ */

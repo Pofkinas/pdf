@@ -4,8 +4,12 @@
  * Includes
  *********************************************************************************************************************/
 
+#include "framework_config.h"
+
+#ifdef ENABLE_LED_ANIMATION
 #include <stdint.h>
 #include <stddef.h>
+#include "ws2812b_config.h"
 #include "ws2812b_api.h"
 #include "led_color.h"
 
@@ -48,4 +52,5 @@ void Animation_Rainbow_Run (void *context);
 void Animation_Rainbow_Free (void *context);
 bool Animation_Rainbow_IsCorrectSpeed (const uint8_t speed);
 
+#endif /* ENABLE_LED_ANIMATION */
 #endif /* SOURCE_UTILITY_LED_ANIMATION_ANIMATION_RAINBOW_H_ */

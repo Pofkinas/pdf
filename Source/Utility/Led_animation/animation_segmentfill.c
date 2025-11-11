@@ -4,6 +4,8 @@
 
 #include "animation_segmentfill.h"
 
+#ifdef ENABLE_LED_ANIMATION
+
 /**********************************************************************************************************************
  * Private definitions and macros
  *********************************************************************************************************************/
@@ -39,7 +41,7 @@ void Animation_SegmentFill_FillBuffer (sSegmentFillData_t *data) {
         return;
     }
     
-    if (!WS2812B_API_IsCorrectDevice(data->device)) {
+    if (!WS2812B_Config_IsCorrectWs2812b(data->device)) {
         return;
     }
 
@@ -94,3 +96,4 @@ void Animation_SegmentFill_Run (void *context) {
     return;
 }
 
+#endif /* ENABLE_LED_ANIMATION */
