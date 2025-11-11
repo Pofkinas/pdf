@@ -4,10 +4,13 @@
  * Includes
  *********************************************************************************************************************/
 
+#include "framework_config.h"
+
+#ifdef ENABLE_VL53L0X
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-#include "framework_config.h"
+#include "vl53l0xv2_config.h"
 
 /**********************************************************************************************************************
  * Exported definitions and macros
@@ -16,20 +19,6 @@
 /**********************************************************************************************************************
  * Exported types
  *********************************************************************************************************************/
-
-typedef enum eVl53l0x {
-    eVl53l0x_First = 0,
-    
-    #ifdef USE_VL53L0X_1
-    eVl53l0x_1,
-    #endif
-
-    #ifdef USE_VL53L0X_2
-    eVl53l0x_2,
-    #endif
-
-    eVl53l0x_Last
-} eVl53l0x_t;
 
 /**********************************************************************************************************************
  * Exported variables
@@ -46,4 +35,5 @@ bool VL53L0X_API_TurnOff (const eVl53l0x_t vl53l0x);
 bool VL53L0X_API_TurnOn (const eVl53l0x_t vl53l0x);
 bool VL53L0X_API_GetDistance (const eVl53l0x_t vl53l0x, uint16_t *distance, size_t timeout);
 
+#endif /* ENABLE_VL53L0X */
 #endif /* SOURCE_API_VL53L0XV2_API_H_ */
