@@ -4,6 +4,7 @@
 
 #include "animation_solidcolor.h"
 
+#ifdef ENABLE_LED_ANIMATION
 #include <stddef.h>
 
 /**********************************************************************************************************************
@@ -41,7 +42,7 @@ void Animation_SolidColor_FillBuffer (sSolidAnimationData_t *data) {
         return;
     }
     
-    if (!WS2812B_API_IsCorrectDevice(data->device)) {
+    if (!WS2812B_Config_IsCorrectWs2812b(data->device)) {
         return;
     }
 
@@ -75,3 +76,4 @@ void Animation_SolidColor_Run (void *context) {
 
     return;
 }
+#endif /* ENABLE_LED_ANIMATION */
