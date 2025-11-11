@@ -4,11 +4,8 @@
 
 #include "pwm_driver.h"
 
-#if defined(USE_MOTOR) || defined(USE_WS2812B) || defined(USE_PWM_LED)
-
-#include "stm32f4xx_ll_tim.h"
+#ifdef ENABLE_PWM
 #include "timer_driver.h"
-#include "gpio_driver.h"
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -18,203 +15,17 @@
  * Private typedef
  *********************************************************************************************************************/
 
-typedef struct sPwmOcChannelDesc {
-    TIM_TypeDef *periph;
-    eTimerDriver_t timer;
-    uint32_t channel;
-    uint32_t mode;
-    uint32_t oc_state;
-    uint32_t ocn_state;
-    uint32_t compare_value;
-    uint32_t oc_polarity;
-    uint32_t ocn_polarity;
-    uint32_t oc_idle;
-    uint32_t ocn_idle;
-    void (*fast_mode_fp) (TIM_TypeDef *, uint32_t);
-    void (*compare_preload_fp) (TIM_TypeDef *, uint32_t);
-    void (*compare_value_fp) (TIM_TypeDef *, uint32_t);
-    bool is_dma_request_enabled;
-    void (*dma_request_fp) (TIM_TypeDef *);
-    uint32_t (*get_ccr_fp) (const TIM_TypeDef *);
-} sPwmOcChannelDesc_t;
-
 /**********************************************************************************************************************
  * Private constants
  *********************************************************************************************************************/
-
-/* clang-format off */
-const static sPwmOcChannelDesc_t g_static_pwm_lut[ePwmDevice_Last] = {
-    #ifdef USE_PULSE_LED
-    [ePwmDevice_PulseLed] = {
-        .periph = TIM3,
-        .timer = eTimerDriver_TIM3,
-        .channel = LL_TIM_CHANNEL_CH1,
-        .mode = LL_TIM_OCMODE_PWM1,
-        .oc_state = LL_TIM_OCSTATE_DISABLE,
-        .ocn_state = LL_TIM_OCSTATE_DISABLE,
-        .compare_value = 0,
-        .oc_polarity = LL_TIM_OCPOLARITY_HIGH,
-        .ocn_polarity = LL_TIM_OCPOLARITY_HIGH,
-        .oc_idle = LL_TIM_OCIDLESTATE_LOW,
-        .ocn_idle = LL_TIM_OCIDLESTATE_LOW,
-        .fast_mode_fp = LL_TIM_OC_DisableFast,
-        .compare_preload_fp = LL_TIM_OC_EnablePreload,
-        .compare_value_fp = LL_TIM_OC_SetCompareCH1,
-        .is_dma_request_enabled = false
-    },
-    #endif
-    
-    #ifdef USE_MOTOR_A
-    [ePwmDevice_MotorA_A1] = {
-        .periph = TIM3,
-        .timer = eTimerDriver_TIM3,
-        .channel = LL_TIM_CHANNEL_CH1,
-        .mode = LL_TIM_OCMODE_PWM1,
-        .oc_state = LL_TIM_OCSTATE_DISABLE,
-        .ocn_state = LL_TIM_OCSTATE_DISABLE,
-        .compare_value = 0,
-        .oc_polarity = LL_TIM_OCPOLARITY_HIGH,
-        .ocn_polarity = LL_TIM_OCPOLARITY_HIGH,
-        .oc_idle = LL_TIM_OCIDLESTATE_LOW,
-        .ocn_idle = LL_TIM_OCIDLESTATE_LOW,
-        .fast_mode_fp = LL_TIM_OC_DisableFast,
-        .compare_preload_fp = LL_TIM_OC_EnablePreload,
-        .compare_value_fp = LL_TIM_OC_SetCompareCH1,
-        .is_dma_request_enabled = false,
-    },
-    [ePwmDevice_MotorA_A2] = {
-        .periph = TIM3,
-        .timer = eTimerDriver_TIM3,
-        .channel = LL_TIM_CHANNEL_CH2,
-        .mode = LL_TIM_OCMODE_PWM1,
-        .oc_state = LL_TIM_OCSTATE_DISABLE,
-        .ocn_state = LL_TIM_OCSTATE_DISABLE,
-        .compare_value = 0,
-        .oc_polarity = LL_TIM_OCPOLARITY_HIGH,
-        .ocn_polarity = LL_TIM_OCPOLARITY_HIGH,
-        .oc_idle = LL_TIM_OCIDLESTATE_LOW,
-        .ocn_idle = LL_TIM_OCIDLESTATE_LOW,
-        .fast_mode_fp = LL_TIM_OC_DisableFast,
-        .compare_preload_fp = LL_TIM_OC_EnablePreload,
-        .compare_value_fp = LL_TIM_OC_SetCompareCH2,
-        .is_dma_request_enabled = false,
-    },
-    #endif
-
-    #ifdef USE_MOTOR_B
-    [ePwmDevice_MotorB_A1] = {
-        .periph = TIM3,
-        .timer = eTimerDriver_TIM3,
-        .channel = LL_TIM_CHANNEL_CH3,
-        .mode = LL_TIM_OCMODE_PWM1,
-        .oc_state = LL_TIM_OCSTATE_DISABLE,
-        .ocn_state = LL_TIM_OCSTATE_DISABLE,
-        .compare_value = 0,
-        .oc_polarity = LL_TIM_OCPOLARITY_HIGH,
-        .ocn_polarity = LL_TIM_OCPOLARITY_HIGH,
-        .oc_idle = LL_TIM_OCIDLESTATE_LOW,
-        .ocn_idle = LL_TIM_OCIDLESTATE_LOW,
-        .fast_mode_fp = LL_TIM_OC_DisableFast,
-        .compare_preload_fp = LL_TIM_OC_EnablePreload,
-        .compare_value_fp = LL_TIM_OC_SetCompareCH3,
-        .is_dma_request_enabled = false,
-    },
-    [ePwmDevice_MotorB_A2] = {
-        .periph = TIM3,
-        .timer = eTimerDriver_TIM3,
-        .channel = LL_TIM_CHANNEL_CH4,
-        .mode = LL_TIM_OCMODE_PWM1,
-        .oc_state = LL_TIM_OCSTATE_DISABLE,
-        .ocn_state = LL_TIM_OCSTATE_DISABLE,
-        .compare_value = 0,
-        .oc_polarity = LL_TIM_OCPOLARITY_HIGH,
-        .ocn_polarity = LL_TIM_OCPOLARITY_HIGH,
-        .oc_idle = LL_TIM_OCIDLESTATE_LOW,
-        .ocn_idle = LL_TIM_OCIDLESTATE_LOW,
-        .fast_mode_fp = LL_TIM_OC_DisableFast,
-        .compare_preload_fp = LL_TIM_OC_EnablePreload,
-        .compare_value_fp = LL_TIM_OC_SetCompareCH4,
-        .is_dma_request_enabled = false,
-    },
-    #endif
-
-    #ifdef USE_WS2812B_1
-    [ePwmDevice_Ws2812b_1] = {
-        .periph = TIM5,
-        .timer = eTimerDriver_TIM5,
-        .channel = LL_TIM_CHANNEL_CH2,
-        .mode = LL_TIM_OCMODE_PWM1,
-        .oc_state = LL_TIM_OCSTATE_ENABLE,
-        .ocn_state = LL_TIM_OCSTATE_DISABLE,
-        .compare_value = 0,
-        .oc_polarity = LL_TIM_OCPOLARITY_HIGH,
-        .ocn_polarity = LL_TIM_OCPOLARITY_HIGH,
-        .oc_idle = LL_TIM_OCIDLESTATE_LOW,
-        .ocn_idle = LL_TIM_OCIDLESTATE_LOW,
-        .fast_mode_fp = LL_TIM_OC_DisableFast,
-        .compare_preload_fp = LL_TIM_OC_EnablePreload,
-        .compare_value_fp = LL_TIM_OC_SetCompareCH2,
-        .is_dma_request_enabled = true,
-        .dma_request_fp = LL_TIM_EnableDMAReq_CC2,
-        .get_ccr_fp = LL_TIM_OC_GetCompareCH2
-    },
-    #endif
-
-    #ifdef USE_WS2812B_2
-    [ePwmDevice_Ws2812b_2] = {
-        .periph = TIM5,
-        .timer = eTimerDriver_TIM5,
-        .channel = LL_TIM_CHANNEL_CH1,
-        .mode = LL_TIM_OCMODE_PWM1,
-        .oc_state = LL_TIM_OCSTATE_ENABLE,
-        .ocn_state = LL_TIM_OCSTATE_DISABLE,
-        .compare_value = 0,
-        .oc_polarity = LL_TIM_OCPOLARITY_HIGH,
-        .ocn_polarity = LL_TIM_OCPOLARITY_HIGH,
-        .oc_idle = LL_TIM_OCIDLESTATE_LOW,
-        .ocn_idle = LL_TIM_OCIDLESTATE_LOW,
-        .fast_mode_fp = LL_TIM_OC_DisableFast,
-        .compare_preload_fp = LL_TIM_OC_EnablePreload,
-        .compare_value_fp = LL_TIM_OC_SetCompareCH1,
-        .is_dma_request_enabled = true,
-        .dma_request_fp = LL_TIM_EnableDMAReq_CC1,
-        .get_ccr_fp = LL_TIM_OC_GetCompareCH1
-    }
-    #endif
-};
-/* clang-format on */
 
 /**********************************************************************************************************************
  * Private variables
  *********************************************************************************************************************/
 
+static sPwmOcDesc_t g_oc_pwm_lut[ePwm_Last] = {0};
 static bool g_is_all_device_init = false;
-
-/* clang-format off */
-static bool g_is_device_enabled[ePwmDevice_Last] = {
-    #ifdef USE_PULSE_LED
-    [ePwmDevice_PulseLed] = false,
-    #endif
-
-    #ifdef USE_MOTOR_A
-    [ePwmDevice_MotorA_A1] = false,
-    [ePwmDevice_MotorA_A2] = false,
-    #endif
-
-    #ifdef USE_MOTOR_B
-    [ePwmDevice_MotorB_A1] = false,
-    [ePwmDevice_MotorB_A2] = false,
-    #endif
-
-    #ifdef USE_WS2812B_1
-    [ePwmDevice_Ws2812b_1] = false,
-    #endif
-
-    #ifdef USE_WS2812B_2
-    [ePwmDevice_Ws2812b_2] = false,
-    #endif
-};
-/* clang-format on */
+static bool g_is_device_enabled[ePwm_Last] = {false};
 
 /**********************************************************************************************************************
  * Exported variables and references
@@ -237,46 +48,51 @@ bool PWM_Driver_InitAllDevices (void) {
         return true;
     }
 
-    if (ePwmDevice_Last == 1) {
-        return false;
-    }
-
     g_is_all_device_init = true;
     
     LL_TIM_OC_InitTypeDef channel_oc_init_struct = {0};
 
-    for (ePwmDevice_t device = (ePwmDevice_First + 1); device < ePwmDevice_Last; device++) {
-        channel_oc_init_struct.OCMode = g_static_pwm_lut[device].mode;
-        channel_oc_init_struct.OCState = g_static_pwm_lut[device].oc_state;
-        channel_oc_init_struct.OCNState = g_static_pwm_lut[device].ocn_state;
-        channel_oc_init_struct.CompareValue = g_static_pwm_lut[device].compare_value;
-        channel_oc_init_struct.OCPolarity = g_static_pwm_lut[device].oc_polarity;
-        channel_oc_init_struct.OCNPolarity = g_static_pwm_lut[device].ocn_polarity;
-        channel_oc_init_struct.OCIdleState = g_static_pwm_lut[device].oc_idle;
-        channel_oc_init_struct.OCNIdleState = g_static_pwm_lut[device].ocn_idle;
-    
-        if (LL_TIM_OC_Init(g_static_pwm_lut[device].periph, g_static_pwm_lut[device].channel, &channel_oc_init_struct) == ERROR) {
+    for (ePwm_t device = ePwm_First; device < ePwm_Last; device++) {
+        const sPwmOcDesc_t *desc = PWM_Config_GetPwmOcDesc(device);
+        
+        if (desc == NULL) {
+            g_is_all_device_init = false;
+            return false;
+        }
+
+        g_oc_pwm_lut[device] = *desc;
+
+        channel_oc_init_struct.OCMode = g_oc_pwm_lut[device].mode;
+        channel_oc_init_struct.OCState = g_oc_pwm_lut[device].oc_state;
+        channel_oc_init_struct.OCNState = g_oc_pwm_lut[device].ocn_state;
+        channel_oc_init_struct.CompareValue = g_oc_pwm_lut[device].compare_value;
+        channel_oc_init_struct.OCPolarity = g_oc_pwm_lut[device].oc_polarity;
+        channel_oc_init_struct.OCNPolarity = g_oc_pwm_lut[device].ocn_polarity;
+        channel_oc_init_struct.OCIdleState = g_oc_pwm_lut[device].oc_idle;
+        channel_oc_init_struct.OCNIdleState = g_oc_pwm_lut[device].ocn_idle;
+
+        if (LL_TIM_OC_Init(g_oc_pwm_lut[device].periph, g_oc_pwm_lut[device].channel, &channel_oc_init_struct) == ERROR) {
             g_is_all_device_init = false;
         }
     
-        if (g_static_pwm_lut[device].fast_mode_fp != NULL) {
-            g_static_pwm_lut[device].fast_mode_fp(g_static_pwm_lut[device].periph, g_static_pwm_lut[device].channel);
+        if (g_oc_pwm_lut[device].fast_mode_fp != NULL) {
+            g_oc_pwm_lut[device].fast_mode_fp(g_oc_pwm_lut[device].periph, g_oc_pwm_lut[device].channel);
         }
     
-        if (g_static_pwm_lut[device].compare_preload_fp != NULL) {
-            g_static_pwm_lut[device].compare_preload_fp(g_static_pwm_lut[device].periph, g_static_pwm_lut[device].channel);
+        if (g_oc_pwm_lut[device].compare_preload_fp != NULL) {
+            g_oc_pwm_lut[device].compare_preload_fp(g_oc_pwm_lut[device].periph, g_oc_pwm_lut[device].channel);
         }
 
-        if (g_static_pwm_lut[device].is_dma_request_enabled) {
-            g_static_pwm_lut[device].dma_request_fp(g_static_pwm_lut[device].periph);
+        if (g_oc_pwm_lut[device].is_dma_request_enabled) {
+            g_oc_pwm_lut[device].dma_request_fp(g_oc_pwm_lut[device].periph);
         }
     }
 
     return g_is_all_device_init;
 }
 
-bool PWM_Driver_Enable_Device (const ePwmDevice_t device) {
-    if ((device <= ePwmDevice_First) || (device >= ePwmDevice_Last)) {
+bool PWM_Driver_Enable_Device (const ePwm_t device) {
+    if (!PWM_Config_IsCorrectPwm(device)) {
         return false;
     }
 
@@ -288,9 +104,9 @@ bool PWM_Driver_Enable_Device (const ePwmDevice_t device) {
         return true;
     }
 
-    LL_TIM_CC_EnableChannel(g_static_pwm_lut[device].periph, g_static_pwm_lut[device].channel);
+    LL_TIM_CC_EnableChannel(g_oc_pwm_lut[device].periph, g_oc_pwm_lut[device].channel);
 
-    if (!Timer_Driver_Start(g_static_pwm_lut[device].timer)) {
+    if (!Timer_Driver_Start(g_oc_pwm_lut[device].timer)) {
         return false;
     }
 
@@ -299,8 +115,8 @@ bool PWM_Driver_Enable_Device (const ePwmDevice_t device) {
     return true;
 }
 
-bool PWM_Driver_Disable_Device (const ePwmDevice_t device) {
-    if ((device <= ePwmDevice_First) || (device >= ePwmDevice_Last)) {
+bool PWM_Driver_Disable_Device (const ePwm_t device) {
+    if (!PWM_Config_IsCorrectPwm(device)) {
         return false;
     }
 
@@ -312,9 +128,9 @@ bool PWM_Driver_Disable_Device (const ePwmDevice_t device) {
         return true;
     }
 
-    g_static_pwm_lut[device].compare_value_fp(g_static_pwm_lut[device].periph, 0);
+    g_oc_pwm_lut[device].compare_value_fp(g_oc_pwm_lut[device].periph, 0);
 
-    if (!Timer_Driver_Stop(g_static_pwm_lut[device].timer)) {
+    if (!Timer_Driver_Stop(g_oc_pwm_lut[device].timer)) {
         return false;
     }
 
@@ -323,8 +139,8 @@ bool PWM_Driver_Disable_Device (const ePwmDevice_t device) {
     return true;
 }
 
-bool PWM_Driver_Change_Duty_Cycle (const ePwmDevice_t device, const size_t value) {
-    if ((device <= ePwmDevice_First) || (device >= ePwmDevice_Last)) {
+bool PWM_Driver_Change_Duty_Cycle (const ePwm_t device, const size_t value) {
+    if (!PWM_Config_IsCorrectPwm(device)) {
         return false;
     }
 
@@ -340,32 +156,32 @@ bool PWM_Driver_Change_Duty_Cycle (const ePwmDevice_t device, const size_t value
         return false;
     }
 
-    if (!LL_TIM_IsEnabledCounter(g_static_pwm_lut[device].periph)) {
+    if (!LL_TIM_IsEnabledCounter(g_oc_pwm_lut[device].periph)) {
         return false;
     }
 
-    g_static_pwm_lut[device].compare_value_fp(g_static_pwm_lut[device].periph, value);
+    g_oc_pwm_lut[device].compare_value_fp(g_oc_pwm_lut[device].periph, value);
 
     return true;
 }
 
-uint32_t PWM_Driver_GetRegAddr (const ePwmDevice_t device) {
-    if ((device <= ePwmDevice_First) || (device >= ePwmDevice_Last)) {
+uint32_t PWM_Driver_GetRegAddr (const ePwm_t device) {
+    if (!PWM_Config_IsCorrectPwm(device)) {
         return 0;
     }
 
-    switch (g_static_pwm_lut[device].channel) {
+    switch (g_oc_pwm_lut[device].channel) {
         case LL_TIM_CHANNEL_CH1: {
-            return (uint32_t) &g_static_pwm_lut[device].periph->CCR1;
+            return (uint32_t) &g_oc_pwm_lut[device].periph->CCR1;
         }
         case LL_TIM_CHANNEL_CH2: {
-            return (uint32_t) &g_static_pwm_lut[device].periph->CCR2;
+            return (uint32_t) &g_oc_pwm_lut[device].periph->CCR2;
         }
         case LL_TIM_CHANNEL_CH3: {
-            return (uint32_t) &g_static_pwm_lut[device].periph->CCR3;
+            return (uint32_t) &g_oc_pwm_lut[device].periph->CCR3;
         }
         case LL_TIM_CHANNEL_CH4: {
-            return (uint32_t) &g_static_pwm_lut[device].periph->CCR4;
+            return (uint32_t) &g_oc_pwm_lut[device].periph->CCR4;
         }
         default: {
             return 0;
@@ -373,8 +189,8 @@ uint32_t PWM_Driver_GetRegAddr (const ePwmDevice_t device) {
     }
 }
 
-uint16_t PWM_Driver_GetDeviceTimerResolution (const ePwmDevice_t device) {
-    if ((device <= ePwmDevice_First) || (device >= ePwmDevice_Last)) {
+uint16_t PWM_Driver_GetDeviceTimerResolution (const ePwm_t device) {
+    if (!PWM_Config_IsCorrectPwm(device)) {
         return 0;
     }
 
@@ -382,11 +198,11 @@ uint16_t PWM_Driver_GetDeviceTimerResolution (const ePwmDevice_t device) {
         return 0;
     }
 
-    return Timer_Driver_GetResolution(g_static_pwm_lut[device].timer);
+    return Timer_Driver_GetResolution(g_oc_pwm_lut[device].timer);
 }
 
-uint32_t PWM_Driver_GetCompareValue (const ePwmDevice_t device) {
-    if ((device <= ePwmDevice_First) || (device >= ePwmDevice_Last)) {
+uint32_t PWM_Driver_GetCompareValue (const ePwm_t device) {
+    if (!PWM_Config_IsCorrectPwm(device)) {
         return 0;
     }
 
@@ -398,13 +214,13 @@ uint32_t PWM_Driver_GetCompareValue (const ePwmDevice_t device) {
         return 0;
     }
 
-    if (!LL_TIM_IsEnabledCounter(g_static_pwm_lut[device].periph)) {
+    if (!LL_TIM_IsEnabledCounter(g_oc_pwm_lut[device].periph)) {
         return 0;
     }
 
-    uint32_t value = g_static_pwm_lut[device].get_ccr_fp(g_static_pwm_lut[device].periph);
+    uint32_t value = g_oc_pwm_lut[device].get_ccr_fp(g_oc_pwm_lut[device].periph);
 
     return value;
 }
 
-#endif
+#endif /* ENABLE_PWM */
