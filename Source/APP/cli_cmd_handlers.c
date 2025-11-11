@@ -429,15 +429,26 @@ bool CLI_APP_Motors_Handlers_Set (sMessage_t arguments, sMessage_t *response) {
     }
 
     eMotorDirection_t direction;
+    eMotorControl_t mode;
     size_t speed = 0;
     size_t direction_value = 0;
+    size_t mode_value = 0;
+    eErrorCode_t error = eErrorCode_OSOK;
 
     if (CMD_API_Helper_FindNextArgUInt(&arguments, &speed, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
         return false;
     }
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &direction_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &direction_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
+    }
+
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &mode_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
 
     if (arguments.size != 0) {
@@ -447,6 +458,7 @@ bool CLI_APP_Motors_Handlers_Set (sMessage_t arguments, sMessage_t *response) {
     }
 
     direction = direction_value;
+    mode = mode_value;
 
     if (!Motor_API_IsCorrectSpeed(speed)) {
         snprintf(response->data, response->size, "%d: Incorect speed\n", speed);
@@ -454,8 +466,14 @@ bool CLI_APP_Motors_Handlers_Set (sMessage_t arguments, sMessage_t *response) {
         return false;
     }
 
-    if (!Motor_API_IsCorrectDirection(direction)) {
-        snprintf(response->data, response->size, "%d: Incorect motors direction\n", direction);
+    if (!Motor_Config_IsCorrectDirection(direction)) {
+        snprintf(response->data, response->size, "%d: Incorect motor direction\n", direction);
+
+        return eErrorCode_INVAL;
+    }
+
+    if (!Motor_API_IsCorrectMode(mode)) {
+        snprintf(response->data, response->size, "%d: Incorect motor mode\n", mode);
 
         return false;
     }
@@ -471,6 +489,7 @@ bool CLI_APP_Motors_Handlers_Set (sMessage_t arguments, sMessage_t *response) {
 
     task_data->speed = speed;
     task_data->direction = direction;
+    task_data->mode = mode;
     formated_task.data = task_data;
 
     if (!Motor_APP_Add_Task(&formated_task)) {

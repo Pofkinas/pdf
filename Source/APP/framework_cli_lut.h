@@ -31,15 +31,15 @@ typedef enum eCliFrameworkCmd {
     eCliFrameworkCmd_Pwm_Led_Pulse,
     #endif
 
-    #ifdef USE_MOTORS
-    eCliFrameworkCmd_Motors_Set,
-    eCliFrameworkCmd_Motors_Stop,
-    #endif
-
-    eCliFrameworkCmd_RgbToHsv,
-    eCliFrameworkCmd_HsvToRgb,
-    eCliFrameworkCmd_Last
-} eCliFrameworkCmd;
+    #ifdef ENABLE_MOTOR
+    eCliDefaultCmd_Motors_Set,
+    eCliDefaultCmd_Motors_Stop,
+    #endif  /* ENABLE_MOTOR */
+    
+    eCliDefaultCmd_RgbToHsv,
+    eCliDefaultCmd_HsvToRgb,
+    eCliDefaultCmd_Last
+} eCliDefaultCmd;
 /* clang-format on */
 
 /**********************************************************************************************************************

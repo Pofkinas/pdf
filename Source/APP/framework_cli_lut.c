@@ -66,6 +66,7 @@ sCmdDesc_t g_framework_cli_lut[eCliFrameworkCmd_Last] = {
     [eCliFrameworkCmd_Motors_Set] = {
         DEFINE_CMD("motors_set:"),
         .handler = CLI_APP_Motors_Handlers_Set
+        /* e. g. motors_set:<speed %>, <eMotorDirection_t>, <eMotorControl_t> */
     },
     [eCliFrameworkCmd_Motors_Stop] = {
         DEFINE_CMD("motors_stop"),

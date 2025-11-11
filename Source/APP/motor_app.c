@@ -4,7 +4,7 @@
 
 #include "motor_app.h"
 
-#ifdef USE_MOTOR
+#ifdef ENABLE_MOTOR
 
 #include <stddef.h>
 #include "cmsis_os2.h"
@@ -12,14 +12,11 @@
 #include "debug_api.h"
 #include "motor_api.h"
 #include "heap_api.h"
+#include "float_parts.h"
 
 /**********************************************************************************************************************
  * Private definitions and macros
  *********************************************************************************************************************/
-
-#define MESSAGE_QUEUE_CAPACITY 10
-#define MESSAGE_QUEUE_PRIORITY 0U
-#define MESSAGE_QUEUE_TIMEOUT 0U
 
 /**********************************************************************************************************************
  * Private typedef
@@ -29,22 +26,11 @@
  * Private constants
  *********************************************************************************************************************/
 
-CREATE_MODULE_NAME (Motor_APP)
-
-const static osThreadAttr_t g_motor_thread_attributes = {
-    .name = "Motor_APP_Thread",
-    .stack_size = 128 * 5,
-    .priority = (osPriority_t) osPriorityNormal
-};
-
-const static osMessageQueueAttr_t g_motor_message_queue_attributes = {
-    .name = "Motor_Command_MessageQueue", 
-    .attr_bits = 0, 
-    .cb_mem = NULL, 
-    .cb_size = 0, 
-    .mq_mem = NULL, 
-    .mq_size = 0
-};
+#ifdef DEBUG_MOTOR_APP
+CREATE_MODULE_NAME (MOTOR_APP)
+#else
+CREATE_MODULE_NAME_EMPTY
+#endif /* DEBUG_MOTOR_APP */
 
 /**********************************************************************************************************************
  * Private variables
@@ -72,7 +58,7 @@ static void Motor_APP_Thread (void *arg);
  
 static void Motor_APP_Thread (void *arg) {
     while (1) {
-        if (osMessageQueueGet(g_motor_message_queue_id, &g_received_task, MESSAGE_QUEUE_PRIORITY, MESSAGE_QUEUE_TIMEOUT) != osOK) {
+        if (osMessageQueueGet(g_motor_message_queue_id, &g_received_task, MOTOR_MESSAGE_QUEUE_PRIORITY, MOTOR_MESSAGE_QUEUE_TIMEOUT) != osOK) {
             continue;
         }
 
@@ -102,7 +88,7 @@ static void Motor_APP_Thread (void *arg) {
                     break;
                 }
             
-                if (!Motor_API_IsCorrectDirection(arguments->direction)) {
+                if (!Motor_Config_IsCorrectDirection(arguments->direction)) {
                     TRACE_ERR("Invalid Motor direction\n");
 
                     Heap_API_Free(arguments);
@@ -110,7 +96,15 @@ static void Motor_APP_Thread (void *arg) {
                     break;
                 }
 
-                if (!Motor_API_SetSpeed(arguments->speed, arguments->direction)) {
+                if (!Motor_API_IsCorrectMode(arguments->mode)) {
+                    TRACE_ERR("Invalid Motor control mode\n");
+
+                    Heap_API_Free(arguments);
+
+                    break;
+                }
+
+                if (!Motor_API_SetMotors(arguments->speed, arguments->direction, arguments->mode)) {
                     TRACE_ERR("Motor Set Speed Failed\n");
 
                     Heap_API_Free(arguments);
@@ -118,7 +112,7 @@ static void Motor_APP_Thread (void *arg) {
                     break;
                 }
 
-                TRACE_INFO("Motors @ Speed %d, Dir %d\n", arguments->speed, arguments->direction);
+                TRACE_INFO("Motors @ Speed [%d.%03u], Dir [%d], Mode [%d]\n", FLOAT_INTEGER_PART(arguments->speed), FLOAT_FRACTIONAL_PART(arguments->speed, 3), arguments->direction, arguments->mode);
 
                 Heap_API_Free(arguments);    
             } break;
@@ -136,8 +130,6 @@ static void Motor_APP_Thread (void *arg) {
             } break;
         }
     }
-
-    osThreadYield();
 }
 
 /**********************************************************************************************************************
@@ -153,12 +145,16 @@ bool Motor_APP_Init (void) {
         return false;
     }
 
+    g_motor_message_queue_id = osMessageQueueNew(MOTOR_MESSAGE_QUEUE_CAPACITY, sizeof(sMotorCommandDesc_t), &g_motor_message_queue_attributes);
+
     if (g_motor_message_queue_id == NULL) {
-        g_motor_message_queue_id = osMessageQueueNew(MESSAGE_QUEUE_CAPACITY, sizeof(sMotorCommandDesc_t), &g_motor_message_queue_attributes);
+        return false;
     }
 
+    g_motor_thread_id = osThreadNew(Motor_APP_Thread, NULL, &g_motor_thread_attributes);
+
     if (g_motor_thread_id == NULL) {
-        g_motor_thread_id = osThreadNew(Motor_APP_Thread, NULL, &g_motor_thread_attributes);
+        return false;
     }
 
     g_is_initialized = true;
@@ -175,11 +171,11 @@ bool Motor_APP_Add_Task (sMotorCommandDesc_t *task_to_message_queue) {
         return false;
     }
 
-    if (osMessageQueuePut(g_motor_message_queue_id, task_to_message_queue, MESSAGE_QUEUE_PRIORITY, MESSAGE_QUEUE_TIMEOUT) != osOK) {
+    if (osMessageQueuePut(g_motor_message_queue_id, task_to_message_queue, MOTOR_MESSAGE_QUEUE_PRIORITY, MOTOR_MESSAGE_QUEUE_TIMEOUT) != osOK) {
         return false;
     }
 
     return true;
 }
 
-#endif
+#endif /* ENABLE_MOTOR */
