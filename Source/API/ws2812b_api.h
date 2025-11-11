@@ -4,11 +4,14 @@
  * Includes
  *********************************************************************************************************************/
 
+#include "framework_config.h"
+
+#ifdef ENABLE_WS2812B
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#include "ws2812b_config.h"
 #include "led_color.h"
-#include "framework_config.h"
 
 /**********************************************************************************************************************
  * Exported definitions and macros
@@ -17,21 +20,6 @@
 /**********************************************************************************************************************
  * Exported types
  *********************************************************************************************************************/
-
-/* clang-format off */ 
-typedef enum eWs2812b {
-    eWs2812b_First = 0,
-    
-    #ifdef USE_WS2812B_1
-    eWs2812b_1,
-    #endif
-
-    #ifdef USE_WS2812B_2
-    eWs2812b_2,
-    #endif
-
-    eWs2812b_Last
-} eWs2812b_t;
 
 typedef enum eLedAnimation {
     eLedAnimation_First = 0,
@@ -81,7 +69,6 @@ typedef struct sLedAnimationRainbow {
     uint8_t hue_step;
     size_t frames_per_update;
 } sLedAnimationRainbow_t;
-/* clang-format on */
 
 /**********************************************************************************************************************
  * Exported variables
@@ -91,17 +78,17 @@ typedef struct sLedAnimationRainbow {
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
-bool WS2812B_API_Init (void);
+bool WS2812B_API_InitAll (void);
 bool WS2812B_API_AddAnimation (sLedAnimationDesc_t *animation_data);
 bool WS2812B_API_ClearAnimations (const eWs2812b_t device);
 bool WS2812B_API_Start (const eWs2812b_t device);
 bool WS2812B_API_Stop (const eWs2812b_t device);
 bool WS2812B_API_Reset (const eWs2812b_t device);
-bool WS2812B_API_IsCorrectDevice (const eWs2812b_t device);
 bool WS2812B_API_FreeData (void *data);
 uint32_t WS2812B_API_GetLedCount (const eWs2812b_t device);
-bool WS2812B_API_SetColor (const eWs2812b_t device, size_t led_number, const uint8_t r, const uint8_t g, const uint8_t b);
-bool WS2812B_API_FillColor (const eWs2812b_t device, const uint8_t r, const uint8_t g, const uint8_t b);
-bool WS2812B_API_FillSegment (const eWs2812b_t device, const size_t start_led, const size_t end_led, const uint8_t r, const uint8_t g, const uint8_t b);
+bool WS2812B_API_SetColor (const eWs2812b_t device, size_t led_number, const uint8_t red, const uint8_t green, const uint8_t blue);
+bool WS2812B_API_FillColor (const eWs2812b_t device, const uint8_t red, const uint8_t green, const uint8_t blue);
+bool WS2812B_API_FillSegment (const eWs2812b_t device, const size_t start_led, const size_t end_led, const uint8_t red, const uint8_t green, const uint8_t blue);
 
+#endif /* ENABLE_WS2812B */
 #endif /* SOURCE_API_WS2812B_API_H_ */
