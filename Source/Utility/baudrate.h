@@ -4,6 +4,8 @@
  * Includes
  *********************************************************************************************************************/
 
+#include <stdint.h>
+
 /**********************************************************************************************************************
  * Exported definitions and macros
  *********************************************************************************************************************/
@@ -13,19 +15,22 @@
  *********************************************************************************************************************/
 
 /* clang-format off */
-typedef enum eUartBaudrate {
-    eUartBaudrate_First = 0,
-    eUartBaudrate_4800 = eUartBaudrate_First,
-    eUartBaudrate_9600,
-    eUartBaudrate_19200,
-    eUartBaudrate_38400,
-    eUartBaudrate_57600,
-    eUartBaudrate_115200,
-    eUartBaudrate_230400,
-    eUartBaudrate_460800,
-    eUartBaudrate_921600,
-    eUartBaudrate_Last
-} eUartBaudrate_t;
+typedef enum eBaudrate {
+    eBaudrate_First = 0,
+    eBaudrate_Default = eBaudrate_First,
+    eBaudrate_4800,
+    eBaudrate_9600,
+    eBaudrate_19200,
+    eBaudrate_38400,
+    eBaudrate_57600,
+    eBaudrate_115200,
+    eBaudrate_230400,
+    eBaudrate_460800,
+    eBaudrate_921600,
+    eBaudrate_1000000,
+    eBaudrate_2000000,
+    eBaudrate_Last
+} eBaudrate_t;
 /* clang-format on */
 
 /**********************************************************************************************************************
@@ -35,5 +40,7 @@ typedef enum eUartBaudrate {
 /**********************************************************************************************************************
  * Prototypes of exported functions
  *********************************************************************************************************************/
+
+const uint32_t Baudrate_GetValue (const eBaudrate_t baudrate);
 
 #endif /* SOURCE_UTILITY_UART_BAUDRATE_H_ */
