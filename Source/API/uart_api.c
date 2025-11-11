@@ -4,19 +4,15 @@
 
 #include "uart_api.h"
 
-#ifdef USE_UART
-
+#ifdef ENABLE_UART
 #include "cmsis_os2.h"
+#include "debug_api.h"
 #include "uart_driver.h"
 #include "heap_api.h"
 
 /**********************************************************************************************************************
  * Private definitions and macros
  *********************************************************************************************************************/
-
-#define MESSAGE_QUEUE_PRIORITY 0U
-#define MESSAGE_QUEUE_CAPACITY 10
-#define MESSAGE_QUEUE_PUT_TIMEOUT 0U
 
 /**********************************************************************************************************************
  * Private typedef
@@ -30,14 +26,7 @@ typedef enum eState {
     eState_Last
 } eState_t;
 
-typedef struct sUartConst {
-    eUartDriver_t uart_driver;
-    size_t buffer_capacity;
-    osMutexAttr_t mutex_send_attributes;
-    osMessageQueueAttr_t message_queue_attributes;
-} sUartConst_t;
-
-typedef struct sUartDynamic {
+typedef struct sUartApiDynamic {
     eState_t current_state;
     bool is_initialized;
     osMutexId_t mutex_send;
@@ -51,33 +40,11 @@ typedef struct sUartDynamic {
  * Private constants
  *********************************************************************************************************************/
 
-const static osThreadAttr_t g_fsm_thread_attributes = {
-    .name = "UART_API_Thread",
-    .stack_size = 256 * 8,
-    .priority = (osPriority_t) osPriorityNormal
-};
-
-/* clang-format off */
-const static sUartConst_t g_static_uart_lut[eUart_Last] = {
-    #ifdef USE_UART_DEBUG
-    [eUart_Debug] = {
-        .uart_driver = eUartDriver_Debug,
-        .buffer_capacity = UART_DEBUG_BUFFER_CAPACITY,
-        .mutex_send_attributes = {.name = "Debug_SendMutex", .attr_bits = osMutexRecursive | osMutexPrioInherit, .cb_mem = NULL, .cb_size = 0U},
-        .message_queue_attributes = {.name = "Debug_MessageQueue", .attr_bits = 0, .cb_mem = NULL, .cb_size = 0, .mq_mem = NULL, .mq_size = 0}
-    },
-    #endif
-
-    #ifdef USE_UART_UROS_TX
-    [eUart_uRos] = {
-        .uart_driver = eUartDriver_uRos,
-        .buffer_capacity = UART_UROS_BUFFER_CAPACITY,
-        .mutex_send_attributes = {.name = "uRos_SendMutex", .attr_bits = osMutexRecursive | osMutexPrioInherit, .cb_mem = NULL, .cb_size = 0U},
-        .message_queue_attributes = {.name = "uRos_MessageQueue", .attr_bits = 0, .cb_mem = NULL, .cb_size = 0, .mq_mem = NULL, .mq_size = 0}
-    },
-    #endif
-};
-/* clang-format on */
+#ifdef DEBUG_UART_API
+CREATE_MODULE_NAME (UART_API)
+#else
+CREATE_MODULE_NAME_EMPTY
+#endif /* DEBUG_UART_API */
 
 /**********************************************************************************************************************
  * Private variables
@@ -85,33 +52,8 @@ const static sUartConst_t g_static_uart_lut[eUart_Last] = {
 
 static osThreadId_t g_fsm_thread_id = NULL;
 
-/* clang-format off */
-static sUartDynamic_t g_dynamic_uart_lut[eUart_Last] = {
-    #ifdef USE_UART_DEBUG
-    [eUart_Debug] = {
-        .current_state = eState_Setup,
-        .is_initialized = false,
-        .mutex_send = NULL,
-        .message_queue = NULL,
-        .message = {.data = NULL, .size = 0},
-        .delimiter = NULL,
-        .delimiter_length = 0
-    },
-    #endif
-
-    #ifdef USE_UART_UROS_TX
-    [eUart_uRos] = {
-        .current_state = eState_Setup,
-        .is_initialized = false,
-        .mutex_send = NULL,
-        .message_queue = NULL,
-        .message = {.data = NULL, .size = 0},
-        .delimiter = NULL,
-        .delimiter_length = 0
-    }
-    #endif
-};
-/* clang-format on */
+static sUartApiConst_t g_static_uart_lut[eUart_Last] = {0};
+static sUartDynamic_t g_dynamic_uart_lut[eUart_Last] = {0};
 
 /**********************************************************************************************************************
  * Exported variables and references
@@ -131,7 +73,7 @@ static void UART_API_BufferIncrement (const eUart_t uart);
 
 static void UART_API_FsmThread (void *arg) {
     while (1) {
-        for (eUart_t uart = (eUart_First + 1); uart < eUart_Last; uart++) {
+        for (eUart_t uart = eUart_First; uart < eUart_Last; uart++) {
             if (!g_dynamic_uart_lut[uart].is_initialized) {
                 continue;
             }
@@ -141,6 +83,8 @@ static void UART_API_FsmThread (void *arg) {
                     g_dynamic_uart_lut[uart].message.data = Heap_API_Calloc(g_static_uart_lut[uart].buffer_capacity, sizeof(char));
                     
                     if (g_dynamic_uart_lut[uart].message.data == NULL) {
+                            TRACE_WRN("FsmThread: Failed to allocate buffer for UART %d\n", uart);
+                            
                             continue;
                     }
                     
@@ -150,7 +94,7 @@ static void UART_API_FsmThread (void *arg) {
                 case eState_Collect: {
                     uint8_t received_byte = 0;
 
-                    while (UART_Driver_ReceiveByte(g_static_uart_lut[uart].uart_driver, &received_byte)) {
+                    while (UART_Driver_ReceiveByte(uart, &received_byte)) {
                         g_dynamic_uart_lut[uart].message.data[g_dynamic_uart_lut[uart].message.size] = received_byte;
 
                         UART_API_BufferIncrement(uart);
@@ -173,6 +117,8 @@ static void UART_API_FsmThread (void *arg) {
                 }
                 case eState_Flush: {
                     if (osMessageQueuePut(g_dynamic_uart_lut[uart].message_queue, &g_dynamic_uart_lut[uart].message, MESSAGE_QUEUE_PRIORITY, MESSAGE_QUEUE_PUT_TIMEOUT) != osOK) {
+                        TRACE_ERR("FsmThread: Failed to put message in queue for UART %d\n", uart);
+                        
                         continue;
                     }
 
@@ -213,36 +159,58 @@ static bool UART_API_IsDelimiterReceived (const eUart_t uart) {
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-bool UART_API_Init (const eUart_t uart, const eUartBaudrate_t baudrate, const char *delimiter) {
-    if ((uart <= eUart_First) || (uart >= eUart_Last)) {
+bool UART_API_Init (const eUart_t uart, const eBaudrate_t baudrate, const char *delimiter) {
+    if (!UART_Config_IsCorrectUart(uart)) {
+        TRACE_ERR("Init: Incorrect UART type %d\n", uart);
+        
         return false;
     }
 
-    if ((baudrate < eUartBaudrate_First) || (baudrate >= eUartBaudrate_Last)) {
+    if ((baudrate < eBaudrate_First) || (baudrate >= eBaudrate_Last)) {
+        TRACE_ERR("Init: Incorrect baudrate %d for UART %d\n", baudrate, uart);
+        
         return false;
     }
 
     if (delimiter == NULL) {
+        TRACE_ERR("Init: Delimiter is NULL\n");
+        
         return false;
     }
 
     if (g_dynamic_uart_lut[uart].is_initialized) {
+        return true;
+    }
+
+    const sUartApiConst_t *api_const = UART_Config_GetUartApiConst(uart);
+
+    if (api_const == NULL) {
+        TRACE_ERR("Init: Failed to get API desc for UART %d\n", uart);
+        
         return false;
     }
+
+    g_static_uart_lut[uart] = *api_const;
     
-    if (!UART_Driver_Init(g_static_uart_lut[uart].uart_driver, baudrate)) {
+    if (!UART_Driver_Init(uart, baudrate)) {
+        TRACE_ERR("Init: Failed to initialize UART driver for UART %d\n", uart);
+        
         return false;
     }
 
     g_dynamic_uart_lut[uart].mutex_send = osMutexNew(&g_static_uart_lut[uart].mutex_send_attributes);
     
     if (g_dynamic_uart_lut[uart].mutex_send == NULL) {
+        TRACE_ERR("Init: Failed to create send mutex for UART %d\n", uart);
+        
         return false;
     }
 
     g_dynamic_uart_lut[uart].message_queue = osMessageQueueNew(MESSAGE_QUEUE_CAPACITY, sizeof(sMessage_t), &g_static_uart_lut[uart].message_queue_attributes);
 
     if (g_dynamic_uart_lut[uart].message_queue == NULL) {
+        TRACE_ERR("Init: Failed to create message queue for UART %d\n", uart);
+        
         return false;
     }
 
@@ -250,6 +218,8 @@ bool UART_API_Init (const eUart_t uart, const eUartBaudrate_t baudrate, const ch
     g_dynamic_uart_lut[uart].delimiter = Heap_API_Calloc((g_dynamic_uart_lut[uart].delimiter_length + 1), sizeof(char));
 
     if (g_dynamic_uart_lut[uart].delimiter == NULL) {
+        TRACE_ERR("Init: Failed to allocate delimiter\n");
+        
         return false;
     }
 
@@ -265,19 +235,27 @@ bool UART_API_Init (const eUart_t uart, const eUartBaudrate_t baudrate, const ch
 }
 
 bool UART_API_Send (const eUart_t uart, const sMessage_t message, const uint32_t timeout) {
-    if ((uart <= eUart_First) || (uart >= eUart_Last)) {
+    if (!UART_Config_IsCorrectUart(uart)) {
+        TRACE_ERR("Send: Incorrect UART type %d\n", uart);
+        
         return false;
     }
 
     if (!g_dynamic_uart_lut[uart].is_initialized) {
+        TRACE_ERR("Send: UART %d not initialized\n", uart);
+        
         return false;
     }
     
     if (osMutexAcquire(g_dynamic_uart_lut[uart].mutex_send, timeout) != osOK) {
+        TRACE_ERR("Send: Failed to acquire mutex for UART %d\n", uart);
+        
         return false;
     }
 
-    if (!UART_Driver_SendBytes(g_static_uart_lut[uart].uart_driver, (uint8_t*) message.data, message.size)) {
+    if (!UART_Driver_SendBytes(uart, (uint8_t*) message.data, message.size)) {
+        TRACE_ERR("Send: Failed to send bytes for UART %d\n", uart);
+        
         osMutexRelease(g_dynamic_uart_lut[uart].mutex_send);
         
         return false;
@@ -289,23 +267,31 @@ bool UART_API_Send (const eUart_t uart, const sMessage_t message, const uint32_t
 }
 
 bool UART_API_Receive (const eUart_t uart, sMessage_t *message, const uint32_t timeout) {
-    if ((uart <= eUart_First) || (uart >= eUart_Last)) {
+    if (!UART_Config_IsCorrectUart(uart)) {
+        TRACE_ERR("Receive: Incorrect UART type %d\n", uart);
+        
         return false;
     }
 
     if (!g_dynamic_uart_lut[uart].is_initialized) {
+        TRACE_ERR("Receive: UART %d not initialized\n", uart);
+        
         return false;
     }
 
     if (message == NULL) {
+        TRACE_ERR("Receive: Message pointer is NULL for UART %d\n", uart);
+        
         return false;
     }
 
     if (osMessageQueueGet(g_dynamic_uart_lut[uart].message_queue, message, MESSAGE_QUEUE_PRIORITY, timeout) != osOK) {
+        TRACE_ERR("Receive: Failed to get message from queue for UART %d\n", uart);
+        
         return false;
     }
 
     return true;
 }
 
-#endif
+#endif /* ENABLE_UART */
