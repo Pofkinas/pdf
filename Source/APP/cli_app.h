@@ -4,9 +4,11 @@
  * Includes
  *********************************************************************************************************************/
 
-#include <stdbool.h>
-#include "uart_baudrate.h"
 #include "framework_config.h"
+
+#ifdef ENABLE_CLI
+#include <stdbool.h>
+#include "baudrate.h"
 
 /**********************************************************************************************************************
  * Exported definitions and macros
@@ -24,6 +26,7 @@
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
-bool CLI_APP_Init (const eUartBaudrate_t baudrate);
+bool CLI_APP_Init (const eBaudrate_t baudrate);
 
+#endif /* ENABLE_CLI */
 #endif /* SOURCE_APP_CLI_APP_H_ */

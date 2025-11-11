@@ -8,7 +8,8 @@
 
 #include <ctype.h>
 #include "cmsis_os2.h"
-#include "framework_cli_lut.h"
+#include "default_cli_lut.h"
+#include "platform_config.h"
 #include "cmd_api.h"
 #include "uart_api.h"
 #include "heap_api.h"
@@ -16,15 +17,13 @@
 #include "message.h"
 #include "error_messages.h"
 
-#ifdef INCLUDE_PROJECT_CLI
-#include "project_cli_lut.h"
+#ifdef ENABLE_CUSTOM_CMD
+#include "custom_cli_lut.h"
 #endif
 
 /**********************************************************************************************************************
  * Private definitions and macros
  *********************************************************************************************************************/
-
-#define DEBUG_CLI_APP
 
 /**********************************************************************************************************************
  * Private typedef
@@ -38,12 +37,12 @@
 CREATE_MODULE_NAME (CLI_APP)
 #else
 CREATE_MODULE_NAME_EMPTY
-#endif
+#endif /* DEBUG_CLI_APP */
 
 const static osThreadAttr_t g_cli_thread_attributes = {
     .name = "CLI_APP_Thread",
-    .stack_size = 256 * 4,
-    .priority = (osPriority_t) osPriorityNormal
+    .stack_size = CLI_APP_THREAD_STACK_SIZE,
+    .priority = (osPriority_t) CLI_APP_THREAD_PRIORITY
 };
 
 /**********************************************************************************************************************
@@ -74,22 +73,24 @@ static void CLI_APP_Thread (void *arg);
 
 static void CLI_APP_Thread (void *arg) {
     while (true) {
-        if (UART_API_Receive(eUart_Debug, &g_command, osWaitForever)) {
-            if (CMD_API_FindCommand(g_command, &g_response, g_framework_cli_lut, eCliFrameworkCmd_Last)){
-                Heap_API_Free(g_command.data);
-                
-                continue;
-            }
+        if (UART_API_Receive(DEBUG_UART, &g_command, osWaitForever)) {
+            eErrorCode_t error_code = eErrorCode_NOTFOUND;
+            
+            #ifdef ENABLE_DEFAULT_CMD
+            error_code = CMD_API_FindCommand(g_command, &g_response, g_default_cmd_lut, eCliDefaultCmd_Last);
+            #endif /* ENABLE_DEFAULT_CMD */
 
-            #ifdef INCLUDE_PROJECT_CLI
-            if (CMD_API_FindCommand(g_command, &g_response, g_project_cli_lut, eCliProjectCmd_Last)){
-                Heap_API_Free(g_command.data);
-                
-                continue;
+            #ifdef ENABLE_CUSTOM_CMD
+            if (error_code == eErrorCode_NOTFOUND) {
+                error_code = CMD_API_FindCommand(g_command, &g_response, g_custom_cmd_lut, eCliCustomCmd_Last);
             }
-            #endif
+            #endif /* ENABLE_CUSTOM_CMD */
 
-            TRACE_ERR(g_response.data);
+            if (error_code != eErrorCode_OSOK) {
+                TRACE_WRN(g_response.data);
+            }
+            
+            Heap_API_Free(g_command.data);
         }
     }
 
@@ -100,17 +101,12 @@ static void CLI_APP_Thread (void *arg) {
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-bool CLI_APP_Init (const eUartBaudrate_t baudrate) {
-    #if  defined(ENABLE_CLI) && defined(DEBUG_CLI_APP)
-    #else
-    return false;
-    #endif
-    
+bool CLI_APP_Init (const eBaudrate_t baudrate) {
     if (g_is_initialized) {
         return true;
     }
-    
-    if ((baudrate < eUartBaudrate_First) || (baudrate >= eUartBaudrate_Last)) {
+
+    if ((baudrate < eBaudrate_First) || (baudrate >= eBaudrate_Last)) {
         return false;
     }
 
@@ -122,8 +118,10 @@ bool CLI_APP_Init (const eUartBaudrate_t baudrate) {
         return false;
     }
 
+    g_cli_thread_id = osThreadNew(CLI_APP_Thread, NULL, &g_cli_thread_attributes);
+
     if (g_cli_thread_id == NULL) {
-        g_cli_thread_id = osThreadNew(CLI_APP_Thread, NULL, &g_cli_thread_attributes);
+        return false;
     }
 
     g_is_initialized = true;
@@ -131,4 +129,4 @@ bool CLI_APP_Init (const eUartBaudrate_t baudrate) {
     return g_is_initialized;
 }
 
-#endif
+#endif /* ENABLE_CLI */
