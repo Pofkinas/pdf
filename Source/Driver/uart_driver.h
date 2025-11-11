@@ -1,14 +1,16 @@
-#ifndef __UART_DRIVER__H__
-#define __UART_DRIVER__H__
+#ifndef SOURCE_DRIVER_UART_DRIVER_H_
+#define SOURCE_DRIVER_UART_DRIVER_H_
 /**********************************************************************************************************************
  * Includes
  *********************************************************************************************************************/
 
+#include "framework_config.h"
+
+#ifdef ENABLE_UART
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-#include "uart_baudrate.h"
-#include "framework_config.h"
+#include "uart_config.h"
 
 /**********************************************************************************************************************
  * Exported definitions and macros
@@ -18,22 +20,6 @@
  * Exported types
  *********************************************************************************************************************/
 
-/* clang-format off */
-typedef enum eUartDriver {
-    eUartDriver_First = 0,
-
-    #ifdef USE_UART_DEBUG
-    eUartDriver_Debug,
-    #endif
-
-    #ifdef USE_UART_UROS_TX
-    eUartDriver_uRos,
-    #endif
-
-    eUartDriver_Last
-} eUartDriver_t;
-/* clang-format on */
-
 /**********************************************************************************************************************
  * Exported variables
  *********************************************************************************************************************/
@@ -42,9 +28,10 @@ typedef enum eUartDriver {
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
-bool UART_Driver_Init (const eUartDriver_t uart, const eUartBaudrate_t baudrate);
-bool UART_Driver_SendByte (const eUartDriver_t uart, const uint8_t data);
-bool UART_Driver_SendBytes (const eUartDriver_t uart, uint8_t *data, const size_t size);
-bool UART_Driver_ReceiveByte (const eUartDriver_t uart, uint8_t *data);
+bool UART_Driver_Init (const eUart_t uart, const eBaudrate_t baudrate);
+bool UART_Driver_SendByte (const eUart_t uart, const uint8_t data);
+bool UART_Driver_SendBytes (const eUart_t uart, uint8_t *data, const size_t size);
+bool UART_Driver_ReceiveByte (const eUart_t uart, uint8_t *data);
 
-#endif /* __UART_DRIVER__H__ */
+#endif /* ENABLE_UART */
+#endif /* SOURCE_DRIVER_UART_DRIVER_H_ */
