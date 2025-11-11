@@ -10,8 +10,6 @@
  * Private definitions and macros
  *********************************************************************************************************************/
 
-#define MUTEX_TIMEOUT 0U
-
 /**********************************************************************************************************************
  * Private typedef
  *********************************************************************************************************************/
@@ -70,7 +68,7 @@ void* Heap_API_MemoryAllocate(const size_t number_of_elements, const size_t size
         return NULL;
     }
     
-    if (osMutexAcquire(g_heap_mutex, MUTEX_TIMEOUT) != osOK) {
+    if (osMutexAcquire(g_heap_mutex, HEAP_API_MUTEX_TIMEOUT) != osOK) {
         return NULL;
     }
 
@@ -88,7 +86,7 @@ bool Heap_API_Free (void *pointer_to_memory) {
         return false;
     }
     
-    if (osMutexAcquire(g_heap_mutex, MUTEX_TIMEOUT) != osOK) {
+    if (osMutexAcquire(g_heap_mutex, HEAP_API_MUTEX_TIMEOUT) != osOK) {
         return false;
     }
 
