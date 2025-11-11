@@ -1,240 +1,239 @@
-#ifndef FRAMEWORK_UTILITY_EXAMPLE_CONFIG_H_
-#define FRAMEWORK_UTILITY_EXAMPLE_CONFIG_H_
+#ifndef SOURCE_UTILITY_EXAMPLE_CONFIG_H_
+#define SOURCE_UTILITY_EXAMPLE_CONFIG_H_
 
-/***********************************************************************************************************************
+/******************************************************************************
  * @file 
- * @brief Platform exmaple configuration header file for the Pofkinas Development Framework (PDF).
+ * @brief Project example configuration header file for the
+ * Pofkinas Development Framework (PDF).
  *
- * This file contains example feature flags and configuration settings for various modules and peripherals used in the application.
+ * This file contains example feature flags and configuration settings
+ * for various modules and peripherals used in the application.
  *
- * @note This file should be used as a template for your platform configuration for file `project_config.h`in main directory (e.g. ProjectName/Application/).
- ***********************************************************************************************************************/
+ * @note This file should be used as a template for your project configuration
+ * configuration file `project_config.h` in config directory
+ * (e.g. project_name/config/).
+ * Peripherals may be configured in their respective *_config.{c,h} files.
+ * See `examples` branch for implementation examples.
+ *****************************************************************************/
 
-//==============================================================================
+//=============================================================================
 // FEATURE FLAGS
-//------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 /// Uncomment the flags for the peripherals and modules you need:
 
-/// -- UART / Debug console
-#define USE_UART_DEBUG                            // Enable debug UART interface
-#define USE_UART_UROS_TX                          // Enable uROS UART transport
+/// -- GPIO                    // Enable GPIO functionality
+#define ENABLE_GPIO
 
-/// -- DEBUG
-#define ENABLE_DEBUG                              // Enable debug messages
+/// -- TIMER                   // Enable TIMER functionality
+#define ENABLE_TIMER
 
-/// -- I²C bus
-#define USE_I2C1                                  // Enable I2C1 peripheral
+/// -- UART                    // Enable UART functionality
+#define ENABLE_UART
 
-/// -- DMA                                        
-#define USE_DMA                                   // Enable DMA support
+/// -- PWM                     // Enable PWM functionality
+#define ENABLE_PWM
 
-/// -- CLI
-#define ENABLE_CLI                                // Enable Command Line Interface (CLI) support
-#define INCLUDE_PROJECT_CLI                       // Include custom CLI commands from project_cli_lut.h
+/// -- DEBUG UART              // Enable Debug UART functionality
+#define ENABLE_UART_DEBUG                   
 
-/// -- LEDs
-#define USE_ONBOARD_LED                           // Enable on-board LED
-#define USE_PULSE_LED                               // Enable PWM controlled LEDs
+/// -- CLI                     // Enable Command Line Interface (CLI) over UART
+#define ENABLE_CLI
+#define ENABLE_DEFAULT_CMD
+#define ENABLE_CUSTOM_CMD
 
-/// -- I/Os
-#define USE_START_BUTTON                          // Enable External Start button
-#define USE_TCRT5000_LEFT                         // Enable reflectance sensor
-#define USE_TCRT5000_RIGHT                        // Enable reflectance sensor
+/// -- LEDs                    // Enable LED functionality
+#define ENABLE_LED
+#define ENABLE_PWM_LED
 
-/// -- WS2812B LED strips
-#define USE_WS2812B_1                             // Enable LED strip
-#define USE_WS2812B_2                             // Enable LED strip
+/// -- I/Os                    // Enable Input/Output functionality
+#define ENABLE_IO
 
-/// -- Time-of-flight sensors
-#define USE_VL53L0X_1                             // Enable VL53L0X sensor
-#define USE_VL53L0_XSHUT1                         // Enable VL53L0X sensor XSHUT
-#define USE_VL53L0X_2                             // Enable VL53L0X sensor
-#define USE_VL53L0_XSHUT2                         // Enable VL53L0X sensor XSHUT
+/// -- EXTI                    // Enable EXTI functionality
+#define ENABLE_EXTI
 
-/// -- Motors
-#define USE_MOTOR_A                               // Enable Motor A
-#define USE_MOTOR_B                               // Enable Motor B
+/// -- DMA                     // Enable DMA functionality
+#define ENABLE_DMA
 
-/// -- LCD
-#define USE_LCD_1                                 // Enable LCD 1 (I2C) interface
+/// -- I²C bus                 // Enable I2C functionality
+#define ENABLE_I2C
 
-//==============================================================================
-// SYSTEM TIMING
-//------------------------------------------------------------------------------
+/// -- WS2812B LED strips      // Enable WS2812B LED strip functionality
+#define ENABLE_WS2812B
+
+/// -- LED animation           // Enable LED animation functionality
+#define ENABLE_LED_ANIMATION
+
+/// -- Time-of-flight sensors  // Enable VL53L0X sensor
+#define ENABLE_VL53L0X         
+
+/// -- Motors                  // Enable Motor functionality
+#define ENABLE_MOTOR
+
+/// -- LCD                     // Enable LCD functionality
+#define ENABLE_LCD
+
+//=============================================================================
+// SYSTEM CONFIGURATION
+//-----------------------------------------------------------------------------
 /// System clock frequency (Hz)
 
 #define SYSTEM_CLOCK_HZ 100000000UL
 
-//==============================================================================
+//=============================================================================
 // UART CONFIGURATION
-//------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-#if defined(USE_UART_DEBUG) || defined(USE_UART_UROS_TX)
-#define USE_UART
-#endif
+#ifdef ENABLE_UART
+// #define UART1 
+// #define UART_1_BAUDRATE
 
-#ifdef USE_UART_DEBUG
+#define UART2 eUart_Debug
+#define UART_2_BAUDRATE eBaudrate_115200
+
+#ifdef ENABLE_UART_DEBUG
+#define DEBUG_UART eUart_Debug
+#endif /* ENABLE_UART_DEBUG */
+
+#define DEBUG_DELIMITER "\r\n"
+#define DEBUG_MESSAGE_SIZE 256
 #define UART_DEBUG_BUFFER_CAPACITY 256
-#endif
 
-#ifdef USE_UART_UROS_TX
-#define UART_UROS_BUFFER_CAPACITY 64
-#endif
+#define DEBUG_MESSAGE_TIMEOUT 1000
+#define DEBUG_MUTEX_TIMEOUT 0U
+#endif /* ENABLE_UART */
 
-//==============================================================================
-// I2C BUS CONFIGURATION
-//------------------------------------------------------------------------------
-
-#if defined(USE_I2C1)
-#define USE_I2C
-#endif
-
-#ifdef USE_I2C1
-#define I2C_MAX_DATA_SIZE 16
-#endif
-
-//==============================================================================
+//=============================================================================
 // LED CONFIGURATION
-//------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-#ifdef USE_ONBOARD_LED
-/// Invert LED logic (true = active-low)
-#define USE_ONBOARD_LED_INVERTED false
-#endif
-
-#if defined(USE_ONBOARD_LED)
-#define USE_LED
+#ifdef ENABLE_LED
 /// Blink Maximum time (s)
 #define MAX_BLINK_TIME 59
 /// Blink frequency limits (Hz)
 #define MIN_BLINK_FREQUENCY 2
 #define MAX_BLINK_FREQUENCY 100
-#endif
+#endif /* ENABLE_LED */
 
-#if defined(USE_PULSE_LED)
-#define USE_PWM_LED
+#ifdef ENABLE_PWM_LED
 // Pulsing Maximum time (s)
 #define MAX_PULSING_TIME 59
 // Pulsing frequency limits (Hz)
 #define MAX_PULSE_FREQUENCY 500
-#endif
+#define MAX_DUTY_CYCLE 65535
+#define MIN_PULSE_FREQUENCY (MAX_DUTY_CYCLE / 1000)
+#endif /* ENABLE_PWM_LED */
 
-//==============================================================================
-// I/O CONFIGURATION
-//------------------------------------------------------------------------------
+//=============================================================================
+// EXTI CONFIGURATION
+//-----------------------------------------------------------------------------
 
-#if defined(USE_START_BUTTON) || defined(USE_TCRT5000_LEFT) || defined(USE_TCRT5000_RIGHT)
-#define USE_IO
-#endif
+#ifdef ENABLE_EXTI
+#define EXTI0 eExti_StartButton
+// #define EXTI1
+// #define EXTI2
+// #define EXTI3
+// #define EXTI4
+// #define EXTI9_5
+// #define EXTI15_10
+#endif /* ENABLE_EXTI */
 
-#ifdef USE_START_BUTTON
-/// Start button active state
-#define START_BUTTON_ACTIVE_STATE eActiveState_Low
-/// Debounce settings 
-#define START_BUTTON_ENABLE_DEBOUNCE true
-#if START_BUTTON_ENABLE_DEBOUNCE == true
-#define STARTSTOP_BUTTON_DEBOUNCE_PERIOD 50U
-#endif
-/// Enable EXTI interrupt for button
-#define START_BUTTON_EXTI true
-/// Button triggered event
-#define STARTSTOP_TRIGGERED_EVENT 0x01U
-#endif
+//=============================================================================
+// I²C BUS CONFIGURATION
+//-----------------------------------------------------------------------------
 
-#ifdef USE_TCRT5000_RIGHT
-#define TCRT_RIGHT_ACTIVE_STATE eActiveState_Both
-#define TCRT_RIGHT_ENABLE_DEBOUNCE true
-#define TCRT_RIGHT_EXTI true
-#define TCRT5000_RIGHT_TRIGGERED_EVENT 0x01U
-#endif
+#ifdef ENABLE_I2C
+#define I2C_1 eI2c_1
+// #define I2C_2
 
-#ifdef USE_TCRT5000_LEFT
-#define TCRT_LEFT_ACTIVE_STATE eActiveState_Both
-#define TCRT_LEFT_ENABLE_DEBOUNCE true
-#define TCRT_LEFT_EXTI true
-#define TCRT5000_LEFT_TRIGGERED_EVENT 0x02U
-#endif
+#define I2C_MAX_DATA_SIZE 16
 
-#if defined(TCRT_RIGHT_ENABLE_DEBOUNCE) || defined(TCRT_LEFT_ENABLE_DEBOUNCE)
-/// Used to debounce PWM EMS
-#define TCRT5000_DEBOUNCE_PERIOD 15U 
-#endif
+#ifdef I2C_1
+#define I2C_1_CLOCK_SPEED 100000U
 
-//==============================================================================
-// WS2812B LED STRIPS CONFIGURATION
-//------------------------------------------------------------------------------
+#define LCD_1_ADDRESS 0x27
+#define VL53L0X_1_I2C_ADDRESS 0x62
+#endif /* I2C_1 */
 
-#if defined(USE_WS2812B_1) || defined(USE_WS2812B_2)
-#define USE_WS2812B
-#endif
+#ifdef I2C_2
+#endif /* I2C_2 */
+#endif /* ENABLE_I2C */
 
-#ifdef USE_WS2812B_1
-/// Number of LEDs on strip
-#define WS2812B_1_LED_COUNT 0
-#endif
+//=============================================================================
+// DMA CONFIGURATION
+//-----------------------------------------------------------------------------
 
-#ifdef USE_WS2812B_2
-/// Number of LEDs on strip
-#define WS2812B_2_LED_COUNT 0
-#endif
+#ifdef ENABLE_DMA
+// #define DMA_1_STREAM_0
+// #define DMA_1_STREAM_1
+// #define DMA_1_STREAM_2
+// #define DMA_1_STREAM_3
+#define DMA_1_STREAM_4 eDma_Ws2812b_1
+// #define DMA_1_STREAM_5
+// #define DMA_1_STREAM_6
+// #define DMA_1_STREAM_7
 
-//==============================================================================
-// VL53L0x TIME-OF-FLIGHT CONFIGURATION
-//------------------------------------------------------------------------------
+// #define DMA_2_STREAM_0
+// #define DMA_2_STREAM_1
+// #define DMA_2_STREAM_2
+// #define DMA_2_STREAM_3
+// #define DMA_2_STREAM_4
+// #define DMA_2_STREAM_5
+// #define DMA_2_STREAM_6
+// #define DMA_2_STREAM_7
+#endif /* ENABLE_DMA */
 
-#if defined(USE_VL53L0X_1) || defined(USE_VL53L0X_2)
-#define USE_VL53L0X
-/// Stop timeout for sensor #1 (ms)
-#define DEFAULT_STOP_TIMEOUT 100
-/// Calibration distances (mm)
-#define DEFAULT_OFFSET_CALIB_DISTANCE_MM 100
-#define DEFAULT_CROSSTALK_CALIB_DISTANCE_MM 200
-#endif
+//=============================================================================
+// VL53L0X CONFIGURATION
+//-----------------------------------------------------------------------------
 
-#ifdef USE_VL53L0X_1
-#define RANGING_PROFILE_VL53L0_1 eVl53l0xRangeProfile_LongRange
-#endif
+#ifdef ENABLE_VL53L0X
+#define VL53L0X_I2C_PHERIPH I2C_1
+#endif /* ENABLE_VL53L0X */
 
-#ifdef USE_VL53L0X_2
-#define RANGING_PROFILE_VL53L0_2 eVl53l0xRangeProfile_LongRange
-#endif
+//=============================================================================
+// DEBUG
+//-----------------------------------------------------------------------------
 
-//==============================================================================
-// MOTOR CONFIGURATION
-//------------------------------------------------------------------------------
+#ifdef ENABLE_UART_DEBUG
+// APP layer debug flags
+#define DEBUG_MAIN
+#define CUSTOM_CLI_CMD_HANDLERS
 
-/// Motor Speed range 0% ÷ 100%
-#if defined(USE_MOTOR_A) || defined(USE_MOTOR_B)
-#define USE_MOTOR
-#define MOTOR_RIGHT_SPEED_OFFSET 0
-#define MOTOR_LEFT_SPEED_OFFSET 0
+#define DEBUG_CLI_APP
+#define DEBUG_DEFAULT_CMD
+#define DEBUG_LED_APP
+#define DEBUG_MOTOR_APP
 
-/// Speed scaling limits (%)
-#define MIN_SCALED_SPEED 0
-#define MAX_SCALED_SPEED 100
-#define SOFT_TURN_SPEED_OFFSET 20
+// API layer debug flags
+// #define DEBUG_CMD_API
+// #define DEBUG_CMD_API_HELPER
+// #define DEBUG_DEFAULT_CMD
+// #define DEBUG_UART_API
+// #define DEBUG_I2C_API
+// #define DEBUG_IO_API
+// #define DEBUG_LCD_API
+// #define DEBUG_LED_API
+// #define DEBUG_MOTOR_API
+// #define DEBUG_VL53L0XV2_API
+// #define DEBUG_WS2812B_API
+#endif /* ENABLE_UART_DEBUG */
 
-/// Soft-start configuration
-#define MOTOR_SOFT_START_STEPS 30
-#define MOTOR_SOFT_START_TIMER_MS 5
+//=============================================================================
+// MISCELLANEOUS
+//-----------------------------------------------------------------------------
 
-/// Default run speed (%)
-#define DEFAULT_MOTOR_SPEED 60
-#endif
-
-//==============================================================================
-// CLI SETTINGS
-//------------------------------------------------------------------------------
+#ifdef ENABLE_CLI
+#define CLI_APP_THREAD_STACK_SIZE (256 * 4)
+#define CLI_APP_THREAD_PRIORITY osPriorityNormal
 
 #define CLI_COMMAND_MESSAGE_CAPACITY 20
 #define RESPONSE_MESSAGE_CAPACITY 128
+#define CMD_SEPARATOR ","
+#endif /* ENABLE_CLI */
 
-//==============================================================================
-// LCD CONFIGURATION
-//------------------------------------------------------------------------------
+#define HEAP_API_MUTEX_TIMEOUT 0U
 
-#if defined(USE_LCD_1)
-#define USE_LCD
-#endif
+#define BYTE 8
+#define BASE_10 10
 
-#endif /* FRAMEWORK_UTILITY_EXAMPLE_CONFIG_H_ */
+#endif /* SOURCE_UTILITY_EXAMPLE_CONFIG_H_ */
