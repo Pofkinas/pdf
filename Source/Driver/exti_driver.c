@@ -4,12 +4,8 @@
 
 #include "exti_driver.h"
 
-#ifdef USE_IO
-
-#include <stdint.h>
-#include "stm32f4xx_ll_system.h"
-#include "stm32f4xx_ll_exti.h"
-#include "gpio_driver.h"
+#ifdef ENABLE_EXTI
+#include "exti_config.h"
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -18,17 +14,6 @@
 /**********************************************************************************************************************
  * Private typedef
  *********************************************************************************************************************/
-
-typedef struct sExtiDesc {
-    eGpioPin_t pin;
-    uint32_t system_port;
-    uint32_t system_line;
-    uint32_t line_0_31;
-    FunctionalState command;
-    uint8_t mode;
-    uint8_t trigger;
-    IRQn_Type nvic;
-} sExtiDesc_t;
 
 typedef struct sExtiDynamic {
     bool is_init;
@@ -41,83 +26,12 @@ typedef struct sExtiDynamic {
  * Private constants
  *********************************************************************************************************************/
 
-/* clang-format off */
-const static sExtiDesc_t g_static_exti_lut[eExtiDriver_Last] = {
-    #ifdef USE_START_BUTTON
-    [eExtiDriver_StartButton] = {
-        .pin = eGpioPin_StartButton,
-        .system_port = LL_SYSCFG_EXTI_PORTC,
-        .system_line = LL_SYSCFG_EXTI_LINE0,
-        .line_0_31 = LL_EXTI_LINE_0,
-        .command = ENABLE,
-        .mode = LL_EXTI_MODE_IT,
-        .trigger = LL_EXTI_TRIGGER_FALLING,
-        .nvic = EXTI0_IRQn,
-    },
-    #endif
-
-    #ifdef USE_TCRT5000_RIGHT
-    [eExtiDriver_Tcrt5000_Right] = {
-        .pin = eGpioPin_Tcrt5000_Right,
-        .system_port = LL_SYSCFG_EXTI_PORTC,
-        .system_line = LL_SYSCFG_EXTI_LINE1,
-        .line_0_31 = LL_EXTI_LINE_1,
-        .command = ENABLE,
-        .mode = LL_EXTI_MODE_IT,
-        .trigger = LL_EXTI_TRIGGER_RISING_FALLING,
-        .nvic = EXTI1_IRQn,
-    },
-    #endif
-
-    #ifdef USE_TCRT5000_LEFT
-    [eExtiDriver_Tcrt5000_Left] = {
-        .pin = eGpioPin_Tcrt5000_Left,
-        .system_port = LL_SYSCFG_EXTI_PORTA,
-        .system_line = LL_SYSCFG_EXTI_LINE6,
-        .line_0_31 = LL_EXTI_LINE_6,
-        .command = ENABLE,
-        .mode = LL_EXTI_MODE_IT,
-        .trigger = LL_EXTI_TRIGGER_RISING_FALLING,
-        .nvic = EXTI9_5_IRQn,
-    },
-    #endif
-};
-/* clang-format on */
-
 /**********************************************************************************************************************
  * Private variables
  *********************************************************************************************************************/
 
-/* clang-format off */
-static sExtiDynamic_t g_dynamic_exti_lut[eExtiDriver_Last] = {
-    #ifdef USE_START_BUTTON
-    [eExtiDriver_StartButton] = {
-        .is_init = false,
-        .is_exti_enabled = false,
-        .callback = NULL,
-        .callback_context = NULL,
-    },
-    #endif
-    
-    #ifdef USE_TCRT5000_RIGHT
-    [eExtiDriver_Tcrt5000_Right] = {
-        .is_init = false,
-        .is_exti_enabled = false,
-        .callback = NULL,
-        .callback_context = NULL,
-    },
-    #endif
-
-    #ifdef USE_TCRT5000_LEFT
-    [eExtiDriver_Tcrt5000_Left] = {
-        .is_init = false,
-        .is_exti_enabled = false,
-        .callback = NULL,
-        .callback_context = NULL,
-    },
-    #endif
-};
-/* clang-format on */
+static sExtiDesc_t g_exti_lut[eExti_Last];
+static sExtiDynamic_t g_dynamic_exti_lut[eExti_Last] = {0};
 
 /**********************************************************************************************************************
  * Exported variables and references
@@ -127,59 +41,99 @@ static sExtiDynamic_t g_dynamic_exti_lut[eExtiDriver_Last] = {
  * Prototypes of private functions
  *********************************************************************************************************************/
 
-static void EXTIx_IRQHandler (const IRQn_Type interupt);
+static void EXTIx_IRQHandler (const eExti_t exti_device);
 void EXTI0_IRQHandler(void);
 void EXTI1_IRQHandler(void);
+void EXTI2_IRQHandler(void);
+void EXTI3_IRQHandler(void);
+void EXTI4_IRQHandler(void);
 void EXTI9_5_IRQHandler(void);
+void EXTI15_10_IRQHandler(void);
 
 /**********************************************************************************************************************
  * Definitions of private functions
  *********************************************************************************************************************/
 
-static void EXTIx_IRQHandler (const IRQn_Type interupt) {
-    for (eExtiDriver_t exti_device = (eExtiDriver_First + 1); exti_device < eExtiDriver_Last; exti_device++) {
-        if (g_static_exti_lut[exti_device].nvic != interupt) {
-            continue;
-        }
+static void EXTIx_IRQHandler (const eExti_t exti_device) {
+    if (!Exti_Config_IsCorrectExti(exti_device)) {
+        return;
+    }
+    
+    if (LL_EXTI_IsActiveFlag_0_31(g_exti_lut[exti_device].line_0_31)) {
+        Exti_Driver_ClearFlag(exti_device);
 
-        if (LL_EXTI_IsActiveFlag_0_31(g_static_exti_lut[exti_device].line_0_31)) {
-            Exti_Driver_ClearFlag(exti_device);
-
-            g_dynamic_exti_lut[exti_device].callback(g_dynamic_exti_lut[exti_device].callback_context);
-        }
+        g_dynamic_exti_lut[exti_device].callback(g_dynamic_exti_lut[exti_device].callback_context);
     }
 
     return;
 }
 
 void EXTI0_IRQHandler(void) {
-    #ifdef USE_START_BUTTON
-    EXTIx_IRQHandler(EXTI0_IRQn);
-    #endif
+    #ifdef EXTI0
+    EXTIx_IRQHandler(EXTI0);
+    #endif /* EXTI0 */
+
+    return;
 }
 
 void EXTI1_IRQHandler(void) {
-    #ifdef USE_TCRT5000_RIGHT
-    EXTIx_IRQHandler(EXTI1_IRQn);
-    #endif
+    #ifdef EXTI1
+    EXTIx_IRQHandler(EXTI1);
+    #endif /* EXTI1 */
+
+    return;
+}
+
+void EXTI2_IRQHandler(void) {
+    #ifdef EXTI2
+    EXTIx_IRQHandler(EXTI2);
+    #endif /* EXTI2 */
+
+    return;
+}
+
+void EXTI3_IRQHandler(void) {
+    #ifdef EXTI3
+    EXTIx_IRQHandler(EXTI3);
+    #endif /* EXTI3 */
+
+    return;
+}
+
+void EXTI4_IRQHandler(void) {
+    #ifdef EXTI4
+    EXTIx_IRQHandler(EXTI4);
+    #endif /* EXTI4 */
+
+    return;
 }
 
 void EXTI9_5_IRQHandler(void) {
-    #ifdef USE_TCRT5000_LEFT
-    EXTIx_IRQHandler(EXTI9_5_IRQn);
-    #endif
+    #ifdef EXTI9_5
+    EXTIx_IRQHandler(EXTI9_5);
+    #endif /* EXTI9_5 */
+
+    return;
+}
+
+void EXTI15_10_IRQHandler(void) {
+    #ifdef EXTI15_10
+    EXTIx_IRQHandler(EXTI15_10);
+    #endif /* EXTI15_10 */
+
+    return;
 }
 
 /**********************************************************************************************************************
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-bool Exti_Driver_InitDevice (const eExtiDriver_t exti_device, exti_callback_t exti_callback, void *callback_context) {
-    if (exti_callback == NULL) {
+bool Exti_Driver_InitDevice (const eExti_t exti_device, exti_callback_t exti_callback, void *callback_context) {
+    if (!Exti_Config_IsCorrectExti(exti_device)) {
         return false;
     }
 
-    if ((exti_device <= eExtiDriver_First) || (exti_device >= eExtiDriver_Last)) {
+    if (exti_callback == NULL) {
         return false;
     }
 
@@ -187,22 +141,30 @@ bool Exti_Driver_InitDevice (const eExtiDriver_t exti_device, exti_callback_t ex
         return true;
     }
 
+    const sExtiDesc_t *desc = Exti_Config_GetExtiDesc(exti_device);
+
+    if (desc == NULL) {
+        return false;
+    }
+
+    g_exti_lut[exti_device] = *desc;
+
     LL_EXTI_InitTypeDef exti_init_struct = {0};
 
-    LL_SYSCFG_SetEXTISource(g_static_exti_lut[exti_device].system_port, g_static_exti_lut[exti_device].system_line);
+    LL_SYSCFG_SetEXTISource(g_exti_lut[exti_device].system_port, g_exti_lut[exti_device].system_line);
 
-    exti_init_struct.Line_0_31 = g_static_exti_lut[exti_device].line_0_31;
-    exti_init_struct.LineCommand = g_static_exti_lut[exti_device].command;
-    exti_init_struct.Mode = g_static_exti_lut[exti_device].mode;
-    exti_init_struct.Trigger = g_static_exti_lut[exti_device].trigger;
+    exti_init_struct.Line_0_31 = g_exti_lut[exti_device].line_0_31;
+    exti_init_struct.LineCommand = g_exti_lut[exti_device].command;
+    exti_init_struct.Mode = g_exti_lut[exti_device].mode;
+    exti_init_struct.Trigger = g_exti_lut[exti_device].trigger;
 
     if (LL_EXTI_Init(&exti_init_struct) == ERROR) {
         return false;
     }
 
-    NVIC_SetPriority(g_static_exti_lut[exti_device].nvic, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 5, 0));
+    NVIC_SetPriority(g_exti_lut[exti_device].nvic, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 5, 0));
 
-    NVIC_EnableIRQ(g_static_exti_lut[exti_device].nvic);
+    NVIC_EnableIRQ(g_exti_lut[exti_device].nvic);
 
     g_dynamic_exti_lut[exti_device].is_init = true;
     g_dynamic_exti_lut[exti_device].callback = exti_callback;
@@ -211,38 +173,50 @@ bool Exti_Driver_InitDevice (const eExtiDriver_t exti_device, exti_callback_t ex
     return true;
 }
 
-bool Exti_Driver_Disable_IT (const eExtiDriver_t exti_device) {
-    if ((exti_device <= eExtiDriver_First) || (exti_device >= eExtiDriver_Last)) {
+bool Exti_Driver_Disable_IT (const eExti_t exti_device) {
+    if (!Exti_Config_IsCorrectExti(exti_device)) {
         return false;
     }
 
-    LL_EXTI_DisableIT_0_31(g_static_exti_lut[exti_device].line_0_31);
+    if (!g_dynamic_exti_lut[exti_device].is_init) {
+        return false;
+    }
+
+    LL_EXTI_DisableIT_0_31(g_exti_lut[exti_device].line_0_31);
 
     g_dynamic_exti_lut[exti_device].is_exti_enabled = false;
 
     return true;
 }
 
-bool Exti_Driver_Enable_IT (const eExtiDriver_t exti_device) {
-    if ((exti_device <= eExtiDriver_First) || (exti_device >= eExtiDriver_Last)) {
+bool Exti_Driver_Enable_IT (const eExti_t exti_device) {
+    if (!Exti_Config_IsCorrectExti(exti_device)) {
         return false;
     }
 
-    LL_EXTI_EnableIT_0_31(g_static_exti_lut[exti_device].line_0_31);
+    if (!g_dynamic_exti_lut[exti_device].is_init) {
+        return false;
+    }
+
+    LL_EXTI_EnableIT_0_31(g_exti_lut[exti_device].line_0_31);
 
     g_dynamic_exti_lut[exti_device].is_exti_enabled = true;
 
     return true;
 }
 
-bool Exti_Driver_ClearFlag (const eExtiDriver_t exti_device) {
-    if ((exti_device <= eExtiDriver_First) || (exti_device >= eExtiDriver_Last)) {
+bool Exti_Driver_ClearFlag (const eExti_t exti_device) {
+    if (!Exti_Config_IsCorrectExti(exti_device)) {
         return false;
     }
 
-    LL_EXTI_ClearFlag_0_31(g_static_exti_lut[exti_device].line_0_31);
+    if (!g_dynamic_exti_lut[exti_device].is_init) {
+        return false;
+    }
+
+    LL_EXTI_ClearFlag_0_31(g_exti_lut[exti_device].line_0_31);
 
     return true;
 }
 
-#endif
+#endif /* ENABLE_EXTI */
