@@ -4,9 +4,12 @@
  * Includes
  *********************************************************************************************************************/
 
+#include "framework_config.h"
+
+#ifdef ENABLE_IO
 #include <stdbool.h>
 #include "cmsis_os2.h"
-#include "framework_config.h"
+#include "io_config.h"
 
 /**********************************************************************************************************************
  * Exported definitions and macros
@@ -15,26 +18,6 @@
 /**********************************************************************************************************************
  * Exported types
  *********************************************************************************************************************/
-
-/* clang-format off */
-typedef enum eIo {
-    eIo_First = 0,
-    
-    #ifdef USE_START_BUTTON
-    eIo_StartStopButton,
-    #endif
-
-    #ifdef USE_TCRT5000_RIGHT
-    eIo_Tcrt5000_Right,
-    #endif
-
-    #ifdef USE_TCRT5000_LEFT
-    eIo_Tcrt5000_Left,
-    #endif
-    
-    eIo_Last
-} eIo_t;
-/* clang-format on */
 
 /**********************************************************************************************************************
  * Exported variables
@@ -45,7 +28,7 @@ typedef enum eIo {
  *********************************************************************************************************************/
 
 bool IO_API_Init (eIo_t device, osEventFlagsId_t event_flags_id);
-bool IO_API_IsCorrectDevice (const eIo_t device);
 bool IO_API_ReadPinState (const eIo_t device, bool *pin_state);
 
+#endif /* ENABLE_IO */
 #endif /* SOURCE_API_IO_API_H_ */
