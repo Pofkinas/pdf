@@ -5,7 +5,6 @@
 #include "cmd_api.h"
 
 #ifdef ENABLE_CLI
-
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,8 +13,6 @@
 /**********************************************************************************************************************
  * Private definitions and macros
  *********************************************************************************************************************/
-
-#define DEBUG_CMD_API
 
 /**********************************************************************************************************************
  * Private typedef
@@ -29,7 +26,7 @@
 CREATE_MODULE_NAME (CMD_API)
 #else
 CREATE_MODULE_NAME_EMPTY
-#endif
+#endif /* DEBUG_CMD_API */
 
 /**********************************************************************************************************************
  * Private variables
@@ -51,33 +48,33 @@ CREATE_MODULE_NAME_EMPTY
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-bool CMD_API_FindCommand (sMessage_t command, sMessage_t *response, sCmdDesc_t *command_lut, const size_t command_lut_size) {
+eErrorCode_t CMD_API_FindCommand (sMessage_t command, sMessage_t *response, sCmdDesc_t *command_lut, const size_t command_lut_size) {
     if ((response == NULL) || (command_lut == NULL)) {
         TRACE_ERR("Invalid data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
 
     if (response->data == NULL) {
         TRACE_ERR("Invalid response data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
     
     for (size_t command_number = 1; command_number < command_lut_size; command_number++) {
-        if (strncmp(command.data, command_lut[command_number].command, command_lut[command_number].command_lenght) != 0) {
+        if (strncmp(command.data, command_lut[command_number].command, command_lut[command_number].command_length) != 0) {
             continue;
         }
 
-        command.data += command_lut[command_number].command_lenght;
-        command.size -= command_lut[command_number].command_lenght;
+        command.data += command_lut[command_number].command_length;
+        command.size -= command_lut[command_number].command_length;
 
         return command_lut[command_number].handler(command, response);
     }
 
     snprintf(response->data, response->size, "Invalid command\n");
 
-    return false;
+    return eErrorCode_NOTFOUND;
 }
 
-#endif
+#endif /* ENABLE_CLI */

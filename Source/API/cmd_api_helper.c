@@ -5,20 +5,14 @@
 #include "cmd_api_helper.h"
 
 #ifdef ENABLE_CLI
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "debug_api.h"
-#include "error_messages.h"
 
 /**********************************************************************************************************************
  * Private definitions and macros
  *********************************************************************************************************************/
-
-#define DEBUG_CMD_API_HELPER
-
-#define BASE_10 10
 
 /**********************************************************************************************************************
  * Private typedef
@@ -32,7 +26,7 @@
 CREATE_MODULE_NAME (CMD_API_HELPER)
 #else
 CREATE_MODULE_NAME_EMPTY
-#endif
+#endif /* DEBUG_CMD_API_HELPER */
 
 /**********************************************************************************************************************
  * Private variables
@@ -54,23 +48,23 @@ CREATE_MODULE_NAME_EMPTY
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-int CMD_API_Helper_FindNextArgUInt (sMessage_t *argument, size_t *return_argument, char *separator, const size_t separator_lenght, sMessage_t *response) {
+eErrorCode_t CMD_API_Helper_FindNextArgUInt (sMessage_t *argument, size_t *return_argument, char *separator, const size_t separator_lenght, sMessage_t *response) {
     if ((argument == NULL) || (return_argument == NULL) || (separator == NULL) || (response == NULL)) {
-        TRACE_ERR("Invalid data pointer");
+        TRACE_ERR("Invalid data pointer\n");
         
-        return eErrorCode_INVAL;
+        return eErrorCode_NULLPTR;
     }
 
     if ((argument->data == NULL) || (response->data == NULL)) {
-        TRACE_ERR("Invalid argument/response data pointer");
+        TRACE_ERR("Invalid argument/response data pointer\n");
 
-        return eErrorCode_INVAL;
+        return eErrorCode_NULLPTR;
     }
 
     if (argument->size == 0) {
-        snprintf(response->data, response->size, "No expected arguments\n");
+        snprintf(response->data, response->size, "Missing argument\n");
 
-        return eErrorCode_NOMSG;
+        return eErrorCode_ARGFEW;
     }
 
     char *invalid_character;
@@ -100,4 +94,4 @@ int CMD_API_Helper_FindNextArgUInt (sMessage_t *argument, size_t *return_argumen
     return eErrorCode_OSOK;
 }
 
-#endif
+#endif /* ENABLE_CLI */
