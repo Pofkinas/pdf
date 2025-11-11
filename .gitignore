@@ -20,3 +20,17 @@
 !source/utility/**
 !source/utility/led_animation/
 !source/utility/led_animation/**
+
+# Allow example files
+!Application/
+!Application/**
+!Application/Config/
+!Application/Config/**
+!ThirdParty/
+!ThirdParty/**
+!.cproject
+!.mxproject
+!.project
+!pdf_test.ioc
+!STM32F411RETX_FLASH.ld
+!STM32F411RETX_RAM.ld
