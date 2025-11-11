@@ -123,59 +123,59 @@ void LED_HsvToRgb(const sLedColorHsv_t hsv, sLedColorRgb_t *rgb) {
         return;
     }
     
-    uint8_t h = hsv.hue;
-    uint8_t s = hsv.saturation;
-    uint8_t v = hsv.value;
+    uint8_t hue = hsv.hue;
+    uint8_t saturation = hsv.saturation;
+    uint8_t value = hsv.value;
 
-    uint8_t r, g, b;
+    uint8_t red, green, blue;
 
-    if (s == 0) {
-        r = v;
-        g = v;
-        b = v;
+    if (saturation == 0) {
+        red = value;
+        green = value;
+        blue = value;
     } else {
-        uint8_t region = h / 43;
-        uint8_t remainder = (h - region * 43) * 6;
+        uint8_t region = hue / 43;
+        uint8_t remainder = (hue - region * 43) * 6;
 
-        uint8_t p = (v * (255 - s)) >> 8;
-        uint8_t q = (v * (255 - ((s * remainder) >> 8))) >> 8;
-        uint8_t t = (v * (255 - ((s * (255 - remainder)) >> 8))) >> 8;
+        uint8_t p = (value * (255 - saturation)) >> 8;
+        uint8_t q = (value * (255 - ((saturation * remainder) >> 8))) >> 8;
+        uint8_t t = (value * (255 - ((saturation * (255 - remainder)) >> 8))) >> 8;
 
         switch (region) {
             case 0: {
-                r = v;
-                g = t;
-                b = p;
+                red = value;
+                green = t;
+                blue = p;
             } break;
             case 1: {
-                r = q;
-                g = v;
-                b = p;
+                red = q;
+                green = value;
+                blue = p;
             } break;
             case 2: {
-                r = p;
-                g = v;
-                b = t;
+                red = p;
+                green = value;
+                blue = t;
             } break;
             case 3: {
-                r = p;
-                g = q;
-                b = v;
+                red = p;
+                green = q;
+                blue = value;
             } break;
             case 4: {
-                r = t;
-                g = p;
-                b = v;
+                red = t;
+                green = p;
+                blue = value;
             } break;
             default: {
-                r = v;
-                g = p;
-                b = q;
+                red = value;
+                green = p;
+                blue = q;
             } break;
         }
     }
 
-    rgb->color = ((uint32_t)r << 16) | ((uint32_t)g << 8) | b;
+    rgb->color = ((uint32_t)red << 16) | ((uint32_t)green << 8) | blue;
 
     return;
 }
@@ -185,12 +185,12 @@ void LED_RgbToHsv(const sLedColorRgb_t rgb, sLedColorHsv_t *hsv) {
         return;
     }
 
-    uint8_t r = (rgb.color >> 16) & 0xFF;
-    uint8_t g = (rgb.color >> 8) & 0xFF;
-    uint8_t b = rgb.color & 0xFF;
+    uint8_t red = (rgb.color >> 16) & 0xFF;
+    uint8_t green = (rgb.color >> 8) & 0xFF;
+    uint8_t blue = rgb.color & 0xFF;
 
-    uint8_t rgb_min = r < g ? (r < b ? r : b) : (g < b ? g : b);
-    uint8_t rgb_max = r > g ? (r > b ? r : b) : (g > b ? g : b);
+    uint8_t rgb_min = red < green ? (red < blue ? red : blue) : (green < blue ? green : blue);
+    uint8_t rgb_max = red > green ? (red > blue ? red : blue) : (green > blue ? green : blue);
     
     uint8_t delta = rgb_max - rgb_min;
 
@@ -211,12 +211,12 @@ void LED_RgbToHsv(const sLedColorRgb_t rgb, sLedColorHsv_t *hsv) {
 
     int16_t hue;
 
-    if (rgb_max == r) {
-        hue = 0 + 43 * (g - b) / delta;
-    } else if (rgb_max == g) {
-        hue = 85 + 43 * (b - r) / delta;
+    if (rgb_max == red) {
+        hue = 0 + 43 * (green - blue) / delta;
+    } else if (rgb_max == green) {
+        hue = 85 + 43 * (blue - red) / delta;
     } else {
-        hue = 171 + 43 * (r - g) / delta;
+        hue = 171 + 43 * (red - green) / delta;
     }
 
     if (hue < 0) hue += 256;
