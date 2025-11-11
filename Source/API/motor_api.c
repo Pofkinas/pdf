@@ -4,10 +4,10 @@
 
 #include "motor_api.h"
 
-#ifdef USE_MOTOR
-
+#ifdef ENABLE_MOTOR
 #include <stdint.h>
 #include "cmsis_os2.h"
+#include "debug_api.h"
 #include "motor_driver.h"
 #include "pwm_driver.h"
 #include "timer_driver.h"
@@ -17,31 +17,18 @@
  * Private definitions and macros
  *********************************************************************************************************************/
 
-#define INPUT_MIN_SPEED 0
-#define INPUT_MAX_SPEED 100
 #define MUTEX_TIMEOUT 0U
 
 /**********************************************************************************************************************
  * Private typedef
  *********************************************************************************************************************/
 
-typedef struct sMotorsRotation {
-    eMotorRotation_t rotation[eMotorDirection_Last];
-} sMotorsRotation_t;
-
-typedef struct sMotorStatic {
-    osMutexAttr_t mutex_attributes;
-    osTimerAttr_t timer_attributes;
-    void (*timer_callback) (void *arg);
-    uint8_t motor_speed_offset;
-} sMotorConst_t;
-
 typedef struct sMotorDynamic {
-    eMotorDriver_t motor;
+    eMotor_t motor;
     bool is_enabled;
     uint16_t speed;
     uint16_t new_speed;
-    uint16_t max_speed;
+    size_t max_speed;
     eMotorDirection_t direction;
     osMutexId_t mutex;
     bool is_soft_start_running;
@@ -62,56 +49,11 @@ static void Motor_API_Statup_TimerCallback (void *arg);
  * Private constants
  *********************************************************************************************************************/
 
-/* clang-format off */
-const static sMotorsRotation_t g_static_motor_rotation_lut[eMotor_Last] = {
-    #ifdef USE_MOTOR_A
-    [eMotor_Right] = {
-        .rotation = {
-            [eMotorDirection_Forward] = eMotorRotation_Forward,
-            [eMotorDirection_Reverse] = eMotorRotation_Backward,
-            [eMotorDirection_Right] =  eMotorRotation_Backward,
-            [eMotorDirection_Left] = eMotorRotation_Forward,
-            [eMotorDirection_RightSoft] = eMotorRotation_Forward,
-            [eMotorDirection_LeftSoft] = eMotorRotation_Forward
-        }
-    },
-    #endif
-
-    #ifdef USE_MOTOR_B
-    [eMotor_Left] = {
-        .rotation = {
-            [eMotorDirection_Forward] = eMotorRotation_Forward,
-            [eMotorDirection_Reverse] = eMotorRotation_Backward,
-            [eMotorDirection_Right] = eMotorRotation_Forward,
-            [eMotorDirection_Left] = eMotorRotation_Backward,
-            [eMotorDirection_RightSoft] = eMotorRotation_Forward,
-            [eMotorDirection_LeftSoft] = eMotorRotation_Forward
-        }
-
-    }
-    #endif
-};
-
-const static sMotorConst_t g_static_motor_lut[eMotor_Last] = {
-    #ifdef USE_MOTOR_A
-    [eMotor_Right] = {
-        .mutex_attributes = {.name = "Motor_A_Mutex", .attr_bits = osMutexRecursive | osMutexPrioInherit, .cb_mem = NULL, .cb_size = 0U},
-        .timer_attributes = {.name = "Motor_A_Timer", .attr_bits = 0, .cb_mem = NULL, .cb_size = 0U},
-        .timer_callback = Motor_API_Statup_TimerCallback,
-        .motor_speed_offset = MOTOR_RIGHT_SPEED_OFFSET
-    },
-    #endif
-
-    #ifdef USE_MOTOR_B
-    [eMotor_Left] = {
-        .mutex_attributes = {.name = "Motor_B_Mutex", .attr_bits = osMutexRecursive | osMutexPrioInherit, .cb_mem = NULL, .cb_size = 0U},
-        .timer_attributes = {.name = "Motor_B_Timer", .attr_bits = 0, .cb_mem = NULL, .cb_size = 0U},
-        .timer_callback = Motor_API_Statup_TimerCallback,
-        .motor_speed_offset = MOTOR_LEFT_SPEED_OFFSET
-    }
-    #endif
-}; 
-/* clang-format on */
+#ifdef DEBUG_MOTOR_API
+CREATE_MODULE_NAME (MOTOR_API)
+#else
+CREATE_MODULE_NAME_EMPTY
+#endif /* DEBUG_MOTOR_API */
 
 /**********************************************************************************************************************
  * Private variables
@@ -119,39 +61,8 @@ const static sMotorConst_t g_static_motor_lut[eMotor_Last] = {
 
 static bool g_is_all_motors_init = false;
 
-/* clang-format off */
-static sMotorDynamic_t g_dynamic_motor_lut[eMotor_Last] = {
-    #ifdef USE_MOTOR_A
-    [eMotor_Right] = {
-        .motor = eMotorDriver_A,
-        .is_enabled = false,
-        .speed = 0,
-        .new_speed = 0,
-        .max_speed = 0,
-        .direction = eMotorDirection_Last,
-        .mutex = NULL,
-        .is_soft_start_running = false,
-        .soft_start_timer= NULL,
-        .soft_start_step = 1,
-    },
-    #endif
-
-    #ifdef USE_MOTOR_B
-    [eMotor_Left] = {
-        .motor = eMotorDriver_B,
-        .is_enabled = false,
-        .speed = 0,
-        .new_speed = 0,
-        .max_speed = 0,
-        .direction = eMotorDirection_Last,
-        .mutex = NULL,
-        .is_soft_start_running = false,
-        .soft_start_timer = NULL,
-        .soft_start_step = 1,
-    }
-    #endif
-};
-/* clang-format on */
+static sMotor_t g_static_motor_lut[eMotor_Last] = {0}; 
+static sMotorDynamic_t g_dynamic_motor_lut[eMotor_Last] = {0};
 
 /**********************************************************************************************************************
  * Exported variables and references
@@ -162,11 +73,15 @@ static sMotorDynamic_t g_dynamic_motor_lut[eMotor_Last] = {
  *********************************************************************************************************************/
  
 static uint16_t Motor_API_Scale_Speed (const eMotor_t motor, const size_t speed) {
-    if ((motor <= eMotor_First) || (motor >= eMotor_Last)) {
+    if (!Motor_Config_IsCorrectMotor(motor)) {
+        TRACE_ERR("Motor_API_Scale_Speed: Incorrect motor type %d\n", motor);
+        
         return 0;
     }
 
     if (!Motor_API_IsCorrectSpeed(speed)) {
+        TRACE_ERR("Motor_API_Scale_Speed: Incorrect speed %d\n", speed);
+        
         return 0;
     }
     
@@ -175,49 +90,65 @@ static uint16_t Motor_API_Scale_Speed (const eMotor_t motor, const size_t speed)
     }
 
     if (speed == INPUT_MAX_SPEED) {
-        return (uint16_t) ((uint32_t) MAX_SCALLED_SPEED * g_dynamic_motor_lut[motor].max_speed / INPUT_MAX_SPEED);
+        return (uint16_t) ((uint32_t) MAX_SCALED_SPEED * g_dynamic_motor_lut[motor].max_speed / INPUT_MAX_SPEED);
     }
 
-    uint16_t scaled_speed = MIN_SCALLED_SPEED + ((speed * (MAX_SCALLED_SPEED - MIN_SCALLED_SPEED)) / MAX_SCALLED_SPEED);
+    uint16_t scaled_speed = MIN_SCALED_SPEED + ((speed * (MAX_SCALED_SPEED - MIN_SCALED_SPEED)) / MAX_SCALED_SPEED);
 
     return (uint16_t) ((uint32_t) scaled_speed * g_dynamic_motor_lut[motor].max_speed / INPUT_MAX_SPEED);
 }
 
 static bool Motor_API_SetMotorSpeed (const eMotor_t motor, const size_t speed, const eMotorDirection_t direction) {
-    if ((motor <= eMotor_First) || (motor >= eMotor_Last)) {
+    if (!Motor_Config_IsCorrectMotor(motor)) {
+        TRACE_ERR("Motor_API_SetMotorSpeed: Incorrect motor type %d\n", motor);
+        
         return false;
     }
 
     if ((speed < STOP_SPEED) || (speed > g_dynamic_motor_lut[motor].max_speed)) {
+        TRACE_ERR("Motor_API_SetMotorSpeed: Speed %d out of range for motor %d\n", speed, motor);
+        
         return false;
     }
 
-    if (!Motor_API_IsCorrectDirection(direction)) {
+    if (!Motor_Config_IsCorrectDirection(direction)) {
+        TRACE_ERR("Motor_API_SetMotorSpeed: Incorrect direction %d\n", direction);
+        
         return false;
     }
 
     if (osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT) != osOK) {
+        TRACE_ERR("Motor_API_SetMotorSpeed: Failed to acquire mutex for motor %d\n", motor);
+        
         return false;
     }
 
     switch (direction) {
         case eMotorDirection_Forward: {
-            if (!Motor_Driver_SetSpeed(g_dynamic_motor_lut[motor].motor, g_static_motor_rotation_lut[motor].rotation[eMotorDirection_Forward], speed)) {
+            if (!Motor_Driver_SetSpeed(motor, g_static_motor_lut[motor].rotation[eMotorDirection_Forward], speed)) {
+                TRACE_ERR("Motor_API_SetMotorSpeed: Failed to set forward speed for motor %d\n", motor);
+                
                 return false;
             }
         } break;
         case eMotorDirection_Reverse: {
-            if (!Motor_Driver_SetSpeed(g_dynamic_motor_lut[motor].motor, g_static_motor_rotation_lut[motor].rotation[eMotorDirection_Reverse], speed)) {
+            if (!Motor_Driver_SetSpeed(motor, g_static_motor_lut[motor].rotation[eMotorDirection_Reverse], speed)) {
+                TRACE_ERR("Motor_API_SetMotorSpeed: Failed to set reverse speed for motor %d\n", motor);
+                
                 return false;
             }
         } break;
         case eMotorDirection_Right: {
-            if (!Motor_Driver_SetSpeed(g_dynamic_motor_lut[motor].motor, g_static_motor_rotation_lut[motor].rotation[eMotorDirection_Right], speed)) {
+            if (!Motor_Driver_SetSpeed(motor, g_static_motor_lut[motor].rotation[eMotorDirection_Right], speed)) {
+                TRACE_ERR("Motor_API_SetMotorSpeed: Failed to set right speed for motor %d\n", motor);
+                
                 return false;
             }
         } break;
         case eMotorDirection_Left: {
-            if (!Motor_Driver_SetSpeed(g_dynamic_motor_lut[motor].motor, g_static_motor_rotation_lut[motor].rotation[eMotorDirection_Left], speed)) {
+            if (!Motor_Driver_SetSpeed(motor, g_static_motor_lut[motor].rotation[eMotorDirection_Left], speed)) {
+                TRACE_ERR("Motor_API_SetMotorSpeed: Failed to set left speed for motor %d\n", motor);
+                
                 return false;
             }
         } break;
@@ -244,7 +175,7 @@ static void Motor_API_Statup_TimerCallback (void *arg) {
             Motor_API_SetMotorSpeed(motor_desc->motor, motor_desc->speed, motor_desc->direction);
         }
 
-        motor_desc->soft_start_step = 1;
+        motor_desc->soft_start_step = DEFAULT_SOFT_START_STEP;
         motor_desc->is_soft_start_running = false;
 
         osTimerStop(motor_desc->soft_start_timer);
@@ -262,76 +193,127 @@ bool Motor_API_Init (void) {
         return true;
     }
 
-    if (eMotor_Last == 1) {
-        return false;
-    }
-
     if (!GPIO_Driver_InitAllPins()) {
+        TRACE_ERR("Init: Failed to initialize GPIO pins\n");
+        
         return false;
     }
 
     if (!Timer_Driver_InitAllTimers()) {
+        TRACE_ERR("Init: Failed to initialize timers\n");
+
         return false;
     }
 
     if (!PWM_Driver_InitAllDevices()) {
+        TRACE_ERR("Init: Failed to initialize PWM devices\n");
+        
         return false;
     }
 
     if (!Motor_Driver_InitAllMotors()) {
+        TRACE_ERR("Init: Failed to initialize motor drivers\n");
+        
         return false;
-    }
-    
-    for (eMotor_t motor = (eMotor_First + 1); motor < eMotor_Last; motor++) {
-        if (g_dynamic_motor_lut[motor].mutex == NULL) {
-            g_dynamic_motor_lut[motor].mutex = osMutexNew(&g_static_motor_lut[motor].mutex_attributes);
-        }
-
-        if (g_dynamic_motor_lut[motor].soft_start_timer == NULL) {
-            g_dynamic_motor_lut[motor].soft_start_timer = osTimerNew(g_static_motor_lut[motor].timer_callback, osTimerPeriodic, &g_dynamic_motor_lut[motor], &g_static_motor_lut[motor].timer_attributes);
-        }
-
-        if (!Motor_Driver_GetMaxSpeed(g_dynamic_motor_lut[motor].motor, &g_dynamic_motor_lut[motor].max_speed)) {
-            return false;
-        }
     }
 
     g_is_all_motors_init = true;
+    
+    for (eMotor_t motor = eMotor_First; motor < eMotor_Last; motor++) {
+        const sMotor_t *desc = Motor_Config_GetMotorDesc(motor);
+
+        if (desc == NULL) {
+            TRACE_ERR("Init: No motor desc for motor %d\n", motor);
+            
+            g_is_all_motors_init = false;
+
+            continue;
+        }
+
+        g_static_motor_lut[motor] = *desc;
+        
+        g_dynamic_motor_lut[motor].mutex = osMutexNew(&g_static_motor_lut[motor].mutex_attributes);
+
+        if (g_dynamic_motor_lut[motor].mutex == NULL) {
+            TRACE_ERR("Init: Failed to create mutex for motor %d\n", motor);
+            
+            g_is_all_motors_init = false;
+
+            continue;
+        }
+
+        g_dynamic_motor_lut[motor].soft_start_timer = osTimerNew(Motor_API_Statup_TimerCallback, osTimerPeriodic, &g_dynamic_motor_lut[motor], &g_static_motor_lut[motor].timer_attributes);
+
+        if (g_dynamic_motor_lut[motor].soft_start_timer == NULL) {
+            TRACE_ERR("Init: Failed to create soft start timer for motor %d\n", motor);
+            
+            g_is_all_motors_init = false;
+
+            continue;
+        }
+
+        if (!Motor_Driver_GetMaxSpeed(motor, &g_dynamic_motor_lut[motor].max_speed)) {
+            TRACE_ERR("Init: Failed to get max speed for motor %d\n", motor);
+            
+            g_is_all_motors_init = false;
+
+            continue;
+        }
+
+        g_dynamic_motor_lut[motor].motor = motor;
+        g_dynamic_motor_lut[motor].direction = eMotorDirection_Last;
+        g_dynamic_motor_lut[motor].is_soft_start_running = false;
+        g_dynamic_motor_lut[motor].soft_start_step = DEFAULT_SOFT_START_STEP;
+    }
 
     return g_is_all_motors_init;
 }
 
 bool Motor_API_SetSpeed (const size_t speed, const eMotorDirection_t direction) {
     if (!Motor_API_IsCorrectSpeed(speed)) {
+        TRACE_ERR("SetSpeed: Incorrect speed %d\n", speed);
+        
         return false;
     }
 
-    if (!Motor_API_IsCorrectDirection(direction)) {
+    if (!Motor_Config_IsCorrectDirection(direction)) {
+        TRACE_ERR("SetSpeed: Incorrect direction %d\n", direction);
+        
         return false;
     }
 
-    for (eMotor_t motor = (eMotor_First + 1); motor < eMotor_Last; motor++) {
+    bool is_success = true;
+
+    for (eMotor_t motor = eMotor_First; motor < eMotor_Last; motor++) {
         if (!Motor_API_IsMotorEnabled(motor)) {
             if (!Motor_Driver_EnableMotor(motor)) {
-                return false;
+                TRACE_ERR("SetSpeed: Failed to enable motor %d\n", motor);
+                
+                is_success = false;
+
+                continue;
             }
 
             g_dynamic_motor_lut[motor].is_enabled = true;
         }
 
         if (g_dynamic_motor_lut[motor].is_soft_start_running) {
-            return false;
+            continue;
         }
 
         if (osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT) != osOK) {
-            return false;
+            TRACE_ERR("SetSpeed: Failed to acquire mutex for motor %d\n", motor);
+            
+            is_success = false;
+
+            continue;
         }
 
         g_dynamic_motor_lut[motor].new_speed = Motor_API_Scale_Speed(motor, speed);
 
-        if (direction == eMotorDirection_RightSoft && motor == eMotor_Left) {
+        if (direction == eMotorDirection_RightSoft && g_static_motor_lut[motor].position == eMotorPosition_Left) {
             g_dynamic_motor_lut[motor].new_speed -= SOFT_TURN_SPEED_OFFSET;
-        } else if (direction == eMotorDirection_LeftSoft && motor == eMotor_Right) {
+        } else if (direction == eMotorDirection_LeftSoft && g_static_motor_lut[motor].position == eMotorPosition_Right) {
             g_dynamic_motor_lut[motor].new_speed -= SOFT_TURN_SPEED_OFFSET;
         }
 
@@ -350,7 +332,7 @@ bool Motor_API_SetSpeed (const size_t speed, const eMotorDirection_t direction) 
         g_dynamic_motor_lut[motor].direction = direction;
 
         if (g_dynamic_motor_lut[motor].speed == STOP_SPEED) {
-            g_dynamic_motor_lut[motor].soft_start_step = 1;
+            g_dynamic_motor_lut[motor].soft_start_step = DEFAULT_SOFT_START_STEP;
             g_dynamic_motor_lut[motor].step_value = g_dynamic_motor_lut[motor].new_speed / MOTOR_SOFT_START_STEPS;
             g_dynamic_motor_lut[motor].is_soft_start_running = true;
         }
@@ -358,69 +340,91 @@ bool Motor_API_SetSpeed (const size_t speed, const eMotorDirection_t direction) 
         osMutexRelease(g_dynamic_motor_lut[motor].mutex);
 
         if (g_dynamic_motor_lut[motor].speed == STOP_SPEED) {
-            osTimerStart(g_dynamic_motor_lut[motor].soft_start_timer, MOTOR_SOFT_START_TIMER_PERIOD);
+            osTimerStart(g_dynamic_motor_lut[motor].soft_start_timer, MOTOR_SOFT_START_TIMER_MS);
         } else {
             if (!Motor_API_SetMotorSpeed(motor, g_dynamic_motor_lut[motor].new_speed, g_dynamic_motor_lut[motor].direction)) {
-                return false;
+                TRACE_ERR("SetSpeed: Failed to set motor speed for motor %d\n", motor);
+                
+                is_success = false;
+
+                continue;
             }
         }
 
         g_dynamic_motor_lut[motor].speed = g_dynamic_motor_lut[motor].new_speed;
     }
 
-    return true;
+    return is_success;
 }
 
 bool Motor_API_StopAllMotors (void) {
-    for (eMotor_t motor = (eMotor_First + 1); motor < eMotor_Last; motor++) {
+    bool is_success = true;
+    
+    for (eMotor_t motor = eMotor_First; motor < eMotor_Last; motor++) {
         if (!Motor_API_IsMotorEnabled(motor)) {
-            return false;
+            TRACE_WRN("StopAllMotors: Motor %d not enabled\n", motor);
+            
+            is_success = false;
+
+            continue;
         }
 
         g_dynamic_motor_lut[motor].speed = STOP_SPEED;
 
-        if (!Motor_Driver_SetSpeed(g_dynamic_motor_lut[motor].motor, g_static_motor_rotation_lut[motor].rotation[eMotorDirection_Forward], g_dynamic_motor_lut[motor].speed)) {
-            return false;
+        if (!Motor_Driver_SetSpeed(motor, g_static_motor_lut[motor].rotation[eMotorDirection_Forward], g_dynamic_motor_lut[motor].speed)) {
+            TRACE_ERR("StopAllMotors: Failed to stop motor %d\n", motor);
+            
+            is_success = false;
+
+            continue;
         }
     }
 
-    return true;
+    return is_success;
 }
 
 bool Motor_API_EnableAllMotors (void) {
-    for (eMotor_t motor = (eMotor_First + 1); motor < eMotor_Last; motor++) {
+    bool is_success = true;
+    
+    for (eMotor_t motor = eMotor_First; motor < eMotor_Last; motor++) {
         if (Motor_API_IsMotorEnabled(motor)) {
             continue;
         }
 
         if (!Motor_Driver_EnableMotor(motor)) {
-            return false;
+            TRACE_ERR("EnableAllMotors: Failed to enable motor %d\n", motor);
+            
+            is_success = false;
+            
+            continue;
         }
 
         g_dynamic_motor_lut[motor].is_enabled = true;
     }
 
-    return true;
+    return is_success;
 }
 
 bool Motor_API_DisableAllMotors (void) {
-    for (eMotor_t motor = (eMotor_First + 1); motor < eMotor_Last; motor++) {
+    bool is_success = true;
+    
+    for (eMotor_t motor = eMotor_First; motor < eMotor_Last; motor++) {
         if (!Motor_API_IsMotorEnabled(motor)) {
             continue;
         }
 
         if (!Motor_Driver_DisableMotor(motor)) {
-            return false;
+            TRACE_ERR("DisableAllMotors: Failed to disable motor %d\n", motor);
+            
+            is_success = false;
+
+            continue;
         }
 
         g_dynamic_motor_lut[motor].is_enabled = false;
     }
 
-    return true;
-}
-
-bool Motor_API_IsCorrectDirection (const eMotorDirection_t direction) {
-    return (direction >= eMotorDirection_First) && (direction < eMotorDirection_Last);
+    return is_success;
 }
 
 bool Motor_API_IsCorrectSpeed (const size_t speed) {
@@ -431,4 +435,4 @@ bool Motor_API_IsMotorEnabled (const eMotor_t motor) {
     return g_dynamic_motor_lut[motor].is_enabled;
 }
 
-#endif
+#endif /* ENABLE_MOTOR */

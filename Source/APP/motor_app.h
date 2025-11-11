@@ -4,10 +4,13 @@
  * Includes
  *********************************************************************************************************************/
 
+#include "framework_config.h"
+
+#ifdef ENABLE_MOTOR
 #include <stdbool.h>
 #include <stdint.h>
 #include "motor_api.h"
-#include "framework_config.h"
+#include "motor_config.h"
 
 /**********************************************************************************************************************
  * Exported definitions and macros
@@ -47,4 +50,5 @@ typedef struct sMotorSet {
 bool Motor_APP_Init (void);
 bool Motor_APP_Add_Task (sMotorCommandDesc_t *task_to_message_queue);
 
+#endif /* ENABLE_MOTOR */
 #endif /* SOURCE_APP_MOTOR_APP_H_ */

@@ -4,8 +4,7 @@
 
 #include "motor_driver.h"
 
-#ifdef USE_MOTOR
-
+#ifdef ENABLE_MOTOR
 #include "pwm_driver.h"
 #include "timer_driver.h"
 
@@ -16,68 +15,24 @@
 /**********************************************************************************************************************
  * Private typedef
  *********************************************************************************************************************/
- 
-typedef struct sMotorConstDesc {
-    eTimerDriver_t timer;
-    ePwmDevice_t fwd_channel;
-    ePwmDevice_t rev_channel;
-} sMotorConstDesc_t;
 
 typedef struct sMotorDynamic {
     bool is_enabled;
-    uint16_t max_speed;
-    uint16_t current_speed;
+    size_t max_speed;
+    size_t current_speed;
 } sMotorDynamic_t;
 
 /**********************************************************************************************************************
  * Private constants
  *********************************************************************************************************************/
 
-/* clang-format off */
-const static sMotorConstDesc_t g_static_motor_lut[eMotorDriver_Last] = {
-    #ifdef USE_MOTOR_A
-    [eMotorDriver_A] = {
-        .timer = eTimerDriver_TIM3,
-        .fwd_channel = ePwmDevice_MotorA_A2,
-        .rev_channel = ePwmDevice_MotorA_A1
-    },
-    #endif
-
-    #ifdef USE_MOTOR_B
-    [eMotorDriver_B] = {
-        .timer = eTimerDriver_TIM3,
-        .fwd_channel = ePwmDevice_MotorB_A2,
-        .rev_channel = ePwmDevice_MotorB_A1
-    }
-    #endif
-};
-/* clang-format on */
-
 /**********************************************************************************************************************
  * Private variables
  *********************************************************************************************************************/
 
 static bool g_is_all_motor_init = false;
-
-/* clang-format off */
-static sMotorDynamic_t g_dynamic_motor_lut[eMotorDriver_Last] = {
-    #ifdef USE_MOTOR_A
-    [eMotorDriver_A] = {
-        .is_enabled = false,
-        .max_speed = 0,
-        .current_speed = 0
-    },
-    #endif
-
-    #ifdef USE_MOTOR_B
-    [eMotorDriver_B] = {
-        .is_enabled = false,
-        .max_speed = 0,
-        .current_speed = 0
-    }
-    #endif
-};
-/* clang-format on */
+static sMotorDriverDesc_t g_motor_lut[eMotor_Last] = {0};
+static sMotorDynamic_t g_dynamic_motor_lut[eMotor_Last] = {0};
 
 /**********************************************************************************************************************
  * Exported variables and references
@@ -100,21 +55,31 @@ bool Motor_Driver_InitAllMotors (void) {
         return true;
     }
 
-    if (eMotorDriver_Last == 1) {
-        return false;
-    }
-
-    for (eMotorDriver_t motor = (eMotorDriver_First + 1); motor < eMotorDriver_Last; motor++) {
-        g_dynamic_motor_lut[motor].max_speed = Timer_Driver_GetResolution(g_static_motor_lut[motor].timer);
-    }
-
     g_is_all_motor_init = true;
+
+    for (eMotor_t motor = (eMotor_First + 1); motor < eMotor_Last; motor++) {
+        const sMotorDriverDesc_t *desc = Motor_Config_GetMotorDriverDesc(motor);
+
+        if (desc == NULL) {
+            g_is_all_motor_init = false;
+            return false;
+        }
+
+        g_motor_lut[motor] = *desc;
+        
+        g_dynamic_motor_lut[motor].current_speed = STOP_SPEED;
+        g_dynamic_motor_lut[motor].max_speed = Timer_Driver_GetResolution(g_motor_lut[motor].timer);
+    }
 
     return g_is_all_motor_init;
 }
 
-bool Motor_Driver_EnableMotor (const eMotorDriver_t motor) {
-    if ((motor <= eMotorDriver_First) || (motor >= eMotorDriver_Last)) {
+bool Motor_Driver_EnableMotor (const eMotor_t motor) {
+    if (!Motor_Config_IsCorrectMotor(motor)) {
+        return false;
+    }
+
+    if (!g_is_all_motor_init) {
         return false;
     }
 
@@ -122,11 +87,11 @@ bool Motor_Driver_EnableMotor (const eMotorDriver_t motor) {
         return true;
     }
 
-    if (!PWM_Driver_Enable_Device(g_static_motor_lut[motor].fwd_channel)) {
+    if (!PWM_Driver_Enable_Device(g_motor_lut[motor].fwd_channel)) {
         return false;
     }
 
-    if (!PWM_Driver_Enable_Device(g_static_motor_lut[motor].rev_channel)) {
+    if (!PWM_Driver_Enable_Device(g_motor_lut[motor].rev_channel)) {
         return false;
     }
 
@@ -135,8 +100,12 @@ bool Motor_Driver_EnableMotor (const eMotorDriver_t motor) {
     return g_dynamic_motor_lut[motor].is_enabled;
 }
 
-bool Motor_Driver_DisableMotor (const eMotorDriver_t motor) {
-    if ((motor <= eMotorDriver_First) || (motor >= eMotorDriver_Last)) {
+bool Motor_Driver_DisableMotor (const eMotor_t motor) {
+    if (!Motor_Config_IsCorrectMotor(motor)) {
+        return false;
+    }
+
+    if (!g_is_all_motor_init) {
         return false;
     }
 
@@ -144,11 +113,11 @@ bool Motor_Driver_DisableMotor (const eMotorDriver_t motor) {
         return true;
     }
 
-    if (!PWM_Driver_Disable_Device(g_static_motor_lut[motor].fwd_channel)) {
+    if (!PWM_Driver_Disable_Device(g_motor_lut[motor].fwd_channel)) {
         return false;
     }
 
-    if (!PWM_Driver_Disable_Device(g_static_motor_lut[motor].rev_channel)) {
+    if (!PWM_Driver_Disable_Device(g_motor_lut[motor].rev_channel)) {
         return false;
     }
 
@@ -157,8 +126,12 @@ bool Motor_Driver_DisableMotor (const eMotorDriver_t motor) {
     return g_dynamic_motor_lut[motor].is_enabled;
 }
 
-bool Motor_Driver_SetSpeed (const eMotorDriver_t motor, const eMotorRotation_t rotation_dir, const size_t speed) {
-    if ((motor <= eMotorDriver_First) || (motor >= eMotorDriver_Last)) {
+bool Motor_Driver_SetSpeed (const eMotor_t motor, const eMotorRotation_t rotation_dir, const size_t speed) {
+    if (!Motor_Config_IsCorrectMotor(motor)) {
+        return false;
+    }
+
+    if (!g_is_all_motor_init) {
         return false;
     }
 
@@ -176,20 +149,20 @@ bool Motor_Driver_SetSpeed (const eMotorDriver_t motor, const eMotorRotation_t r
 
     switch (rotation_dir) {
         case eMotorRotation_Forward: {
-            if (!PWM_Driver_Change_Duty_Cycle(g_static_motor_lut[motor].rev_channel, STOP_SPEED)) {
+            if (!PWM_Driver_Change_Duty_Cycle(g_motor_lut[motor].rev_channel, STOP_SPEED)) {
                 return false;
             }
             
-            if (!PWM_Driver_Change_Duty_Cycle(g_static_motor_lut[motor].fwd_channel, speed)) {
+            if (!PWM_Driver_Change_Duty_Cycle(g_motor_lut[motor].fwd_channel, speed)) {
                 return false;
             }
         } break;
         case eMotorRotation_Backward: {
-            if (!PWM_Driver_Change_Duty_Cycle(g_static_motor_lut[motor].fwd_channel, STOP_SPEED)) {
+            if (!PWM_Driver_Change_Duty_Cycle(g_motor_lut[motor].fwd_channel, STOP_SPEED)) {
                 return false;
             }
             
-            if (!PWM_Driver_Change_Duty_Cycle(g_static_motor_lut[motor].rev_channel, speed)) {
+            if (!PWM_Driver_Change_Duty_Cycle(g_motor_lut[motor].rev_channel, speed)) {
                 return false;
             }
         } break;
@@ -201,12 +174,16 @@ bool Motor_Driver_SetSpeed (const eMotorDriver_t motor, const eMotorRotation_t r
     return true;
 }
 
-bool Motor_Driver_GetMaxSpeed (const eMotorDriver_t motor, uint16_t *speed) {
-    if ((motor <= eMotorDriver_First) || (motor >= eMotorDriver_Last)) {
+bool Motor_Driver_GetMaxSpeed (const eMotor_t motor, size_t *speed) {
+    if (!Motor_Config_IsCorrectMotor(motor)) {
         return false;
     }
 
     if (speed == NULL) {
+        return false;
+    }
+
+    if (!g_is_all_motor_init) {
         return false;
     }
 
@@ -215,4 +192,4 @@ bool Motor_Driver_GetMaxSpeed (const eMotorDriver_t motor, uint16_t *speed) {
     return true;
 }
 
-#endif
+#endif /* ENABLE_MOTOR */
