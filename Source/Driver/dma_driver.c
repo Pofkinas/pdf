@@ -4,10 +4,7 @@
 
 #include "dma_driver.h"
 
-#ifdef USE_DMA
-
-#include "stm32f4xx_ll_dma.h"
-#include "stm32f4xx_ll_bus.h"
+#ifdef ENABLE_DMA
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -16,151 +13,27 @@
 /**********************************************************************************************************************
  * Private typedef
  *********************************************************************************************************************/
- 
-typedef struct sDmaStaticDesc {
-    DMA_TypeDef *dma;
-    void (*enable_clock_fp) (uint32_t);
-    uint32_t clock;
-    IRQn_Type nvic;
-    uint32_t channel;
-    uint32_t stream;
-    uint32_t data_direction;
-    uint32_t mode;
-    uint32_t periph_or_src_increment_mode;
-    uint32_t mem_or_dest_increment_mode;
-    uint32_t periph_or_src_size;
-    uint32_t mem_or_dest_size;
-    uint32_t priority_level;
-    void (*fifo_mode_fp) (DMA_TypeDef*, uint32_t);
-} sDmaStaticDesc_t;
 
 typedef struct sDmaDynamicDesc {
     bool is_init;
     uint32_t *periph_or_src_addr;
     uint32_t *mem_or_dest_addr;
-    void (*isr_callback) (void *isr_callback_context, const eDmaDriver_Flags_t);
+    void (*isr_callback) (void *isr_callback_context, const eDma_Flags_t);
     void *isr_callback_context;
 } sDmaDynamicDesc_t;
-
-typedef struct sDmaIsActiveFlags {
-    uint32_t (*is_active_tc_flag_fp) (DMA_TypeDef*);
-    uint32_t (*is_active_ht_flag_fp) (DMA_TypeDef*);
-    uint32_t (*is_active_te_flag_fp) (DMA_TypeDef*);
-} sDmaIsActiveFlags_t;
-
-typedef struct sDmaClearFlags {
-    void (*clear_tc_flag_fp) (DMA_TypeDef*);
-    void (*clear_ht_flag_fp) (DMA_TypeDef*);
-    void (*clear_te_flag_fp) (DMA_TypeDef*);
-} sDmaClearFlags_t;
 
 /**********************************************************************************************************************
  * Private constants
  *********************************************************************************************************************/
 
-/* clang-format off */
-const static sDmaStaticDesc_t g_static_dma_desc_lut[eDmaDriver_Last] = {
-    #ifdef USE_WS2812B_1
-    [eDmaDriver_Ws2812b_1] = {
-        .dma = DMA1,
-        .enable_clock_fp = LL_AHB1_GRP1_EnableClock,
-        .clock = LL_AHB1_GRP1_PERIPH_DMA1,
-        .nvic = DMA1_Stream4_IRQn,
-        .channel = LL_DMA_CHANNEL_6,
-        .stream = LL_DMA_STREAM_4,
-        .data_direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH,
-        .mode = LL_DMA_MODE_CIRCULAR,
-        .periph_or_src_increment_mode = LL_DMA_PERIPH_NOINCREMENT,
-        .mem_or_dest_increment_mode = LL_DMA_MEMORY_INCREMENT,
-        .periph_or_src_size = LL_DMA_PDATAALIGN_WORD,
-        .mem_or_dest_size = LL_DMA_MDATAALIGN_WORD,
-        .priority_level = LL_DMA_PRIORITY_MEDIUM,
-        .fifo_mode_fp = LL_DMA_DisableFifoMode,
-    },
-    #endif
-
-    #ifdef USE_WS2812B_2
-    [eDmaDriver_Ws2812b_2] = {
-        .dma = DMA1,
-        .enable_clock_fp = LL_AHB1_GRP1_EnableClock,
-        .clock = LL_AHB1_GRP1_PERIPH_DMA1,
-        .nvic = DMA1_Stream2_IRQn,
-        .channel = LL_DMA_CHANNEL_6,
-        .stream = LL_DMA_STREAM_2,
-        .data_direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH,
-        .mode = LL_DMA_MODE_CIRCULAR,
-        .periph_or_src_increment_mode = LL_DMA_PERIPH_NOINCREMENT,
-        .mem_or_dest_increment_mode = LL_DMA_MEMORY_INCREMENT,
-        .periph_or_src_size = LL_DMA_PDATAALIGN_WORD,
-        .mem_or_dest_size = LL_DMA_MDATAALIGN_WORD,
-        .priority_level = LL_DMA_PRIORITY_MEDIUM,
-        .fifo_mode_fp = LL_DMA_DisableFifoMode,
-    },
-    #endif
-};
-
-static sDmaIsActiveFlags_t g_dma_is_active_flags_fp_lut[eDmaDriver_Last] = {
-    #ifdef USE_WS2812B_1
-    [eDmaDriver_Ws2812b_1] = {
-        .is_active_tc_flag_fp = LL_DMA_IsActiveFlag_TC4,
-        .is_active_ht_flag_fp = LL_DMA_IsActiveFlag_HT4,
-        .is_active_te_flag_fp = LL_DMA_IsActiveFlag_TE4
-    },
-    #endif
-
-    #ifdef USE_WS2812B_2
-    [eDmaDriver_Ws2812b_2] = {
-        .is_active_tc_flag_fp = LL_DMA_IsActiveFlag_TC2,
-        .is_active_ht_flag_fp = LL_DMA_IsActiveFlag_HT2,
-        .is_active_te_flag_fp = LL_DMA_IsActiveFlag_TE2
-    },
-    #endif
-};
-
-const static sDmaClearFlags_t g_dma_clear_flags_fp_lut[eDmaDriver_Last] = {
-    #ifdef USE_WS2812B_1
-    [eDmaDriver_Ws2812b_1] = {
-        .clear_tc_flag_fp = LL_DMA_ClearFlag_TC4,
-        .clear_ht_flag_fp = LL_DMA_ClearFlag_HT4,
-        .clear_te_flag_fp = LL_DMA_ClearFlag_TE4
-    },
-    #endif
-
-    #ifdef USE_WS2812B_2
-    [eDmaDriver_Ws2812b_2] = {
-        .clear_tc_flag_fp = LL_DMA_ClearFlag_TC2,
-        .clear_ht_flag_fp = LL_DMA_ClearFlag_HT2,
-        .clear_te_flag_fp = LL_DMA_ClearFlag_TE2
-    },
-    #endif
-};
-/* clang-format on */
-
 /**********************************************************************************************************************
  * Private variables
  *********************************************************************************************************************/
 
-/* clang-format off */
-static sDmaDynamicDesc_t g_dynamic_dma_lut[eDmaDriver_Last] = {
-    #ifdef USE_WS2812B_1
-    [eDmaDriver_Ws2812b_1] = {
-        .is_init = false,
-        .periph_or_src_addr = NULL,
-        .mem_or_dest_addr = NULL,
-        .isr_callback = NULL
-    },
-    #endif
-
-    #ifdef USE_WS2812B_2
-    [eDmaDriver_Ws2812b_2] = {
-        .is_init = false,
-        .periph_or_src_addr = NULL,
-        .mem_or_dest_addr = NULL,
-        .isr_callback = NULL
-    },
-    #endif
-};
-/* clang-format on */
+static sDmaDesc_t g_dma_desc_lut[eDma_Last] = {0};
+static sDmaIsActiveFlags_t g_dma_is_active_flags_fp_lut[eDma_Last] = {0};
+static sDmaClearFlags_t g_dma_clear_flags_fp_lut[eDma_Last] = {0};
+static sDmaDynamicDesc_t g_dynamic_dma_lut[eDma_Last] = {0};
 
 /**********************************************************************************************************************
  * Exported variables and references
@@ -170,16 +43,39 @@ static sDmaDynamicDesc_t g_dynamic_dma_lut[eDmaDriver_Last] = {
  * Prototypes of private functions
  *********************************************************************************************************************/
 
-static void DMAx_Streamx_ISRHandler(const eDmaDriver_t stream, const eDmaDriver_Flags_t flag);
+static bool DMA_Driver_IsCorrectFlag (const eDma_Flags_t flag);
+static void DMAx_Streamx_ISRHandler(const eDma_t stream, const eDma_Flags_t flag);
+void DMA1_Stream0_IRQHandler(void);
+void DMA1_Stream1_IRQHandler(void);
 void DMA1_Stream2_IRQHandler(void);
+void DMA1_Stream3_IRQHandler(void);
 void DMA1_Stream4_IRQHandler(void);
+void DMA1_Stream5_IRQHandler(void);
+void DMA1_Stream6_IRQHandler(void);
+void DMA1_Stream7_IRQHandler(void);
+void DMA2_Stream0_IRQHandler(void);
+void DMA2_Stream1_IRQHandler(void);
+void DMA2_Stream2_IRQHandler(void);
+void DMA2_Stream3_IRQHandler(void);
+void DMA2_Stream4_IRQHandler(void);
+void DMA2_Stream5_IRQHandler(void);
+void DMA2_Stream6_IRQHandler(void);
+void DMA2_Stream7_IRQHandler(void);
 
 /**********************************************************************************************************************
  * Definitions of private functions
  *********************************************************************************************************************/
 
-static void DMAx_Streamx_ISRHandler(const eDmaDriver_t stream, const eDmaDriver_Flags_t flag) {
-    if ((stream <= eDmaDriver_First) || (stream >= eDmaDriver_Last)) {
+static bool DMA_Driver_IsCorrectFlag (const eDma_Flags_t flag) {
+    return (flag >= eDma_Flags_First) && (flag < eDma_Flags_Last);
+}
+
+static void DMAx_Streamx_ISRHandler(const eDma_t stream, const eDma_Flags_t flag) {
+    if (!DMA_Config_IsCorrectDma(stream)) {
+        return;
+    }
+
+    if (!DMA_Driver_IsCorrectFlag(flag)) {
         return;
     }
 
@@ -198,38 +94,290 @@ static void DMAx_Streamx_ISRHandler(const eDmaDriver_t stream, const eDmaDriver_
     return;
 }
 
+void DMA1_Stream0_IRQHandler(void) {
+    #ifdef DMA_1_STREAM_0
+    if (LL_DMA_IsActiveFlag_TC0(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_0, eDma_Flags_TC);
+    }
+
+    if (LL_DMA_IsActiveFlag_HT0(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_0, eDma_Flags_HT);
+    }
+
+    if (LL_DMA_IsActiveFlag_TE0(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_0, eDma_Flags_TE);
+    }
+    #endif /* DMA_1_STREAM_0 */
+
+    return;
+}
+
+void DMA1_Stream1_IRQHandler(void) {
+    #ifdef DMA_1_STREAM_1
+    if (LL_DMA_IsActiveFlag_TC1(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_1, eDma_Flags_TC);
+    }
+
+    if (LL_DMA_IsActiveFlag_HT1(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_1, eDma_Flags_HT);
+    }
+
+    if (LL_DMA_IsActiveFlag_TE1(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_1, eDma_Flags_TE);
+    }
+    #endif /* DMA_1_STREAM_1 */
+
+    return;
+}
+
 void DMA1_Stream2_IRQHandler(void) {
-    #ifdef USE_WS2812B_2
+    #ifdef DMA_1_STREAM_2
     if (LL_DMA_IsActiveFlag_TC2(DMA1)) {
-        DMAx_Streamx_ISRHandler(eDmaDriver_Ws2812b_2, eDmaDriver_Flags_TC);
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_2, eDma_Flags_TC);
     }
 
     if (LL_DMA_IsActiveFlag_HT2(DMA1)) {
-        DMAx_Streamx_ISRHandler(eDmaDriver_Ws2812b_2, eDmaDriver_Flags_HT);
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_2, eDma_Flags_HT);
     }
 
     if (LL_DMA_IsActiveFlag_TE2(DMA1)) {
-        DMAx_Streamx_ISRHandler(eDmaDriver_Ws2812b_2, eDmaDriver_Flags_TE);
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_2, eDma_Flags_TE);
     }
-    #endif
+    #endif /* DMA_1_STREAM_2 */
+
+    return;
+}
+
+void DMA1_Stream3_IRQHandler(void) {
+    #ifdef DMA_1_STREAM_3
+    if (LL_DMA_IsActiveFlag_TC3(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_3, eDma_Flags_TC);
+    }
+
+    if (LL_DMA_IsActiveFlag_HT3(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_3, eDma_Flags_HT);
+    }
+
+    if (LL_DMA_IsActiveFlag_TE3(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_3, eDma_Flags_TE);
+    }
+    #endif /* DMA_1_STREAM_3 */
 
     return;
 }
 
 void DMA1_Stream4_IRQHandler(void) {
-    #ifdef USE_WS2812B_1
+    #ifdef DMA_1_STREAM_4
     if (LL_DMA_IsActiveFlag_TC4(DMA1)) {
-        DMAx_Streamx_ISRHandler(eDmaDriver_Ws2812b_1, eDmaDriver_Flags_TC);
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_4, eDma_Flags_TC);
     }
 
     if (LL_DMA_IsActiveFlag_HT4(DMA1)) {
-        DMAx_Streamx_ISRHandler(eDmaDriver_Ws2812b_1, eDmaDriver_Flags_HT);
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_4, eDma_Flags_HT);
     }
 
     if (LL_DMA_IsActiveFlag_TE4(DMA1)) {
-        DMAx_Streamx_ISRHandler(eDmaDriver_Ws2812b_1, eDmaDriver_Flags_TE);
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_4, eDma_Flags_TE);
     }
-    #endif
+    #endif /* DMA_1_STREAM_4 */
+
+    return;
+}
+
+void DMA1_Stream5_IRQHandler(void) {
+    #ifdef DMA_1_STREAM_5
+    if (LL_DMA_IsActiveFlag_TC5(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_5, eDma_Flags_TC);
+    }
+
+    if (LL_DMA_IsActiveFlag_HT5(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_5, eDma_Flags_HT);
+    }
+
+    if (LL_DMA_IsActiveFlag_TE5(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_5, eDma_Flags_TE);
+    }
+    #endif /* DMA_1_STREAM_5 */
+
+    return;
+}
+
+void DMA1_Stream6_IRQHandler(void) {
+    #ifdef DMA_1_STREAM_6
+    if (LL_DMA_IsActiveFlag_TC6(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_6, eDma_Flags_TC);
+    }
+
+    if (LL_DMA_IsActiveFlag_HT6(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_6, eDma_Flags_HT);
+    }
+
+    if (LL_DMA_IsActiveFlag_TE6(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_6, eDma_Flags_TE);
+    }
+    #endif /* DMA_1_STREAM_6 */
+
+    return;
+}
+
+void DMA1_Stream7_IRQHandler(void) {
+    #ifdef DMA_1_STREAM_7
+    if (LL_DMA_IsActiveFlag_TC7(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_7, eDma_Flags_TC);
+    }
+
+    if (LL_DMA_IsActiveFlag_HT7(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_7, eDma_Flags_HT);
+    }
+
+    if (LL_DMA_IsActiveFlag_TE7(DMA1)) {
+        DMAx_Streamx_ISRHandler(DMA_1_STREAM_7, eDma_Flags_TE);
+    }
+    #endif /* DMA_1_STREAM_7 */
+
+    return;
+}
+
+void DMA2_Stream0_IRQHandler(void) {
+    #ifdef DMA_2_STREAM_0
+    if (LL_DMA_IsActiveFlag_TC0(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_0, eDma_Flags_TC);
+    }
+
+    if (LL_DMA_IsActiveFlag_HT0(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_0, eDma_Flags_HT);
+    }
+
+    if (LL_DMA_IsActiveFlag_TE0(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_0, eDma_Flags_TE);
+    }
+    #endif /* DMA_2_STREAM_0 */
+
+    return;
+}
+
+void DMA2_Stream1_IRQHandler(void) {
+    #ifdef DMA_2_STREAM_1
+    if (LL_DMA_IsActiveFlag_TC1(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_1, eDma_Flags_TC);
+    }
+
+    if (LL_DMA_IsActiveFlag_HT1(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_1, eDma_Flags_HT);
+    }
+
+    if (LL_DMA_IsActiveFlag_TE1(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_1, eDma_Flags_TE);
+    }
+    #endif /* DMA_2_STREAM_1 */
+
+    return;
+}
+
+void DMA2_Stream2_IRQHandler(void) {
+    #ifdef DMA_2_STREAM_2
+    if (LL_DMA_IsActiveFlag_TC2(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_2, eDma_Flags_TC);
+    }
+
+    if (LL_DMA_IsActiveFlag_HT2(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_2, eDma_Flags_HT);
+    }
+
+    if (LL_DMA_IsActiveFlag_TE2(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_2, eDma_Flags_TE);
+    }
+    #endif /* DMA_2_STREAM_2 */
+
+    return;
+}
+
+void DMA2_Stream3_IRQHandler(void) {
+    #ifdef DMA_2_STREAM_3
+    if (LL_DMA_IsActiveFlag_TC3(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_3, eDma_Flags_TC);
+    }
+
+    if (LL_DMA_IsActiveFlag_HT3(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_3, eDma_Flags_HT);
+    }
+
+    if (LL_DMA_IsActiveFlag_TE3(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_3, eDma_Flags_TE);
+    }
+    #endif /* DMA_2_STREAM_3 */
+
+    return;
+}
+
+void DMA2_Stream4_IRQHandler(void) {
+    #ifdef DMA_2_STREAM_4
+    if (LL_DMA_IsActiveFlag_TC4(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_4, eDma_Flags_TC);
+    }
+
+    if (LL_DMA_IsActiveFlag_HT4(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_4, eDma_Flags_HT);
+    }
+
+    if (LL_DMA_IsActiveFlag_TE4(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_4, eDma_Flags_TE);
+    }
+    #endif /* DMA_2_STREAM_4 */
+
+    return;
+}
+
+void DMA2_Stream5_IRQHandler(void) {
+    #ifdef DMA_2_STREAM_5
+    if (LL_DMA_IsActiveFlag_TC5(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_5, eDma_Flags_TC);
+    }
+
+    if (LL_DMA_IsActiveFlag_HT5(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_5, eDma_Flags_HT);
+    }
+
+    if (LL_DMA_IsActiveFlag_TE5(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_5, eDma_Flags_TE);
+    }
+    #endif /* DMA_2_STREAM_5 */
+
+    return;
+}
+
+void DMA2_Stream6_IRQHandler(void) {
+    #ifdef DMA_2_STREAM_6
+    if (LL_DMA_IsActiveFlag_TC6(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_6, eDma_Flags_TC);
+    }
+
+    if (LL_DMA_IsActiveFlag_HT6(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_6, eDma_Flags_HT);
+    }
+
+    if (LL_DMA_IsActiveFlag_TE6(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_6, eDma_Flags_TE);
+    }
+    #endif /* DMA_2_STREAM_6 */
+
+    return;
+}
+
+void DMA2_Stream7_IRQHandler(void) {
+    #ifdef DMA_2_STREAM_7
+    if (LL_DMA_IsActiveFlag_TC7(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_7, eDma_Flags_TC);
+    }
+
+    if (LL_DMA_IsActiveFlag_HT7(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_7, eDma_Flags_HT);
+    }
+
+    if (LL_DMA_IsActiveFlag_TE7(DMA2)) {
+        DMAx_Streamx_ISRHandler(DMA_2_STREAM_7, eDma_Flags_TE);
+    }
+    #endif /* DMA_2_STREAM_7 */
 
     return;
 }
@@ -238,12 +386,12 @@ void DMA1_Stream4_IRQHandler(void) {
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-bool DMA_Driver_Init(sDmaInit_t *data) {
+bool DMA_Driver_Init (sDmaInit_t *data) {
     if (data == NULL) {
         return false;
     }
 
-    if ((data->stream <= eDmaDriver_First) || (data->stream >= eDmaDriver_Last)) {
+    if (!DMA_Config_IsCorrectDma(data->stream)) {
         return false;
     }
 
@@ -251,43 +399,55 @@ bool DMA_Driver_Init(sDmaInit_t *data) {
         return true;
     }
 
-    g_static_dma_desc_lut[data->stream].enable_clock_fp(g_static_dma_desc_lut[data->stream].clock);
+    const sDmaDesc_t *desc = DMA_Config_GetDmaDesc(data->stream);
+    const sDmaIsActiveFlags_t *is_active_flags_fp = DMA_Config_GetDmaIsActiveFlagsFp(data->stream);
+    const sDmaClearFlags_t *clear_flags_fp = DMA_Config_GetDmaClearFlagsFp(data->stream);
+
+    if ((desc == NULL) || (is_active_flags_fp == NULL) || (clear_flags_fp == NULL)) {
+        return false;
+    }
+
+    g_dma_desc_lut[data->stream] = *desc;
+    g_dma_is_active_flags_fp_lut[data->stream] = *is_active_flags_fp;
+    g_dma_clear_flags_fp_lut[data->stream] = *clear_flags_fp;
+
+    g_dma_desc_lut[data->stream].enable_clock_fp(g_dma_desc_lut[data->stream].clock);
     
     LL_DMA_InitTypeDef dma_init_struct = {0};
 
     dma_init_struct.PeriphOrM2MSrcAddress = (uint32_t) data->periph_or_src_addr;
     dma_init_struct.MemoryOrM2MDstAddress = (uint32_t) data->mem_or_dest_addr;
-    dma_init_struct.Direction = g_static_dma_desc_lut[data->stream].data_direction;
-    dma_init_struct.Mode = g_static_dma_desc_lut[data->stream].mode;
-    dma_init_struct.PeriphOrM2MSrcIncMode = g_static_dma_desc_lut[data->stream].periph_or_src_increment_mode;
-    dma_init_struct.MemoryOrM2MDstIncMode = g_static_dma_desc_lut[data->stream].mem_or_dest_increment_mode;
-    dma_init_struct.PeriphOrM2MSrcDataSize = g_static_dma_desc_lut[data->stream].periph_or_src_size;
-    dma_init_struct.MemoryOrM2MDstDataSize = g_static_dma_desc_lut[data->stream].mem_or_dest_size;
+    dma_init_struct.Direction = g_dma_desc_lut[data->stream].data_direction;
+    dma_init_struct.Mode = g_dma_desc_lut[data->stream].mode;
+    dma_init_struct.PeriphOrM2MSrcIncMode = g_dma_desc_lut[data->stream].periph_or_src_increment_mode;
+    dma_init_struct.MemoryOrM2MDstIncMode = g_dma_desc_lut[data->stream].mem_or_dest_increment_mode;
+    dma_init_struct.PeriphOrM2MSrcDataSize = g_dma_desc_lut[data->stream].periph_or_src_size;
+    dma_init_struct.MemoryOrM2MDstDataSize = g_dma_desc_lut[data->stream].mem_or_dest_size;
     dma_init_struct.NbData = data->data_buffer_size;
-    dma_init_struct.Channel = g_static_dma_desc_lut[data->stream].channel;
-    dma_init_struct.Priority = g_static_dma_desc_lut[data->stream].priority_level;
+    dma_init_struct.Channel = g_dma_desc_lut[data->stream].channel;
+    dma_init_struct.Priority = g_dma_desc_lut[data->stream].priority_level;
 
-    LL_DMA_DisableStream(g_static_dma_desc_lut[data->stream].dma, g_static_dma_desc_lut[data->stream].stream);
+    LL_DMA_DisableStream(g_dma_desc_lut[data->stream].dma, g_dma_desc_lut[data->stream].stream);
 
-    if (LL_DMA_Init(g_static_dma_desc_lut[data->stream].dma, g_static_dma_desc_lut[data->stream].stream, &dma_init_struct) == ERROR) {
+    if (LL_DMA_Init(g_dma_desc_lut[data->stream].dma, g_dma_desc_lut[data->stream].stream, &dma_init_struct) == ERROR) {
         return false;
     }
 
-    g_static_dma_desc_lut[data->stream].fifo_mode_fp(g_static_dma_desc_lut[data->stream].dma, g_static_dma_desc_lut[data->stream].stream);
+    g_dma_desc_lut[data->stream].fifo_mode_fp(g_dma_desc_lut[data->stream].dma, g_dma_desc_lut[data->stream].stream);
 
     if (data->isr_callback != NULL) {
         g_dynamic_dma_lut[data->stream].isr_callback = data->isr_callback;
         g_dynamic_dma_lut[data->stream].isr_callback_context = data->isr_callback_context;
         
-        NVIC_SetPriority(g_static_dma_desc_lut[data->stream].nvic, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 5, 0));
-        NVIC_EnableIRQ(g_static_dma_desc_lut[data->stream].nvic);
+        NVIC_SetPriority(g_dma_desc_lut[data->stream].nvic, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 5, 0));
+        NVIC_EnableIRQ(g_dma_desc_lut[data->stream].nvic);
         
-        LL_DMA_EnableIT_TC(g_static_dma_desc_lut[data->stream].dma, g_static_dma_desc_lut[data->stream].stream);
-        LL_DMA_EnableIT_HT(g_static_dma_desc_lut[data->stream].dma, g_static_dma_desc_lut[data->stream].stream);
-        LL_DMA_EnableIT_TE(g_static_dma_desc_lut[data->stream].dma, g_static_dma_desc_lut[data->stream].stream);
+        LL_DMA_EnableIT_TC(g_dma_desc_lut[data->stream].dma, g_dma_desc_lut[data->stream].stream);
+        LL_DMA_EnableIT_HT(g_dma_desc_lut[data->stream].dma, g_dma_desc_lut[data->stream].stream);
+        LL_DMA_EnableIT_TE(g_dma_desc_lut[data->stream].dma, g_dma_desc_lut[data->stream].stream);
     }
 
-    switch (g_static_dma_desc_lut[data->stream].data_direction) {
+    switch (g_dma_desc_lut[data->stream].data_direction) {
         case LL_DMA_DIRECTION_MEMORY_TO_PERIPH: {
             g_dynamic_dma_lut[data->stream].periph_or_src_addr = data->mem_or_dest_addr;
             g_dynamic_dma_lut[data->stream].mem_or_dest_addr = data->periph_or_src_addr;
@@ -306,8 +466,8 @@ bool DMA_Driver_Init(sDmaInit_t *data) {
     return true;
 }
 
-bool DMA_Driver_ConfigureStream (const eDmaDriver_t stream, uint32_t *src_address, uint32_t *dst_address, const size_t size) {
-    if ((stream <= eDmaDriver_First) || (stream >= eDmaDriver_Last)) {
+bool DMA_Driver_ConfigureStream (const eDma_t stream, uint32_t *src_address, uint32_t *dst_address, const size_t size) {
+    if (!DMA_Config_IsCorrectDma(stream)) {
         return false;
     }
 
@@ -327,21 +487,21 @@ bool DMA_Driver_ConfigureStream (const eDmaDriver_t stream, uint32_t *src_addres
         return false;
     }
 
-    if (LL_DMA_IsEnabledStream(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream)) { 
+    if (LL_DMA_IsEnabledStream(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream)) { 
         DMA_Driver_DisableStream(stream);
     }
 
-    while (LL_DMA_IsEnabledStream(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream)) {} 
+    while (LL_DMA_IsEnabledStream(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream)) {} 
 
-    LL_DMA_ConfigAddresses(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream, (uint32_t) g_dynamic_dma_lut[stream].periph_or_src_addr, (uint32_t) g_dynamic_dma_lut[stream].mem_or_dest_addr, g_static_dma_desc_lut[stream].data_direction);
-    LL_DMA_SetDataLength(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream, size);
-    LL_DMA_SetChannelSelection(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream, g_static_dma_desc_lut[stream].channel);
+    LL_DMA_ConfigAddresses(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream, (uint32_t) g_dynamic_dma_lut[stream].periph_or_src_addr, (uint32_t) g_dynamic_dma_lut[stream].mem_or_dest_addr, g_dma_desc_lut[stream].data_direction);
+    LL_DMA_SetDataLength(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream, size);
+    LL_DMA_SetChannelSelection(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream, g_dma_desc_lut[stream].channel);
 
     return true;
 }
 
-bool DMA_Driver_EnableStream(const eDmaDriver_t stream) {
-    if ((stream <= eDmaDriver_First) || (stream >= eDmaDriver_Last)) {
+bool DMA_Driver_EnableStream (const eDma_t stream) {
+    if (!DMA_Config_IsCorrectDma(stream)) {
         return false;
     }
 
@@ -349,13 +509,13 @@ bool DMA_Driver_EnableStream(const eDmaDriver_t stream) {
         return false;
     }
 
-    LL_DMA_EnableStream(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream);
+    LL_DMA_EnableStream(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream);
 
     return true;
 }
 
-bool DMA_Driver_DisableStream(const eDmaDriver_t stream) {
-    if ((stream <= eDmaDriver_First) || (stream >= eDmaDriver_Last)) {
+bool DMA_Driver_DisableStream (const eDma_t stream) {
+    if (!DMA_Config_IsCorrectDma(stream)) {
         return false;
     }
 
@@ -363,15 +523,19 @@ bool DMA_Driver_DisableStream(const eDmaDriver_t stream) {
         return false;
     }
 
-    LL_DMA_DisableStream(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream);
+    LL_DMA_DisableStream(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream);
 
-    while (LL_DMA_IsEnabledStream(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream)) {} 
+    while (LL_DMA_IsEnabledStream(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream)) {} 
 
     return true;
 }
 
-bool DMA_Driver_ClearFlag (const eDmaDriver_t stream, const eDmaDriver_Flags_t flag) {
-    if ((stream <= eDmaDriver_First) || (stream >= eDmaDriver_Last)) {
+bool DMA_Driver_ClearFlag (const eDma_t stream, const eDma_Flags_t flag) {
+    if (!DMA_Config_IsCorrectDma(stream)) {
+        return false;
+    }
+
+    if (!DMA_Driver_IsCorrectFlag(flag)) {
         return false;
     }
 
@@ -380,14 +544,14 @@ bool DMA_Driver_ClearFlag (const eDmaDriver_t stream, const eDmaDriver_Flags_t f
     }
 
     switch (flag) {
-        case eDmaDriver_Flags_TC: {
-            g_dma_clear_flags_fp_lut[stream].clear_tc_flag_fp(g_static_dma_desc_lut[stream].dma);
+        case eDma_Flags_TC: {
+            g_dma_clear_flags_fp_lut[stream].clear_tc_flag_fp(g_dma_desc_lut[stream].dma);
         } break;
-        case eDmaDriver_Flags_HT: {
-            g_dma_clear_flags_fp_lut[stream].clear_ht_flag_fp(g_static_dma_desc_lut[stream].dma);
+        case eDma_Flags_HT: {
+            g_dma_clear_flags_fp_lut[stream].clear_ht_flag_fp(g_dma_desc_lut[stream].dma);
         } break;
-        case eDmaDriver_Flags_TE: {
-            g_dma_clear_flags_fp_lut[stream].clear_te_flag_fp(g_static_dma_desc_lut[stream].dma);
+        case eDma_Flags_TE: {
+            g_dma_clear_flags_fp_lut[stream].clear_te_flag_fp(g_dma_desc_lut[stream].dma);
         } break;
         default: {
             return false;
@@ -397,8 +561,8 @@ bool DMA_Driver_ClearFlag (const eDmaDriver_t stream, const eDmaDriver_Flags_t f
     return true;
 }
 
-bool DMA_Driver_ClearAllFlags (const eDmaDriver_t stream) {
-    if ((stream <= eDmaDriver_First) || (stream >= eDmaDriver_Last)) {
+bool DMA_Driver_ClearAllFlags (const eDma_t stream) {
+    if (!DMA_Config_IsCorrectDma(stream)) {
         return false;
     }
 
@@ -406,27 +570,27 @@ bool DMA_Driver_ClearAllFlags (const eDmaDriver_t stream) {
         return false;
     }
 
-    if (g_dma_is_active_flags_fp_lut[stream].is_active_tc_flag_fp(g_static_dma_desc_lut[stream].dma)) {
-        g_dma_clear_flags_fp_lut[stream].clear_tc_flag_fp(g_static_dma_desc_lut[stream].dma);
+    if (g_dma_is_active_flags_fp_lut[stream].is_active_tc_flag_fp(g_dma_desc_lut[stream].dma)) {
+        g_dma_clear_flags_fp_lut[stream].clear_tc_flag_fp(g_dma_desc_lut[stream].dma);
     }
 
-    if (g_dma_is_active_flags_fp_lut[stream].is_active_ht_flag_fp(g_static_dma_desc_lut[stream].dma)) {
-        g_dma_clear_flags_fp_lut[stream].clear_ht_flag_fp(g_static_dma_desc_lut[stream].dma);
+    if (g_dma_is_active_flags_fp_lut[stream].is_active_ht_flag_fp(g_dma_desc_lut[stream].dma)) {
+        g_dma_clear_flags_fp_lut[stream].clear_ht_flag_fp(g_dma_desc_lut[stream].dma);
     }
 
-    if (g_dma_is_active_flags_fp_lut[stream].is_active_te_flag_fp(g_static_dma_desc_lut[stream].dma)) {
-        g_dma_clear_flags_fp_lut[stream].clear_te_flag_fp(g_static_dma_desc_lut[stream].dma);
+    if (g_dma_is_active_flags_fp_lut[stream].is_active_te_flag_fp(g_dma_desc_lut[stream].dma)) {
+        g_dma_clear_flags_fp_lut[stream].clear_te_flag_fp(g_dma_desc_lut[stream].dma);
     }
 
     return true;
 }
 
-bool DMA_Driver_EnableIt (const eDmaDriver_t stream, const eDmaDriver_Flags_t flag) {
-    if ((stream <= eDmaDriver_First) || (stream >= eDmaDriver_Last)) {
+bool DMA_Driver_EnableIt (const eDma_t stream, const eDma_Flags_t flag) {
+    if (!DMA_Config_IsCorrectDma(stream)) {
         return false;
     }
 
-    if ((flag < eDmaDriver_Flags_First) || (flag >= eDmaDriver_Flags_Last)) {
+    if (!DMA_Driver_IsCorrectFlag(flag)) {
         return false;
     }
 
@@ -435,14 +599,14 @@ bool DMA_Driver_EnableIt (const eDmaDriver_t stream, const eDmaDriver_Flags_t fl
     }
 
     switch (flag) {
-        case eDmaDriver_Flags_TC: {
-            LL_DMA_EnableIT_TC(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream);
+        case eDma_Flags_TC: {
+            LL_DMA_EnableIT_TC(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream);
         } break;
-        case eDmaDriver_Flags_HT: {
-            LL_DMA_EnableIT_HT(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream);
+        case eDma_Flags_HT: {
+            LL_DMA_EnableIT_HT(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream);
         } break;
-        case eDmaDriver_Flags_TE: {
-            LL_DMA_EnableIT_TE(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream);
+        case eDma_Flags_TE: {
+            LL_DMA_EnableIT_TE(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream);
         } break;
         default: {
             return false;
@@ -452,8 +616,8 @@ bool DMA_Driver_EnableIt (const eDmaDriver_t stream, const eDmaDriver_Flags_t fl
     return true;
 }
 
-bool DMA_Driver_EnableItAll (const eDmaDriver_t stream) {
-    if ((stream <= eDmaDriver_First) || (stream >= eDmaDriver_Last)) {
+bool DMA_Driver_EnableItAll (const eDma_t stream) {
+    if (!DMA_Config_IsCorrectDma(stream)) {
         return false;
     }
 
@@ -461,19 +625,19 @@ bool DMA_Driver_EnableItAll (const eDmaDriver_t stream) {
         return false;
     }
 
-    LL_DMA_EnableIT_TC(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream);
-    LL_DMA_EnableIT_HT(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream);
-    LL_DMA_EnableIT_TE(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream);
+    LL_DMA_EnableIT_TC(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream);
+    LL_DMA_EnableIT_HT(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream);
+    LL_DMA_EnableIT_TE(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream);
 
     return true;
 }
 
-bool DMA_Driver_DisableIt (const eDmaDriver_t stream, const eDmaDriver_Flags_t flag) {
-    if ((stream <= eDmaDriver_First) || (stream >= eDmaDriver_Last)) {
+bool DMA_Driver_DisableIt (const eDma_t stream, const eDma_Flags_t flag) {
+    if (!DMA_Config_IsCorrectDma(stream)) {
         return false;
     }
 
-    if ((flag < eDmaDriver_Flags_First) || (flag >= eDmaDriver_Flags_Last)) {
+    if (!DMA_Driver_IsCorrectFlag(flag)) {
         return false;
     }
 
@@ -482,14 +646,14 @@ bool DMA_Driver_DisableIt (const eDmaDriver_t stream, const eDmaDriver_Flags_t f
     }
 
     switch (flag) {
-        case eDmaDriver_Flags_TC: {
-            LL_DMA_DisableIT_TC(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream);
+        case eDma_Flags_TC: {
+            LL_DMA_DisableIT_TC(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream);
         } break;
-        case eDmaDriver_Flags_HT: {
-            LL_DMA_DisableIT_HT(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream);
+        case eDma_Flags_HT: {
+            LL_DMA_DisableIT_HT(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream);
         } break;
-        case eDmaDriver_Flags_TE: {
-            LL_DMA_DisableIT_TE(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream);
+        case eDma_Flags_TE: {
+            LL_DMA_DisableIT_TE(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream);
         } break;
         default: {
             return false;
@@ -499,8 +663,8 @@ bool DMA_Driver_DisableIt (const eDmaDriver_t stream, const eDmaDriver_Flags_t f
     return true;
 }
 
-bool DMA_Driver_DisableItAll (const eDmaDriver_t stream) {
-    if ((stream <= eDmaDriver_First) || (stream >= eDmaDriver_Last)) {
+bool DMA_Driver_DisableItAll (const eDma_t stream) {
+    if (!DMA_Config_IsCorrectDma(stream)) {
         return false;
     }
 
@@ -508,11 +672,11 @@ bool DMA_Driver_DisableItAll (const eDmaDriver_t stream) {
         return false;
     }
 
-    LL_DMA_DisableIT_TC(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream);
-    LL_DMA_DisableIT_HT(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream);
-    LL_DMA_DisableIT_TE(g_static_dma_desc_lut[stream].dma, g_static_dma_desc_lut[stream].stream);
+    LL_DMA_DisableIT_TC(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream);
+    LL_DMA_DisableIT_HT(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream);
+    LL_DMA_DisableIT_TE(g_dma_desc_lut[stream].dma, g_dma_desc_lut[stream].stream);
 
     return true;
 }
 
-#endif
+#endif /* ENABLE_DMA */
