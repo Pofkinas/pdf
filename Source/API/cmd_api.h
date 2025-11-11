@@ -4,10 +4,13 @@
  * Includes
  *********************************************************************************************************************/
 
+#include "framework_config.h"
+
+#ifdef ENABLE_CLI
 #include <stdbool.h>
 #include <stddef.h>
+#include "error_messages.h"
 #include "message.h"
-#include "framework_config.h"
 
 /**********************************************************************************************************************
  * Exported definitions and macros
@@ -17,13 +20,11 @@
  * Exported types
  *********************************************************************************************************************/
 
-/* clang-format off */
 typedef struct sCmdDesc {
     char *command;
-    size_t command_lenght;
-    bool (*handler)(sMessage_t arguments, sMessage_t *response);
+    size_t command_length;
+    eErrorCode_t (*handler)(sMessage_t arguments, sMessage_t *response);
 } sCmdDesc_t;
-/* clang-format on */
 
 /**********************************************************************************************************************
  * Exported variables
@@ -33,6 +34,7 @@ typedef struct sCmdDesc {
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
-bool CMD_API_FindCommand (sMessage_t command, sMessage_t *response, sCmdDesc_t *command_lut, const size_t command_lut_size);
+eErrorCode_t CMD_API_FindCommand (sMessage_t command, sMessage_t *response, sCmdDesc_t *command_lut, const size_t command_lut_size);
 
+#endif /* ENABLE_CLI */
 #endif /* SOURCE_API_CMD_API_H_ */
