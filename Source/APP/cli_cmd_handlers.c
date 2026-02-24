@@ -16,6 +16,7 @@
 #include "led_api.h"
 #include "motor_api.h"
 #include "debug_api.h"
+#include "led_config.h"
 #include "colour.h"
 
 /**********************************************************************************************************************
@@ -746,11 +747,11 @@ eErrorCode_t CLI_APP_Led_Handlers_RgbToHsv (sMessage_t arguments, sMessage_t *re
         return eErrorCode_INVAL;
     }
 
-    sLedColorRgb_t rgb = {0};
-    sLedColorHsv_t hsv = {0};
-    rgb.color = (red << 16) | (green << 8) | blue;
+    ColourRgb_t rgb = 0;
+    sColourHsv_t hsv = {0};
+    rgb = (red << 16) | (green << 8) | blue;
 
-    LED_RgbToHsv(rgb, &hsv);
+    Colour_RgbToHsv(rgb, &hsv);
 
     TRACE_INFO("hue: %d, sat: %d, val: %d\n", hsv.hue, hsv.saturation, hsv.value);
 
@@ -802,21 +803,21 @@ eErrorCode_t CLI_APP_Led_Handlers_HsvToRgb (sMessage_t arguments, sMessage_t *re
     }
 
     if ((hue > 255) || (saturation > 255) || (value > 255)) {
-        snprintf(response->data, response->size, "Invalid RGB values\n");
+        snprintf(response->data, response->size, "Invalid HSV values\n");
 
         return eErrorCode_INVAL;
     }
 
-    sLedColorHsv_t hsv = {0};
-    sLedColorRgb_t rgb = {0};
+    sColourHsv_t hsv = {0};
+    ColourRgb_t rgb = 0;
 
     hsv.hue = hue;
     hsv.saturation = saturation;
     hsv.value = value;
 
-    LED_HsvToRgb(hsv, &rgb);
+    Colour_HsvToRgb(hsv, &rgb);
 
-    TRACE_INFO("red: %d, green: %d, blue: %d\n", (rgb.color >> 16) & 0xFF, (rgb.color >> 8) & 0xFF, rgb.color & 0xFF);
+    TRACE_INFO("red: %d, green: %d, blue: %d\n", (rgb>> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
     
     snprintf(response->data, response->size, "Operation successful\n");
 

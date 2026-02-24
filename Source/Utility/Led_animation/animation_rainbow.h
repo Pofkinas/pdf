@@ -6,12 +6,11 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_LED_ANIMATION
+#if defined(ENABLE_LED_ANIMATION)
 #include <stdint.h>
 #include <stddef.h>
-#include "ws2812b_config.h"
 #include "ws2812b_api.h"
-#include "led_color.h"
+#include "colour.h"
 
 /**********************************************************************************************************************
  * Exported definitions and macros

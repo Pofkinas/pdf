@@ -4,7 +4,7 @@
 
 #include "animation_rainbow.h"
 
-#ifdef ENABLE_LED_ANIMATION
+#if defined(ENABLE_LED_ANIMATION)
 #include <stdlib.h>
 
 /**********************************************************************************************************************
@@ -66,8 +66,7 @@ void Animation_Rainbow_FillBuffer (sLedRainbow_t *context) {
                 return;
             }
 
-            context->hue_offset = rainbow_data->start_hsv_color.hue;
-
+            context->hue_offset = rainbow_data->start_hsv_colour.hue;
             context->frame_counter = 0;
 
             context->state = eRainbowState_Run;
@@ -79,12 +78,12 @@ void Animation_Rainbow_FillBuffer (sLedRainbow_t *context) {
                 return;
             }
             
-            sLedColorHsv_t hsv = {
-                .saturation = rainbow_data->start_hsv_color.saturation,
-                .value = rainbow_data->start_hsv_color.value
+            sColourHsv_t hsv = {
+                .saturation = rainbow_data->start_hsv_colour.saturation,
+                .value = rainbow_data->start_hsv_colour.value
             };
 
-            sLedColorRgb_t rgb = {0};
+            ColourRgb_t rgb = {0};
 
             uint8_t red;
             uint8_t green;
@@ -93,14 +92,14 @@ void Animation_Rainbow_FillBuffer (sLedRainbow_t *context) {
             if (rainbow_data->hue_step == 0) {
                 hsv.hue = context->hue_offset;
 
-                LED_HsvToRgb(hsv, &rgb);
+                Colour_HsvToRgb(hsv, &rgb);
 
-                red = LED_ScaleBrightness(((rgb.color >> 16) & 0xFF), context->brightness);
-                green = LED_ScaleBrightness(((rgb.color >> 8) & 0xFF), context->brightness);
-                blue = LED_ScaleBrightness((rgb.color & 0xFF), context->brightness);
+                red = Colour_ScaleBrightness(((rgb >> 16) & 0xFF), context->brightness);
+                green = Colour_ScaleBrightness(((rgb >> 8) & 0xFF), context->brightness);
+                blue = Colour_ScaleBrightness((rgb & 0xFF), context->brightness);
                 
                 for (size_t led = rainbow_data->segment_start_led; led <= rainbow_data->segment_end_led; led++) {
-                    if (!WS2812B_API_SetColor(context->device, led, red, green, blue)) {
+                    if (!WS2812B_API_SetColour(context->device, led, red, green, blue)) {
                         context->state = eRainbowState_Init;
                         
                         return;
@@ -110,13 +109,13 @@ void Animation_Rainbow_FillBuffer (sLedRainbow_t *context) {
                 for (size_t led = rainbow_data->segment_start_led; led <= rainbow_data->segment_end_led; led++) {
                     hsv.hue = context->hue_offset + led * rainbow_data->hue_step;
 
-                    LED_HsvToRgb(hsv, &rgb);
+                    Colour_HsvToRgb(hsv, &rgb);
 
-                    red = LED_ScaleBrightness(((rgb.color >> 16) & 0xFF), context->brightness);
-                    green = LED_ScaleBrightness(((rgb.color >> 8) & 0xFF), context->brightness);
-                    blue = LED_ScaleBrightness((rgb.color & 0xFF), context->brightness);
+                    red = Colour_ScaleBrightness(((rgb >> 16) & 0xFF), context->brightness);
+                    green = Colour_ScaleBrightness(((rgb >> 8) & 0xFF), context->brightness);
+                    blue = Colour_ScaleBrightness((rgb & 0xFF), context->brightness);
 
-                    if (!WS2812B_API_SetColor(context->device, led, red, green, blue)) {
+                    if (!WS2812B_API_SetColour(context->device, led, red, green, blue)) {
                         context->state = eRainbowState_Init;
 
                         return;

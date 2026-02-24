@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "ws2812b_config.h"
-#include "led_color.h"
+#include "colour.h"
 
 /**********************************************************************************************************************
  * Exported definitions and macros
@@ -23,7 +23,7 @@
 
 typedef enum eLedAnimation {
     eLedAnimation_First = 0,
-    eLedAnimation_SolidColor = eLedAnimation_First,
+    eLedAnimation_SolidColour = eLedAnimation_First,
     eLedAnimation_SegmentFill,
     eLedAnimation_Rainbow,
     eLedAnimation_Last
@@ -86,8 +86,8 @@ bool WS2812B_API_Stop (const eWs2812b_t device);
 bool WS2812B_API_Reset (const eWs2812b_t device);
 bool WS2812B_API_FreeData (void *data);
 uint32_t WS2812B_API_GetLedCount (const eWs2812b_t device);
-bool WS2812B_API_SetColor (const eWs2812b_t device, size_t led_number, const uint8_t red, const uint8_t green, const uint8_t blue);
-bool WS2812B_API_FillColor (const eWs2812b_t device, const uint8_t red, const uint8_t green, const uint8_t blue);
+bool WS2812B_API_SetColour (const eWs2812b_t device, size_t led_number, const uint8_t red, const uint8_t green, const uint8_t blue);
+bool WS2812B_API_FillColour (const eWs2812b_t device, const uint8_t red, const uint8_t green, const uint8_t blue);
 bool WS2812B_API_FillSegment (const eWs2812b_t device, const size_t start_led, const size_t end_led, const uint8_t red, const uint8_t green, const uint8_t blue);
 
 #endif /* ENABLE_WS2812B */

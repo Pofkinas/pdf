@@ -13,7 +13,7 @@
 #include "pwm_driver.h"
 #include "gpio_driver.h"
 
-#include "animation_solidcolor.h"
+#include "animation_solidcolour.h"
 #include "animation_segmentfill.h"
 #include "animation_rainbow.h"
 
@@ -199,8 +199,8 @@ static bool WS2812B_API_BuildStaticAnimation (const sLedAnimationDesc_t *static_
     }
 
     switch (static_animation_data->animation) {
-        case eLedAnimation_SolidColor: {
-            sLedAnimationSolidColor_t *data = static_animation_data->data;
+        case eLedAnimation_SolidColour: {
+            sLedAnimationSolidColour_t *data = static_animation_data->data;
 
             sSolidAnimationData_t solid_context = {
                 .device = static_animation_data->device,
@@ -210,7 +210,7 @@ static bool WS2812B_API_BuildStaticAnimation (const sLedAnimationDesc_t *static_
         
             sLedAnimationInstance_t animation_instance = {
                 .context = &solid_context,
-                .build_animation = Animation_SolidColor_Run
+                .build_animation = Animation_SolidColour_Run
             };
         
             animation_instance.build_animation(animation_instance.context);
@@ -285,7 +285,7 @@ static bool WS2812B_API_QueueDynamicAnimation (const sLedAnimationDesc_t *dynami
             rainbow_context->state = eRainbowState_Init;
 
             rainbow_data->direction = data->direction;
-            rainbow_data->start_hsv_color = data->start_hsv_color;
+            rainbow_data->start_hsv_colour = data->start_hsv_colour;
             rainbow_data->segment_start_led = data->segment_start_led;
             rainbow_data->segment_end_led = data->segment_end_led;
             rainbow_data->speed = data->speed;
@@ -435,7 +435,7 @@ bool WS2812B_API_AddAnimation (sLedAnimationDesc_t *animation_data) {
     bool is_execute_successful = true;
 
     switch (animation_data->animation) {
-        case eLedAnimation_SolidColor: {
+        case eLedAnimation_SolidColour: {
             if (!WS2812B_API_BuildStaticAnimation(animation_data)) {
                 TRACE_ERR("AddAnimation: Build static animation [%d] failed\n", animation_data->animation);
                 
@@ -718,7 +718,7 @@ uint32_t WS2812B_API_GetLedCount (const eWs2812b_t device) {
     return g_ws2812b_api_static_lut[device].max_led;
 }
 
-bool WS2812B_API_SetColor (const eWs2812b_t device, size_t led_number, const uint8_t red, const uint8_t green, const uint8_t blue) {
+bool WS2812B_API_SetColour (const eWs2812b_t device, size_t led_number, const uint8_t red, const uint8_t green, const uint8_t blue) {
     if (!WS2812B_Config_IsCorrectWs2812b(device)) {
         TRACE_ERR("SetColour: Incorrect device [%d]\n", device);
         
@@ -726,7 +726,7 @@ bool WS2812B_API_SetColor (const eWs2812b_t device, size_t led_number, const uin
     }
 
     if (!g_ws2812b_api_is_init) {
-        TRACE_ERR("SetColor: Device not initialized\n");
+        TRACE_ERR("SetColour: Device not initialized\n");
 
         return false;
     }
@@ -746,7 +746,7 @@ bool WS2812B_API_SetColor (const eWs2812b_t device, size_t led_number, const uin
     return true;
 }
 
-bool WS2812B_API_FillColor (const eWs2812b_t device, const uint8_t red, const uint8_t green, const uint8_t blue) {
+bool WS2812B_API_FillColour (const eWs2812b_t device, const uint8_t red, const uint8_t green, const uint8_t blue) {
     if (!WS2812B_Config_IsCorrectWs2812b(device)) {
         TRACE_ERR("FillColour: Incorrect device [%d]\n", device);
         
@@ -754,7 +754,7 @@ bool WS2812B_API_FillColor (const eWs2812b_t device, const uint8_t red, const ui
     }
 
     if (!g_ws2812b_api_is_init) {
-        TRACE_ERR("FillColor: Device not initialized\n");
+        TRACE_ERR("FillColour: Device not initialized\n");
 
         return false;
     }

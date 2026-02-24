@@ -2,10 +2,9 @@
  * Includes
  *********************************************************************************************************************/
 
-#include "animation_solidcolor.h"
+#include "animation_solidcolour.h"
 
-#ifdef ENABLE_LED_ANIMATION
-#include <stddef.h>
+#if defined(ENABLE_LED_ANIMATION)
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -31,34 +30,30 @@
  * Prototypes of private functions
  *********************************************************************************************************************/
  
-void Animation_SolidColor_FillBuffer (sSolidAnimationData_t *data);
+static void Animation_Solidcolour_FillBuffer (sSolidAnimationData_t *data);
 
 /**********************************************************************************************************************
  * Definitions of private functions
  *********************************************************************************************************************/
 
-void Animation_SolidColor_FillBuffer (sSolidAnimationData_t *data) {
-    if (data == NULL) {
+static void Animation_Solidcolour_FillBuffer (sSolidAnimationData_t *data) {
+    if (NULL == data) {
         return;
     }
     
-    if (!WS2812B_Config_IsCorrectWs2812b(data->device)) {
+    if ((!WS2812B_Config_IsCorrectWs2812b(data->device)) || (0 == data->brightness)) {
         return;
     }
 
-    if (data->brightness == 0) {
-        return;
-    }
+    uint8_t r = (data->rgb >> 16) & 0xFF;
+    uint8_t g = (data->rgb >> 8) & 0xFF;
+    uint8_t b = data->rgb & 0xFF;
 
-    uint8_t r = (data->rgb.color >> 16) & 0xFF;
-    uint8_t g = (data->rgb.color >> 8) & 0xFF;
-    uint8_t b = data->rgb.color & 0xFF;
+    r = Colour_ScaleBrightness(r, data->brightness);
+    g = Colour_ScaleBrightness(g, data->brightness);
+    b = Colour_ScaleBrightness(b, data->brightness);
 
-    r = LED_ScaleBrightness(r, data->brightness);
-    g = LED_ScaleBrightness(g, data->brightness);
-    b = LED_ScaleBrightness(b, data->brightness);
-
-    WS2812B_API_FillColor(data->device, r, g, b);
+    WS2812B_API_FillColour(data->device, r, g, b);
 
     return;
 }
@@ -67,13 +62,14 @@ void Animation_SolidColor_FillBuffer (sSolidAnimationData_t *data) {
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-void Animation_SolidColor_Run (void *context) {
-    if (context == NULL) {
+void Animation_SolidColour_Run (void *context) {
+    if (NULL == context) {
         return;
     }
     
-    Animation_SolidColor_FillBuffer((sSolidAnimationData_t*) context);
+    Animation_Solidcolour_FillBuffer((sSolidAnimationData_t*) context);
 
     return;
 }
+
 #endif /* ENABLE_LED_ANIMATION */

@@ -6,12 +6,11 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_LED_ANIMATION
+#if defined(ENABLE_LED_ANIMATION)
 #include <stdint.h>
 #include <stddef.h>
-#include "ws2812b_config.h"
 #include "ws2812b_api.h"
-#include "led_color.h"
+#include "colour.h"
 
 /**********************************************************************************************************************
  * Exported definitions and macros
@@ -25,8 +24,8 @@
 typedef struct sSegmentFillData {
     eWs2812b_t device;
     uint8_t brightness;
-    sLedColorRgb_t base_rgb;
-    sLedColorRgb_t segment_rgb;
+    ColourRgb_t base_rgb;
+    ColourRgb_t segment_rgb;
     size_t start_led;
     size_t end_led;
 } sSegmentFillData_t;

@@ -67,4 +67,8 @@
 #error "ENABLE_LED_ANIMATION requires ENABLE_WS2812B to be defined."
 #endif /* ENABLE_LED_ANIMATION && !ENABLE_WS2812B */
 
+#if defined(ENABLE_LED_ANIMATION) && !defined(ENABLE_COLOUR)
+#error "ENABLE_LED_ANIMATION requires ENABLE_COLOUR to be defined."
+#endif /* ENABLE_LED_ANIMATION && !ENABLE_COLOUR */
+
 #endif /* SOURCE_UTILITY_FRAMEWORK_CONFIG_H_ */
