@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_CLI
+#ifdef ENABLE_CMD
 #include <stdbool.h>
 #include <stddef.h>
 #include "error_messages.h"
@@ -36,5 +36,5 @@ typedef struct sCmdDesc {
 
 eErrorCode_t CMD_API_FindCommand (sMessage_t command, sMessage_t *response, sCmdDesc_t *command_lut, const size_t command_lut_size);
 
-#endif /* ENABLE_CLI */
+#endif /* ENABLE_CMD */
 #endif /* SOURCE_API_CMD_API_H_ */

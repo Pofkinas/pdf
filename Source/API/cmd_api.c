@@ -4,7 +4,7 @@
 
 #include "cmd_api.h"
 
-#ifdef ENABLE_CLI
+#ifdef ENABLE_CMD
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -77,4 +77,4 @@ eErrorCode_t CMD_API_FindCommand (sMessage_t command, sMessage_t *response, sCmd
     return eErrorCode_NOTFOUND;
 }
 
-#endif /* ENABLE_CLI */
+#endif /* ENABLE_CMD */
