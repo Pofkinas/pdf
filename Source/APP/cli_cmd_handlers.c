@@ -532,6 +532,173 @@ eErrorCode_t CLI_APP_Motors_Handlers_Set (sMessage_t arguments, sMessage_t *resp
 }
 #endif /* ENABLE_MOTOR */
 
+#ifdef ENABLE_PID_CONTROL
+CLI_APP_Motors_Handlers_SetTargetRPM (sMessage_t arguments, sMessage_t *response) {
+    if (response == NULL) {
+        TRACE_ERR("Invalid data pointer\n");
+
+        return eErrorCode_NULLPTR;
+    }
+
+    if ((response->data == NULL)) {
+        TRACE_ERR("Invalid response data pointer\n");
+
+        return eErrorCode_NULLPTR;
+    }
+
+    eMotor_t motor;
+    eMotorControl_t mode;
+    size_t motor_value = 0;
+    size_t mode_value = 0;
+    float target_rpm;
+
+    eErrorCode_t error = eErrorCode_OSOK;
+
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &motor_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
+    }
+
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &mode_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
+    }
+
+    error = CMD_API_Helper_FindNextArgFloat(&arguments, &target_rpm, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+    
+    if (error != eErrorCode_OSOK) {
+        return error;
+    }
+
+    if (arguments.size != 0) {
+        snprintf(response->data, response->size, "Too many arguments\n");
+
+        return eErrorCode_ARGMANY;
+    }
+
+    if (!Motor_Config_IsCorrectMotor(motor_value)) {
+        snprintf(response->data, response->size, "%d: Incorrect motor\n", motor_value);
+
+        return eErrorCode_INVAL;
+    }
+
+    if (!Motor_API_IsCorrectRPM(target_rpm)) {
+        snprintf(response->data, response->size, "%d: Incorrect target RPM\n", target_rpm);
+
+        return eErrorCode_INVAL;
+    }
+
+    if (!Motor_Config_IsCorrectMode(mode_value)) {
+        snprintf(response->data, response->size, "%d: Incorect motor mode\n", mode_value);
+
+        return eErrorCode_INVAL;
+    }
+
+    sMotorCommandDesc_t formated_task = {.task = eMotorTask_SetRpm, .data = NULL};
+    sMotorSetRpm_t *task_data = Heap_API_Calloc(1, sizeof(sMotorSetRpm_t));
+
+    if (task_data == NULL) {
+        snprintf(response->data, response->size, "Failed Calloc\n");
+        
+        return eErrorCode_NOMEM;
+    }
+
+    task_data->motor = motor_value;
+    task_data->target_rpm = target_rpm;
+    task_data->mode = mode_value;
+    formated_task.data = task_data;
+
+    if (!Motor_APP_Add_Task(&formated_task)) {
+        snprintf(response->data, response->size, "Failed task add\n");
+        
+        Heap_API_Free(task_data);
+
+        return eErrorCode_FAILED;
+    }
+
+    snprintf(response->data, response->size, "Operation successful\n");
+
+    return eErrorCode_OSOK;
+}
+
+eErrorCode_t Custom_CLI_APP_Handlers_SetPID (sMessage_t arguments, sMessage_t *response) {
+    if (response == NULL) {
+        TRACE_ERR("Invalid data pointer\n");
+
+        return eErrorCode_NULLPTR;
+    }
+
+    if ((response->data == NULL)) {
+        TRACE_ERR("Invalid response data pointer\n");
+
+        return eErrorCode_NULLPTR;
+    }
+
+    sPID_t pid_params = {0};
+    sMotor_t motor;
+    size_t motor_value = 0;
+    eErrorCode_t error = eErrorCode_OSOK;
+
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &motor_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+    
+    if (error != eErrorCode_OSOK) {
+        return error;
+    }
+
+    error = CMD_API_Helper_FindNextArgFloat(&arguments, &pid_params.kp, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
+    }
+
+    error = CMD_API_Helper_FindNextArgFloat(&arguments, &pid_params.ki, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
+    }
+
+    error = CMD_API_Helper_FindNextArgFloat(&arguments, &pid_params.kd, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
+    }
+
+    error = CMD_API_Helper_FindNextArgFloat(&arguments, &pid_params.integral_limit, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
+    }
+
+    if (arguments.size != 0) {
+        snprintf(response->data, response->size, "Too many arguments\n");
+
+        return eErrorCode_ARGMANY;
+    }
+
+    if (!Motor_Config_IsCorrectMotor(motor_value)) {
+        snprintf(response->data, response->size, "%d: Incorrect motor\n", motor_value);
+
+        return eErrorCode_INVAL;
+    }
+
+    motor = motor_value;
+
+    if (!Motor_API_SetPID(motor, &pid_params)) {
+        snprintf(response->data, response->size, "Failed to set PID parameters\n");
+
+        return eErrorCode_FAILED;
+    }
+
+    TRACE_INFO("Set PID for [%d]: Kp: %ld.%04u, Ki: %ld.%04u, Kd: %ld.%04u, I limit: %ld.%04u\n", motor, FLOAT_INTEGER_PART(pid_params.kp), FLOAT_FRACTIONAL_PART(pid_params.kp, 4), FLOAT_INTEGER_PART(pid_params.ki), FLOAT_FRACTIONAL_PART(pid_params.ki, 4), FLOAT_INTEGER_PART(pid_params.kd), FLOAT_FRACTIONAL_PART(pid_params.kd, 4), FLOAT_INTEGER_PART(pid_params.integral_limit), FLOAT_FRACTIONAL_PART(pid_params.integral_limit, 4));
+
+    snprintf(response->data, response->size, "Operation successful\n");
+
+    return eErrorCode_OSOK;
+}
+#endif /* ENABLE_PID_CONTROL */
+
 eErrorCode_t CLI_APP_Led_Handlers_RgbToHsv (sMessage_t arguments, sMessage_t *response) {
     if (response == NULL) {
         TRACE_ERR("Invalid data pointer\n");

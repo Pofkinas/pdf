@@ -25,6 +25,9 @@ typedef enum eMotorTask {
     eMotorTask_First,
     eMotorTask_Set = eMotorTask_First,
     eMotorTask_Stop,
+    #ifdef ENABLE_PID_CONTROL
+    eMotorTask_SetRpm,
+    #endif /* ENABLE_PID_CONTROL */
     eMotorTask_Last
 } eMotorTask_t;
 
@@ -38,6 +41,14 @@ typedef struct sMotorSet {
     eMotorDirection_t direction;
     eMotorControl_t mode;
 } sMotorSet_t;
+
+#ifdef ENABLE_PID_CONTROL
+typedef struct sMotorSetRpm {
+    eMotor_t motor;
+    float target_rpm;
+    eMotorControl_t mode;
+} sMotorSetRpm_t;
+#endif /* ENABLE_PID_CONTROL */
 /* clang-format on */
 
 /**********************************************************************************************************************

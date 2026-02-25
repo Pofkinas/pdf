@@ -125,6 +125,61 @@ static void Motor_APP_Thread (void *arg) {
 
                 TRACE_INFO("Motors Stopped\n");
             } break;
+            #ifdef ENABLE_PID_CONTROL
+            case eMotorTask_SetRpm: {
+                if (g_received_task.data == NULL) {
+                    TRACE_ERR("No arguments\n");
+
+                    break;
+                }
+
+                sMotorSetRpm_t *arguments = (sMotorSetRpm_t*) g_received_task.data;
+
+                if (arguments == NULL){
+                    TRACE_ERR("No arguments\n");
+
+                    Heap_API_Free(arguments);
+
+                    break;
+                }
+
+                if (!Motor_API_IsCorrectRpm(arguments->target_rpm)) {
+                    TRACE_ERR("Invalid Motor target RPM\n");
+
+                    Heap_API_Free(arguments);
+
+                    break;
+                }
+            
+                if (!Motor_Config_IsCorrectMotor(arguments->motor)) {
+                    TRACE_ERR("Invalid Motor\n");
+
+                    Heap_API_Free(arguments);
+
+                    break;
+                }
+            
+                if (!Motor_API_IsCorrectMode(arguments->mode)) {
+                    TRACE_ERR("Invalid Motor control mode\n");
+
+                    Heap_API_Free(arguments);
+
+                    break;
+                }
+
+                if (!Motor_API_SetTargetRPM(arguments->motor, arguments->target_rpm, arguments->mode)) {
+                    TRACE_ERR("Motor Set Target RPM Failed\n");
+
+                    Heap_API_Free(arguments);
+
+                    break;
+                }
+
+                TRACE_INFO("Motor [%d] @ RPM [%f], Mode [%d]\n", arguments->motor, arguments->target_rpm, arguments->mode);
+
+                Heap_API_Free(arguments);    
+            } break;
+            #endif /* ENABLE_PID_CONTROL */
             default: {
                 TRACE_ERR("Task not found\n");
             } break;

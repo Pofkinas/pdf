@@ -36,6 +36,10 @@ typedef enum eCliDefaultCmd {
     #ifdef ENABLE_MOTOR
     eCliDefaultCmd_Motors_Set,
     eCliDefaultCmd_Motors_Stop,
+    #ifdef ENABLE_PID_CONTROL
+    eCliDefaultCmd_Motors_SetTargetRPM,
+    eCliDefaultCmd_Motors_SetPID,
+    #endif /* ENABLE_PID_CONTROL */
     #endif  /* ENABLE_MOTOR */
     
     eCliDefaultCmd_RgbToHsv,

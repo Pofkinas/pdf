@@ -42,6 +42,10 @@ eErrorCode_t CLI_APP_Pwm_Led_Handlers_Pulse (sMessage_t arguments, sMessage_t *r
 #ifdef ENABLE_MOTOR
 eErrorCode_t CLI_APP_Motors_Handlers_Stop (sMessage_t arguments, sMessage_t *response);
 eErrorCode_t CLI_APP_Motors_Handlers_Set (sMessage_t arguments, sMessage_t *response);
+#ifdef ENABLE_PID_CONTROL
+eErrorCode_t CLI_APP_Motors_Handlers_SetTargetRPM (sMessage_t arguments, sMessage_t *response);
+eErrorCode_t CLI_APP_Motors_Handlers_SetPID (sMessage_t arguments, sMessage_t *response);
+#endif /* ENABLE_PID_CONTROL */
 #endif /* ENABLE_MOTOR */
 
 eErrorCode_t CLI_APP_Led_Handlers_RgbToHsv (sMessage_t arguments, sMessage_t *response);

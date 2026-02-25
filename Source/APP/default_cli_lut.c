@@ -79,7 +79,19 @@ sCmdDesc_t g_default_cmd_lut[eCliDefaultCmd_Last] = {
         .handler = CLI_APP_Motors_Handlers_Stop
         /* e. g. motors_stop */
     },
-    #endif
+    #ifdef ENABLE_PID_CONTROL
+    [eCliDefaultCmd_Motors_SetTargetRPM] = {
+        DEFINE_CMD("motors_setrpm:"),
+        .handler = CLI_APP_Motors_Handlers_SetTargetRPM
+        /* e. g. motors_setrpm:<eMotor_t>, <target_rpm>, <eMotorControl_t> */
+    },
+    [eCliDefaultCmd_Motors_SetPID] = {
+        DEFINE_CMD("motors_setpid:"),
+        .handler = CLI_APP_Motors_Handlers_SetPID
+        /* e. g. motors_setpid:<eMotor_t>, <Kp>, <Ki>, <Kd> */
+    },
+    #endif /* ENABLE_PID_CONTROL */
+    #endif /* ENABLE_MOTOR */
     
     [eCliDefaultCmd_RgbToHsv] = {
         DEFINE_CMD("rgb:"),
