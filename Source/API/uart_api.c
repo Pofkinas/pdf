@@ -86,7 +86,7 @@ static void UART_API_FsmThread (void *arg) {
                     g_dynamic_uart_lut[uart].message.data = Heap_API_Calloc(g_static_uart_lut[uart].buffer_capacity, sizeof(char));
                     
                     if (g_dynamic_uart_lut[uart].message.data == NULL) {
-                            TRACE_WRN("FsmThread: Failed to allocate buffer for UART %d\n", uart);
+                            TRACE_WRN("FsmThread: Failed to allocate buffer for UART [%d]\n", uart);
                             
                             continue;
                     }
@@ -120,7 +120,7 @@ static void UART_API_FsmThread (void *arg) {
                 }
                 case eState_Flush: {
                     if (osMessageQueuePut(g_dynamic_uart_lut[uart].message_queue, &g_dynamic_uart_lut[uart].message, MESSAGE_QUEUE_PRIORITY, MESSAGE_QUEUE_PUT_TIMEOUT) != osOK) {
-                        TRACE_ERR("FsmThread: Failed to put message in queue for UART %d\n", uart);
+                        TRACE_ERR("FsmThread: Failed to put message in queue for UART [%d]\n", uart);
                         
                         continue;
                     }
@@ -234,7 +234,7 @@ bool UART_API_Init (const eUart_t uart, const eBaudrate_t baudrate, const char *
 // TODO: Revork UART_API_Send to use asynchronous sending with message queues and FSM thread + mutiple messages in buffer
 bool UART_API_Send (const eUart_t uart, const sMessage_t message, const uint32_t timeout) {
     if (!UART_Config_IsCorrectUart(uart)) {
-        TRACE_ERR("Send: Incorrect UART type %d\n", uart);
+        TRACE_ERR("Send: Incorrect UART type [%d]\n", uart);
         
         return false;
     }
@@ -246,13 +246,13 @@ bool UART_API_Send (const eUart_t uart, const sMessage_t message, const uint32_t
     }
     
     if (osMutexAcquire(g_dynamic_uart_lut[uart].mutex_send, timeout) != osOK) {
-        TRACE_ERR("Send: Failed to acquire mutex for UART %d\n", uart);
+        TRACE_ERR("Send: Failed to acquire mutex for UART [%d]\n", uart);
         
         return false;
     }
 
     if (!UART_Driver_SendBytes(uart, (uint8_t*) message.data, message.size)) {
-        TRACE_ERR("Send: Failed to send bytes for UART %d\n", uart);
+        TRACE_ERR("Send: Failed to send bytes for UART [%d]\n", uart);
         
         osMutexRelease(g_dynamic_uart_lut[uart].mutex_send);
         
@@ -266,7 +266,7 @@ bool UART_API_Send (const eUart_t uart, const sMessage_t message, const uint32_t
 
 bool UART_API_Receive (const eUart_t uart, sMessage_t *message, const uint32_t timeout) {
     if (!UART_Config_IsCorrectUart(uart)) {
-        TRACE_ERR("Receive: Incorrect UART type %d\n", uart);
+        TRACE_ERR("Receive: Incorrect UART type [%d]\n", uart);
         
         return false;
     }
@@ -278,13 +278,13 @@ bool UART_API_Receive (const eUart_t uart, sMessage_t *message, const uint32_t t
     }
 
     if (message == NULL) {
-        TRACE_ERR("Receive: Message pointer is NULL for UART %d\n", uart);
+        TRACE_ERR("Receive: Message pointer is NULL for UART [%d]\n", uart);
         
         return false;
     }
 
     if (osMessageQueueGet(g_dynamic_uart_lut[uart].message_queue, message, MESSAGE_QUEUE_PRIORITY, timeout) != osOK) {
-        TRACE_ERR("Receive: Failed to get message from queue for UART %d\n", uart);
+        TRACE_ERR("Receive: Failed to get message from queue for UART [%d]\n", uart);
         
         return false;
     }

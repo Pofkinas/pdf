@@ -63,6 +63,7 @@ static void LED_APP_Thread (void *arg) {
         if (g_received_task.data == NULL) {
             TRACE_ERR("No arguments\n");
         }
+        
         switch (g_received_task.task) {
             #ifdef ENABLE_LED
             case eLedTask_Set: {
@@ -92,7 +93,7 @@ static void LED_APP_Thread (void *arg) {
                     break;
                 }
 
-                TRACE_INFO("Led %d Set\n", arguments->led);
+                TRACE_INFO("Led [%d] Set\n", arguments->led);
 
                 Heap_API_Free(arguments);    
             } break;
@@ -123,7 +124,7 @@ static void LED_APP_Thread (void *arg) {
                     break;
                 }
 
-                TRACE_INFO("Led %d Reset\n", arguments->led);
+                TRACE_INFO("Led [%d] Reset\n", arguments->led);
 
                 Heap_API_Free(arguments);
             } break;
@@ -154,7 +155,7 @@ static void LED_APP_Thread (void *arg) {
                     break;
                 }
 
-                TRACE_INFO("Led %d Toggle\n", arguments->led);
+                TRACE_INFO("Led [%d] Toggle\n", arguments->led);
 
                 Heap_API_Free(arguments);
             } break;
@@ -201,7 +202,7 @@ static void LED_APP_Thread (void *arg) {
                     break;
                 }
 
-                TRACE_INFO("Led %d Blink %d s, @ %d Hz\n", arguments->led, arguments->blink_time, arguments->blink_frequency);
+                TRACE_INFO("Led [%d] Blink %u s, @ %u Hz\n", arguments->led, arguments->blink_time, arguments->blink_frequency);
 
                 Heap_API_Free(arguments);
             } break;
@@ -243,7 +244,7 @@ static void LED_APP_Thread (void *arg) {
                     break;
                 }
 
-                TRACE_INFO("Pwm Led Brightness %d\n", arguments->led, arguments->duty_cycle);
+                TRACE_INFO("Pwm Led [%d] Brightness %u\n", arguments->led, arguments->duty_cycle);
 
                 Heap_API_Free(arguments);
             } break;
@@ -290,7 +291,7 @@ static void LED_APP_Thread (void *arg) {
                     break;
                 }
 
-                TRACE_INFO("Pwm Led %d Pulse %d s, @ %d Hz\n", arguments->led, arguments->pulse_time, arguments->pulse_frequency);
+                TRACE_INFO("Pwm Led [%d] Pulse %u s, @ %u Hz\n", arguments->led, arguments->pulse_time, arguments->pulse_frequency);
 
                 Heap_API_Free(arguments);
             } break;

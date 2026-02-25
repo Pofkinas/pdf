@@ -69,7 +69,7 @@ static bool LCD_API_SendBytes (const eLcd_t lcd, const char *data, const size_t 
 
 static bool LCD_API_Send (const eLcd_t lcd, const uint8_t data, const eLcdTxMode_t tx_mode) {
     if (!LCD_Config_IsCorrectLcd(lcd)) {
-        TRACE_ERR ("Send: Incorrect LCD type %d\n", lcd);
+        TRACE_ERR ("Send: Incorrect LCD type [%d]\n", lcd);
         
         return false;
     }
@@ -97,7 +97,7 @@ static sLcdByte_t LCD_API_ConvertToLcdByte (const uint8_t data) {
 
 static bool LCD_API_WakeUpDisplay (const eLcd_t lcd) {
     if (!LCD_Config_IsCorrectLcd(lcd)) {
-        TRACE_ERR ("WakeUpDisplay: Incorrect LCD type %d\n", lcd);
+        TRACE_ERR ("WakeUpDisplay: Incorrect LCD type [%d]\n", lcd);
         
         return false;
     }
@@ -105,35 +105,35 @@ static bool LCD_API_WakeUpDisplay (const eLcd_t lcd) {
     bool is_wakeup_successful = true;
 
     if (!LCD_API_Send(lcd, LCD_WAKEUP_COMMAND, eLcdTxMode_Command)) {
-        TRACE_ERR("WakeUpDisplay: Failed to send wakeup command LCD %d\n", lcd);
+        TRACE_ERR("WakeUpDisplay: Failed to send wakeup command LCD [%d]\n", lcd);
         
         is_wakeup_successful = false;
     }
 
-    PDF_Delay(5);
+    osDelay(5);
 
     if (!LCD_API_Send(lcd, LCD_WAKEUP_COMMAND, eLcdTxMode_Command)) {
-        TRACE_ERR("WakeUpDisplay: Failed to send second wakeup command LCD %d\n", lcd);
+        TRACE_ERR("WakeUpDisplay: Failed to send second wakeup command LCD [%d]\n", lcd);
         
         is_wakeup_successful = false;
     }
 
-    PDF_Delay(1);
+    osDelay(1);
 
     if (!LCD_API_Send(lcd, LCD_WAKEUP_COMMAND, eLcdTxMode_Command)) {
-        TRACE_ERR("WakeUpDisplay: Failed to send third wakeup command LCD %d\n", lcd);
+        TRACE_ERR("WakeUpDisplay: Failed to send third wakeup command LCD [%d]\n", lcd);
         
         is_wakeup_successful = false;
     }
 
-    PDF_Delay(1);
+    osDelay(1);
 
     return is_wakeup_successful;
 }
 
 static bool LCD_API_InitDisplay (const eLcd_t lcd) {
     if (!LCD_Config_IsCorrectLcd(lcd)) {
-        TRACE_ERR ("InitDisplay: Incorrect LCD type %d\n", lcd);
+        TRACE_ERR ("InitDisplay: Incorrect LCD type [%d]\n", lcd);
         
         return false;
     }
@@ -143,7 +143,7 @@ static bool LCD_API_InitDisplay (const eLcd_t lcd) {
     uint8_t command = (LCD_FUNCTION_SET | LCD_FUNCTION_4BIT | LCD_FUNCTION_1LINE | LCD_FUNCTION_5x8DOTS);
 
     if (!LCD_API_Send(lcd, command, eLcdTxMode_Command)) {
-        TRACE_ERR("InitDisplay: Failed to init 4-bit mode (%x) LCD %d\n", command, lcd);
+        TRACE_ERR("InitDisplay: Failed to init 4-bit mode (%x) LCD [%d]\n", command, lcd);
     
         is_init_successful = false;
     }
@@ -151,7 +151,7 @@ static bool LCD_API_InitDisplay (const eLcd_t lcd) {
     command = (LCD_FUNCTION_SET | LCD_FUNCTION_4BIT | LCD_FUNCTION_2LINE | LCD_FUNCTION_5x8DOTS);
 
     if (!LCD_API_Send(lcd, command, eLcdTxMode_Command)) {
-        TRACE_ERR("InitDisplay: Failed to init 2-line mode (%x) LCD %d\n", command, lcd);
+        TRACE_ERR("InitDisplay: Failed to init 2-line mode (%x) LCD [%d]\n", command, lcd);
         
         is_init_successful = false;
     }
@@ -159,23 +159,23 @@ static bool LCD_API_InitDisplay (const eLcd_t lcd) {
     command = (LCD_DISPLAY_CONTROL | LCD_DISPLAY_OFF | LCD_CURSOR_OFF | LCD_BLINK_OFF);
 
     if (!LCD_API_Send(lcd, (LCD_DISPLAY_CONTROL | LCD_DISPLAY_OFF | LCD_CURSOR_OFF | LCD_BLINK_OFF), eLcdTxMode_Command)) {
-        TRACE_ERR("InitDisplay: Failed to turn off display (%x) LCD %d\n", command, lcd);
+        TRACE_ERR("InitDisplay: Failed to turn off display (%x) LCD [%d]\n", command, lcd);
         
         is_init_successful = false;
     }
 
     if (!LCD_API_Send(lcd, LCD_CLEAR_DISPLAY, eLcdTxMode_Command)) {
-        TRACE_ERR("InitDisplay: Failed to clear display LCD %d\n", lcd);
+        TRACE_ERR("InitDisplay: Failed to clear display LCD [%d]\n", lcd);
         
         is_init_successful = false;
     }
 
-    PDF_Delay(2);
+    osDelay(2);
 
     command = (LCD_ENTRY_MODE_SET | LCD_ENTRY_INCREMENT | LCD_ENTRY_SHIFT_OFF);
 
     if (!LCD_API_Send(lcd, command, eLcdTxMode_Command)) {
-        TRACE_ERR("InitDisplay: Failed to set entry mode (%x) LCD %d\n", command, lcd);
+        TRACE_ERR("InitDisplay: Failed to set entry mode (%x) LCD [%d]\n", command, lcd);
         
         is_init_successful = false;
     }
@@ -183,7 +183,7 @@ static bool LCD_API_InitDisplay (const eLcd_t lcd) {
     command = (LCD_DISPLAY_CONTROL | LCD_DISPLAY_ON | LCD_CURSOR_OFF | LCD_BLINK_OFF);
 
     if (!LCD_API_Send(lcd, command, eLcdTxMode_Command)) {
-        TRACE_ERR("InitDisplay: Failed to turn off display (%x) LCD %d\n", command, lcd);
+        TRACE_ERR("InitDisplay: Failed to turn off display (%x) LCD [%d]\n", command, lcd);
         
         is_init_successful = false;
     }
@@ -193,7 +193,7 @@ static bool LCD_API_InitDisplay (const eLcd_t lcd) {
 
 static bool LCD_API_SetCursor (const eLcd_t lcd, const eLcdRow_t row, const eLcdColumn_t column) {
     if (!LCD_Config_IsCorrectLcd(lcd)) {
-        TRACE_ERR ("SetCursor: Incorrect LCD type %d\n", lcd);
+        TRACE_ERR ("SetCursor: Incorrect LCD type [%d]\n", lcd);
         
         return false;
     }
@@ -201,7 +201,7 @@ static bool LCD_API_SetCursor (const eLcd_t lcd, const eLcdRow_t row, const eLcd
     uint8_t command = (LCD_SET_DDRAM_ADDR | (g_static_lcd_lut[lcd].row_addresses[row] + column));
 
     if (!LCD_API_Send(lcd, command, eLcdTxMode_Command)) {
-        TRACE_ERR("SetCursor: Failed to set cursor (%d, %d) LCD %d\n", row, column, lcd);
+        TRACE_ERR("SetCursor: Failed to set cursor (%d, %d) LCD [%d]\n", row, column, lcd);
         
         return false;
     }
@@ -211,7 +211,7 @@ static bool LCD_API_SetCursor (const eLcd_t lcd, const eLcdRow_t row, const eLcd
 
 static bool LCD_API_SendBytes (const eLcd_t lcd, const char *data, const size_t data_size, const eLcdTxMode_t tx_mode) {
     if (!LCD_Config_IsCorrectLcd(lcd)) {
-        TRACE_ERR ("SendBytes: Incorrect LCD type %d\n", lcd);
+        TRACE_ERR ("SendBytes: Incorrect LCD type [%d]\n", lcd);
         
         return false;
     }
@@ -240,7 +240,7 @@ bool LCD_API_InitAllLcd (void) {
         return true;
     }
 
-    PDF_Delay(50);
+    osDelay(50);
 
     g_is_lcd_initialized = true;
 
@@ -248,7 +248,7 @@ bool LCD_API_InitAllLcd (void) {
         const sLcdDesc_t *desc = LCD_Config_GetLcdDesc(lcd);
 
         if (desc == NULL) {
-            TRACE_ERR("InitAllLcd: Failed to get LCD %d description\n", lcd);
+            TRACE_ERR("InitAllLcd: Failed to get LCD [%d] description\n", lcd);
 
             g_is_lcd_initialized = false;
             
@@ -258,7 +258,7 @@ bool LCD_API_InitAllLcd (void) {
         g_static_lcd_lut[lcd] = *desc;
 
         if (!I2C_API_Init(g_static_lcd_lut[lcd].i2c)) {
-            TRACE_ERR("InitAllLcd: Failed to initialize I2C for LCD %d\n", lcd);
+            TRACE_ERR("InitAllLcd: Failed to initialize I2C for LCD [%d]\n", lcd);
 
             g_is_lcd_initialized = false;
             
@@ -279,19 +279,19 @@ bool LCD_API_InitAllLcd (void) {
 
 bool LCD_API_Clear (const eLcd_t lcd) {
     if (!LCD_Config_IsCorrectLcd(lcd)) {
-        TRACE_ERR ("Clear: Incorrect LCD type %d\n", lcd);
+        TRACE_ERR ("Clear: Incorrect LCD type [%d]\n", lcd);
         
         return false;
     }
 
     if (!g_is_lcd_initialized) {
-        TRACE_ERR ("Clear: LCD not initialized %d\n", lcd);
+        TRACE_ERR ("Clear: LCD not initialized [%d]\n", lcd);
         
         return false;
     }
 
     if (!LCD_API_Send(lcd, LCD_CLEAR_DISPLAY, eLcdTxMode_Command)) {
-        TRACE_ERR("Clear: Failed to clear display for LCD %d\n", lcd);
+        TRACE_ERR("Clear: Failed to clear display for LCD [%d]\n", lcd);
         
         return false;
     }
@@ -303,19 +303,19 @@ bool LCD_API_Clear (const eLcd_t lcd) {
 
 bool LCD_API_TurnOn (const eLcd_t lcd) {
     if (!LCD_Config_IsCorrectLcd(lcd)) {
-        TRACE_ERR ("TurnOn: Incorrect LCD type %d\n", lcd);
+        TRACE_ERR ("TurnOn: Incorrect LCD type [%d]\n", lcd);
         
         return false;
     }
     
     if (!g_is_lcd_initialized) {
-        TRACE_ERR ("TurnOn: LCD not initialized %d\n", lcd);
+        TRACE_ERR ("TurnOn: LCD not initialized [%d]\n", lcd);
         
         return false;
     }
 
     if (!LCD_API_Send(lcd, (LCD_DISPLAY_CONTROL | LCD_DISPLAY_ON), eLcdTxMode_Command)) {
-        TRACE_ERR("TurnOn: Failed to turn on display for LCD %d\n", lcd);
+        TRACE_ERR("TurnOn: Failed to turn on display for LCD [%d]\n", lcd);
         
         return false;
     }
@@ -325,19 +325,19 @@ bool LCD_API_TurnOn (const eLcd_t lcd) {
 
 bool LCD_API_TurnOff (const eLcd_t lcd) {
     if (!LCD_Config_IsCorrectLcd(lcd)) {
-        TRACE_ERR ("TurnOff: Incorrect LCD type %d\n", lcd);
+        TRACE_ERR ("TurnOff: Incorrect LCD type [%d]\n", lcd);
         
         return false;
     }
 
     if (!g_is_lcd_initialized) {
-        TRACE_ERR ("TurnOff: LCD not initialized %d\n", lcd);
+        TRACE_ERR ("TurnOff: LCD not initialized [%d]\n", lcd);
         
         return false;
     }
 
     if (!LCD_API_Send(lcd, (LCD_DISPLAY_CONTROL | LCD_DISPLAY_OFF), eLcdTxMode_Command)) {
-        TRACE_ERR("TurnOff: Failed to turn off display for LCD %d\n", lcd);
+        TRACE_ERR("TurnOff: Failed to turn off display for LCD [%d]\n", lcd);
         
         return false;
     }
@@ -347,19 +347,19 @@ bool LCD_API_TurnOff (const eLcd_t lcd) {
 
 bool LCD_API_SendCommand (const eLcd_t lcd, const uint8_t command) {
     if (!LCD_Config_IsCorrectLcd(lcd)) {
-        TRACE_ERR ("SendCommand: Incorrect LCD type %d\n", lcd);
+        TRACE_ERR ("SendCommand: Incorrect LCD type [%d]\n", lcd);
         
         return false;
     }
 
     if (!g_is_lcd_initialized) {
-        TRACE_ERR ("SendCommand: LCD not initialized %d\n", lcd);
+        TRACE_ERR ("SendCommand: LCD not initialized [%d]\n", lcd);
         
         return false;
     }
 
     if (!LCD_API_Send(lcd, command, eLcdTxMode_Command)) {
-        TRACE_ERR("SendCommand: Failed to send command %x to LCD %d\n", command, lcd);
+        TRACE_ERR("SendCommand: Failed to send command (%x) to LCD [%d]\n", command, lcd);
         
         return false;
     }
@@ -369,7 +369,7 @@ bool LCD_API_SendCommand (const eLcd_t lcd, const uint8_t command) {
 
 bool LCD_API_Print (const eLcd_t lcd, const sMessage_t *message, const eLcdRow_t row, const eLcdColumn_t column, const eLcdOption_t option) {
     if (!LCD_Config_IsCorrectLcd(lcd)) {
-        TRACE_ERR ("Print: Incorrect LCD type %d\n", lcd);
+        TRACE_ERR ("Print: Incorrect LCD type [%d]\n", lcd);
         
         return false;
     }
@@ -381,19 +381,19 @@ bool LCD_API_Print (const eLcd_t lcd, const sMessage_t *message, const eLcdRow_t
     }
 
     if ((row < eLcdRow_First) || (row > g_static_lcd_lut[lcd].rows)) {
-        TRACE_ERR("Print: Invalid row %d\n", row);
+        TRACE_ERR("Print: Invalid row [%d]\n", row);
         
         return false;
     }
 
     if ((column < eLcdColumn_First) || (column > g_static_lcd_lut[lcd].columns)) {
-        TRACE_ERR("Print: Invalid column %d\n", column);
+        TRACE_ERR("Print: Invalid column [%d]\n", column);
         
         return false;
     }
 
     if (!g_is_lcd_initialized) {
-        TRACE_ERR ("Print: LCD not initialized %d\n", lcd);
+        TRACE_ERR ("Print: LCD not initialized [%d]\n", lcd);
         
         return false;
     }
@@ -406,7 +406,7 @@ bool LCD_API_Print (const eLcd_t lcd, const sMessage_t *message, const eLcdRow_t
             }
         } break;
         default: {
-            TRACE_ERR("Print: Invalid option %d\n", option);
+            TRACE_ERR("Print: Invalid option [%d]\n", option);
             
             return false;
         }

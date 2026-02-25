@@ -80,13 +80,12 @@ static bool VL53L0X_API_InitDevice (const eVl53l0x_t vl53l0x) {
     osDelay(10);
 
     if (VL53L0X_DataInit(&g_dynamic_vl53l0x_lut[vl53l0x].device) != VL53L0X_ERROR_NONE) {
-        TRACE_ERR("InitDevice: DataInit failed for VL53L0X %d\n", vl53l0x);
+        TRACE_ERR("InitDevice: DataInit failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
     }
 
-    if (VL53L0X_SetDeviceAddress(&g_dynamic_vl53l0x_lut[vl53l0x].device, (g_static_vl53l0x_lut[vl53l0x].i2c_address)) != VL53L0X_ERROR_NONE) {
-        TRACE_ERR("InitDevice: SetDeviceAddress failed for VL53L0X %d\n", vl53l0x);
+        TRACE_ERR("InitDevice: SetDeviceAddress failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
     }
@@ -94,7 +93,7 @@ static bool VL53L0X_API_InitDevice (const eVl53l0x_t vl53l0x) {
     g_dynamic_vl53l0x_lut[vl53l0x].device.I2cDevAddr = (g_static_vl53l0x_lut[vl53l0x].i2c_address >> 1);
 
     if (VL53L0X_StaticInit(&g_dynamic_vl53l0x_lut[vl53l0x].device) != VL53L0X_ERROR_NONE) {
-        TRACE_ERR("InitDevice: StaticInit failed for VL53L0X %d\n", vl53l0x);
+        TRACE_ERR("InitDevice: StaticInit failed for [%d], status [%d]\n", vl53l0x, status);
 
         return false;
     }
@@ -114,72 +113,53 @@ static bool VL53L0X_API_ConfigureDevice (const eVl53l0x_t vl53l0x) {
     if (g_dynamic_vl53l0x_lut[vl53l0x].state != eVl53l0xState_Init) {
         return false;
     }
-    
-    if (!g_dynamic_vl53l0x_lut[vl53l0x].has_calib_default_data) {
-        if (VL53L0X_PerformRefSpadManagement(&g_dynamic_vl53l0x_lut[vl53l0x].device, &g_dynamic_vl53l0x_lut[vl53l0x].calib_SpadCount, &g_dynamic_vl53l0x_lut[vl53l0x].calib_isApertureSpads) != VL53L0X_ERROR_NONE) {
-            TRACE_ERR("ConfigureDevice: PerformRefSpadManagement failed for VL53L0X %d\n", vl53l0x);
+            TRACE_ERR("ConfigureDevice: PerformRefSpadManagement failed for [%d], status [%d]\n", vl53l0x, status);
             
             return false;
         }
 
-        if (VL53L0X_PerformRefCalibration(&g_dynamic_vl53l0x_lut[vl53l0x].device, &g_dynamic_vl53l0x_lut[vl53l0x].calib_VhvSettings, &g_dynamic_vl53l0x_lut[vl53l0x].calib_PhaseCal) != VL53L0X_ERROR_NONE) {
-            TRACE_ERR("ConfigureDevice: PerformRefCalibration failed for VL53L0X %d\n", vl53l0x);
+            TRACE_ERR("ConfigureDevice: PerformRefCalibration failed for [%d], status [%d]\n", vl53l0x, status);
             
             return false;
         }
 
-        if (VL53L0X_PerformOffsetCalibration(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_default_offset_calibration_distance, &g_dynamic_vl53l0x_lut[vl53l0x].offset) != VL53L0X_ERROR_NONE) {
-            TRACE_ERR("ConfigureDevice: PerformOffsetCalibration failed for VL53L0X %d\n", vl53l0x);
+            TRACE_ERR("ConfigureDevice: PerformOffsetCalibration failed for [%d], status [%d]\n", vl53l0x, status);
             
             return false;
         }
 
-        if (g_static_vl53l0x_lut[vl53l0x].crosstalk_talk_compensation_en) {
-            VL53L0X_PerformXTalkCalibration(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_static_vl53l0x_lut[vl53l0x].crosstalk_talk_distance, &g_dynamic_vl53l0x_lut[vl53l0x].crosstalk_value);
-        
-        }
-    }
-
-    if (VL53L0X_SetReferenceSpads(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_dynamic_vl53l0x_lut[vl53l0x].calib_SpadCount, g_dynamic_vl53l0x_lut[vl53l0x].calib_isApertureSpads) != VL53L0X_ERROR_NONE) {
-        TRACE_ERR("ConfigureDevice: SetReferenceSpads failed for VL53L0X %d\n", vl53l0x);
+        TRACE_ERR("ConfigureDevice: SetReferenceSpads failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
     }
 
-    if (VL53L0X_SetRefCalibration(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_dynamic_vl53l0x_lut[vl53l0x].calib_VhvSettings, g_dynamic_vl53l0x_lut[vl53l0x].calib_PhaseCal) != VL53L0X_ERROR_NONE) {
-        TRACE_ERR("ConfigureDevice: SetRefCalibration failed for VL53L0X %d\n", vl53l0x);
+        TRACE_ERR("ConfigureDevice: SetRefCalibration failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
     }
 
-    if (VL53L0X_SetOffsetCalibrationDataMicroMeter(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_dynamic_vl53l0x_lut[vl53l0x].offset) != VL53L0X_ERROR_NONE) {
-        TRACE_ERR("ConfigureDevice: SetOffsetCalibrationDataMicroMeter failed for VL53L0X %d\n", vl53l0x);
+        TRACE_ERR("ConfigureDevice: SetOffsetCalibrationDataMicroMeter failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
     }
 
-    if (g_static_vl53l0x_lut[vl53l0x].crosstalk_talk_compensation_en) {
-        if (VL53L0X_SetXTalkCompensationRateMegaCps(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_dynamic_vl53l0x_lut[vl53l0x].crosstalk_value) != VL53L0X_ERROR_NONE) {
-            TRACE_ERR("ConfigureDevice: SetXTalkCompensationRateMegaCps failed for VL53L0X %d\n", vl53l0x);
+            TRACE_ERR("ConfigureDevice: SetXTalkCompensationRateMegaCps failed for [%d], status [%d]\n", vl53l0x, status);
             
             return false;
         }
-    
-        if (VL53L0X_SetXTalkCompensationEnable(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_static_vl53l0x_lut[vl53l0x].crosstalk_talk_compensation_en) != VL53L0X_ERROR_NONE) {
-            TRACE_ERR("ConfigureDevice: SetXTalkCompensationEnable failed for VL53L0X %d\n", vl53l0x);
+            TRACE_ERR("ConfigureDevice: SetXTalkCompensationEnable failed for [%d], status [%d]\n", vl53l0x, status);
             
             return false;
         }
     }
 
-    if (VL53L0X_SetDeviceMode(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_static_vl53l0x_lut[vl53l0x].device_mode) != VL53L0X_ERROR_NONE) {
-        TRACE_ERR("ConfigureDevice: SetDeviceMode failed for VL53L0X %d\n", vl53l0x);
+        TRACE_ERR("ConfigureDevice: SetDeviceMode failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
     }
 
     if (!VL53L0X_API_SetRangeProfile(vl53l0x, g_static_vl53l0x_lut[vl53l0x].range_profile)) {
-        TRACE_ERR("ConfigureDevice: SetRangeProfile failed for VL53L0X %d\n", vl53l0x);
+        TRACE_ERR("ConfigureDevice: SetRangeProfile failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
     }
@@ -270,7 +250,7 @@ bool VL53L0X_API_InitAll (void) {
         const sVl53l0xDynamicDesc_t *dynamic_desc = VL53L0XV2_Config_GetVl53l0xDynamicDesc(vl53l0x);
 
         if (static_desc == NULL || dynamic_desc == NULL) {
-            TRACE_ERR("InitAll: Failed to get VL53L0X %d description\n", vl53l0x);
+            TRACE_ERR("InitAll: Failed to get [%d] description\n", vl53l0x);
             
             return false;
         }
@@ -383,7 +363,7 @@ bool VL53L0X_API_TurnOff (const eVl53l0x_t vl53l0x) {
 
     if (g_dynamic_vl53l0x_lut[vl53l0x].state == eVl53l0xState_Measuring) {
         if (!VL53L0X_API_StopMeasuring(vl53l0x)) {
-            TRACE_ERR("TurnOff: Failed to stop sensor before turning off VL53L0X %d\n", vl53l0x);
+            TRACE_ERR("TurnOff: Failed to stop sensor [%d] before turning off\n", vl53l0x);
             
             return false;
         }
@@ -499,7 +479,7 @@ bool VL53L0X_API_GetDistance (const eVl53l0x_t vl53l0x, uint16_t *distance, size
 
     if (ranging_data.RangeStatus != 0) {
         #ifdef DEBUG_VL53L0X_RANGE_STATUS
-        TRACE_ERR("GetDistance: RangeStatus: [%d]\n", ranging_data.RangeStatus);
+        TRACE_ERR("GetDistance: sensor [%d] RangeStatus [%d]\n", vl53l0x, ranging_data.RangeStatus);
         #endif
 
         *distance = 0;

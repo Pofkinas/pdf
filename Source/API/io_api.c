@@ -132,13 +132,13 @@ static void IO_API_DebounceTimerCallback (void *context) {
     bool debounce_status = true;
 
     if (debounce_io->device_state != eIoDeviceState_Debounce) {
-        TRACE_WRN("DebounceTimerCallback: Debounce callback exited early, state [%d]\n", debounce_io->device_state);
+        TRACE_WRN("Debounce: exit early, state [%d]\n", debounce_io->device_state);
         
         return;
     }
 
     if (!IO_API_IsGpioStateCorrect(debounce_io->device)) {
-        TRACE_WRN("DebounceTimerCallback: GPIO state is incorrect [%d]\n", debounce_io->device);
+        TRACE_WRN("Debounce: GPIO state is incorrect [%d]\n", debounce_io->device);
         
         debounce_status = false;
     }
@@ -160,12 +160,12 @@ static void IO_API_DebounceTimerCallback (void *context) {
     if (!debounce_status) {  
         osMutexRelease(debounce_io->mutex);
 
-        TRACE_WRN("DebounceTimerCallback: Button [%d] debounce failed\n", debounce_io->device);
+        TRACE_WRN("Debounce: IO [%d] debounce failed\n", debounce_io->device);
 
         return;
     }
 
-    TRACE_INFO("DebounceTimerCallback: Button [%d] triggered\n", debounce_io->device);
+    TRACE_INFO("Debounce: IO [%d] triggered\n", debounce_io->device);
 
     osEventFlagsSet(debounce_io->callback_flag, g_static_io_desc_lut[debounce_io->device].triggered_flag);
 

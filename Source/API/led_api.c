@@ -6,10 +6,10 @@
 
 #if defined(ENABLE_LED) || defined(ENABLE_PWM_LED)
 #include "cmsis_os2.h"
+#include "debug_api.h"
 #include "gpio_driver.h"
 #include "pwm_driver.h"
 #include "timer_driver.h"
-#include "debug_api.h"
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -218,7 +218,7 @@ bool LED_API_Init (void) {
         const sLedDesc_t *desc = LED_Config_GetLedDesc(led);
 
         if (desc == NULL) {
-            TRACE_ERR("Init: Failed to get LED %d description\n", led);
+            TRACE_ERR("Init: Failed to get LED [%d] description\n", led);
             
             g_is_led_initialized = false;
 
@@ -230,7 +230,7 @@ bool LED_API_Init (void) {
         g_led_blink_lut[led].blink_timer = osTimerNew(LED_API_Blink_Timer_Callback, osTimerPeriodic, &g_led_blink_lut[led], &g_led_desc_lut[led].blink_timer_attributes);
         
         if (g_led_blink_lut[led].blink_timer == NULL) {
-            TRACE_ERR("Init: Failed to create blink timer for LED %d\n", led);
+            TRACE_ERR("Init: Failed to create blink timer for LED [%d]\n", led);
             
             g_is_led_initialized = false;
 
@@ -240,7 +240,7 @@ bool LED_API_Init (void) {
         g_led_blink_lut[led].blink_mutex = osMutexNew(&g_led_desc_lut[led].blink_mutex_attributes);
 
         if (g_led_blink_lut[led].blink_mutex == NULL) {
-            TRACE_ERR("Init: Failed to create blink mutex for LED %d\n", led);
+            TRACE_ERR("Init: Failed to create blink mutex for LED [%d]\n", led);
             
             g_is_led_initialized = false;
 
@@ -256,7 +256,7 @@ bool LED_API_Init (void) {
         const sLedPwmDesc_t *desc = LED_Config_GetPwmLedDesc(led);
 
         if (desc == NULL) {
-            TRACE_ERR("Init: Failed to get PWM LED %d description\n", led);
+            TRACE_ERR("Init: Failed to get PWM LED [%d] description\n", led);
             
             g_is_pwm_initialized = false;
 
@@ -268,7 +268,7 @@ bool LED_API_Init (void) {
         g_led_pulse_lut[led].pulse_timer = osTimerNew(LED_API_Pulse_Timer_Callback, osTimerPeriodic, &g_led_pulse_lut[led], &g_pwm_led_desc_lut[led].pulse_timer_attributes);
         
         if (g_led_pulse_lut[led].pulse_timer == NULL) {
-            TRACE_ERR("Init: Failed to create pulse timer for PWM LED %d\n", led);
+            TRACE_ERR("Init: Failed to create pulse timer for PWM LED [%d]\n", led);
             
             g_is_pwm_initialized = false;
 
@@ -278,7 +278,7 @@ bool LED_API_Init (void) {
         g_led_pulse_lut[led].pulse_mutex = osMutexNew(&g_pwm_led_desc_lut[led].pulse_mutex_attributes);
 
         if (g_led_pulse_lut[led].pulse_mutex == NULL) {
-            TRACE_ERR("Init: Failed to create pulse mutex for PWM LED %d\n", led);
+            TRACE_ERR("Init: Failed to create pulse mutex for PWM LED [%d]\n", led);
             
             g_is_pwm_initialized = false;
 
@@ -286,7 +286,7 @@ bool LED_API_Init (void) {
         }
 
         if (!PWM_Driver_Enable_Device(g_pwm_led_desc_lut[led].pwm_device)) {
-            TRACE_ERR("Init: Failed to enable PWM device for LED %d\n", led);
+            TRACE_ERR("Init: Failed to enable PWM device for LED [%d]\n", led);
             
             g_is_pwm_initialized = false;
             
@@ -310,7 +310,7 @@ bool LED_API_TurnOn (const eLed_t led) {
     }
     
     if (!LED_Config_IsCorrectLed(led)) {
-        TRACE_ERR("TurnOn: Incorrect LED type %d\n", led);
+        TRACE_ERR("TurnOn: Incorrect LED type [%d]\n", led);
         
         return false;
     }
@@ -326,7 +326,7 @@ bool LED_API_TurnOff (const eLed_t led) {
     }
     
     if (!LED_Config_IsCorrectLed(led)) {
-        TRACE_ERR("TurnOff: Incorrect LED type %d\n", led);
+        TRACE_ERR("TurnOff: Incorrect LED type [%d]\n", led);
         
         return false;
     }
@@ -342,7 +342,7 @@ bool LED_API_Toggle (const eLed_t led) {
     }
     
     if (!LED_Config_IsCorrectLed(led)) {
-        TRACE_ERR("Toggle: Incorrect LED type %d\n", led);
+        TRACE_ERR("Toggle: Incorrect LED type [%d]\n", led);
         
         return false;
     }
@@ -358,19 +358,19 @@ bool LED_API_Blink (const eLed_t led, const uint8_t blink_time, const uint16_t b
     }
 
     if (!LED_Config_IsCorrectLed(led)) {
-        TRACE_ERR("Blink: Incorrect LED type %d\n", led);
+        TRACE_ERR("Blink: Incorrect LED type [%d]\n", led);
         
         return false;
     }
 
     if (!LED_API_IsCorrectBlinkTime(blink_time)) {
-        TRACE_ERR("Blink: Incorrect blink time %d\n", blink_time);
+        TRACE_ERR("Blink: Incorrect blink time [%d]\n", blink_time);
         
         return false;
     }
 
     if (!LED_API_IsCorrectBlinkFrequency(blink_frequency)) {
-        TRACE_ERR("Blink: Incorrect blink frequency %d\n", blink_frequency);
+        TRACE_ERR("Blink: Incorrect blink frequency [%d]\n", blink_frequency);
         
         return false;
     }
@@ -380,7 +380,7 @@ bool LED_API_Blink (const eLed_t led, const uint8_t blink_time, const uint16_t b
     }
 
     if (osMutexAcquire(g_led_blink_lut[led].blink_mutex, BLINK_MUTEX_TIMEOUT) != osOK) {
-        TRACE_ERR("Blink: Failed to acquire blink mutex for LED %d\n", led);
+        TRACE_ERR("Blink: Failed to acquire blink mutex for LED [%d]\n", led);
         
         return false;
     }
@@ -405,13 +405,13 @@ bool LED_API_Set_Brightness (const eLedPwm_t led, const uint8_t brightness) {
     }
 
     if (!LED_Config_IsCorrectPwmLed(led)) {
-        TRACE_ERR("Set_Brightness: Incorrect PWM LED type %d\n", led);
+        TRACE_ERR("Set_Brightness: Incorrect PWM LED type [%d]\n", led);
         
         return false;
     }
 
     if (!LED_API_IsCorrectDutyCycle(led, brightness)) {
-        TRACE_ERR("Set_Brightness: Incorrect brightness %d for LED %d\n", brightness, led);
+        TRACE_ERR("Set_Brightness: Incorrect brightness [%d] for LED [%d]\n", brightness, led);
         
         return false;
     }
@@ -427,19 +427,19 @@ bool LED_API_Pulse (const eLedPwm_t led, const uint8_t pulsing_time, const uint1
     }
 
     if (!LED_Config_IsCorrectPwmLed(led)) {
-        TRACE_ERR("Pulse: Incorrect PWM LED type %d\n", led);
+        TRACE_ERR("Pulse: Incorrect PWM LED type [%d]\n", led);
         
         return false;
     }
 
     if (!LED_API_IsCorrectPulseTime(pulsing_time)) {
-        TRACE_ERR("Pulse: Incorrect pulse time %d\n", pulsing_time);
+        TRACE_ERR("Pulse: Incorrect pulse time [%d]\n", pulsing_time);
         
         return false;
     }
 
     if (!LED_API_IsCorrectPulseFrequency(pulse_frequency)) {
-        TRACE_ERR("Pulse: Incorrect pulse frequency %d\n", pulse_frequency);
+        TRACE_ERR("Pulse: Incorrect pulse frequency [%d]\n", pulse_frequency);
         
         return false;
     }
@@ -449,7 +449,7 @@ bool LED_API_Pulse (const eLedPwm_t led, const uint8_t pulsing_time, const uint1
     }
 
     if (osMutexAcquire(g_led_pulse_lut[led].pulse_mutex, PULSE_MUTEX_TIMEOUT) != osOK) {
-        TRACE_ERR("Pulse: Failed to acquire pulse mutex for LED %d\n", led);
+        TRACE_ERR("Pulse: Failed to acquire pulse mutex for LED [%d]\n", led);
         
         return false;
     }

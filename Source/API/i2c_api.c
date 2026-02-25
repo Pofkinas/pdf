@@ -519,14 +519,14 @@ bool I2C_API_Write (const eI2c_t i2c, const uint8_t device_address, uint8_t *dat
     if (g_dynamic_i2c[i2c].state == eI2cState_Error) {
         I2C_Driver_DisableIt(i2c);
 
-        TRACE_ERR("Write: Error event flag [%d], I2C state: [%s]\n", (int32_t) flag, I2C_API_GetStateString(g_dynamic_i2c[i2c].previous_state));
+        TRACE_ERR("Write: Error event flag [%ld], I2C state: [%s]\n", (int32_t) flag, I2C_API_GetStateString(g_dynamic_i2c[i2c].previous_state));
 
         I2C_API_HandleError(i2c);
 
         flag = osEventFlagsWait(g_dynamic_i2c[i2c].flag, I2C_FLAG_BUS_RESET, osFlagsWaitAny, BUS_RESET_TIMEOUT);
 
         if (flag != (I2C_FLAG_BUS_RESET | I2C_FLAG_ERROR)) {
-            TRACE_ERR("Read: Failed reset bus, received flag [%d]\n", (int32_t) flag);
+            TRACE_ERR("Read: Failed reset bus, received flag [%ld]\n", (int32_t) flag);
         }
 
         osEventFlagsClear(g_dynamic_i2c[i2c].flag, I2C_FLAG_ERROR);
@@ -606,14 +606,14 @@ bool I2C_API_Read (const eI2c_t i2c, const uint8_t device_address, uint8_t *data
         
         I2C_Driver_DisableIt(i2c);
 
-        TRACE_ERR("Read: Error event flag [%d], I2C state: [%s]\n", (int32_t) flag, I2C_API_GetStateString(g_dynamic_i2c[i2c].previous_state));
+        TRACE_ERR("Read: Error event flag [%ld], I2C state: [%s]\n", (int32_t) flag, I2C_API_GetStateString(g_dynamic_i2c[i2c].previous_state));
 
         I2C_API_HandleError(i2c);
 
         flag = osEventFlagsWait(g_dynamic_i2c[i2c].flag, I2C_FLAG_BUS_RESET, osFlagsWaitAny, BUS_RESET_TIMEOUT);
         
         if (flag != (I2C_FLAG_BUS_RESET | I2C_FLAG_ERROR)) {
-            TRACE_ERR("Read: Failed reset bus, received flag [%d]\n", (int32_t) flag);
+            TRACE_ERR("Read: Failed reset bus, received flag [%ld]\n", (int32_t) flag);
         }
 
         osEventFlagsClear(g_dynamic_i2c[i2c].flag, I2C_FLAG_ERROR);

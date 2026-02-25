@@ -354,7 +354,7 @@ bool WS2812B_API_InitAll (void) {
         const sWs2812bControlDesc_t *desc = WS2812B_Config_GetWs2812bControlDesc(device);
 
         if (desc == NULL) {
-            TRACE_ERR("Init: No control desc for device %d\n", device);
+            TRACE_ERR("Init: No control desc for device [%d]\n", device);
 
             g_ws2812b_api_is_init = false;
 
@@ -405,7 +405,7 @@ bool WS2812B_API_AddAnimation (sLedAnimationDesc_t *animation_data) {
     }
 
     if (!WS2812B_Config_IsCorrectWs2812b(animation_data->device)) {
-        TRACE_ERR("AddAnimation: Incorrect device %d\n", animation_data->device);
+        TRACE_ERR("AddAnimation: Incorrect device [%d]\n", animation_data->device);
         
         return false;
     }
@@ -423,7 +423,7 @@ bool WS2812B_API_AddAnimation (sLedAnimationDesc_t *animation_data) {
     }
 
     if (osMutexAcquire(g_ws2812b_api_dynamic_lut[animation_data->device].mutex, MUTEX_TIMEOUT) != osOK) {
-        TRACE_ERR("AddAnimation: Failed to acquire mutex for device %d\n", animation_data->device);
+        TRACE_ERR("AddAnimation: Failed to acquire mutex for device [%d]\n", animation_data->device);
         
         return false;
     }
@@ -478,7 +478,7 @@ bool WS2812B_API_AddAnimation (sLedAnimationDesc_t *animation_data) {
 
 bool WS2812B_API_ClearAnimations (const eWs2812b_t device) {
     if (!WS2812B_Config_IsCorrectWs2812b(device)) {
-        TRACE_ERR("ClearAnimations: Incorrect device %d\n", device);
+        TRACE_ERR("ClearAnimations: Incorrect device [%d]\n", device);
         
         return false;
     }
@@ -500,7 +500,7 @@ bool WS2812B_API_ClearAnimations (const eWs2812b_t device) {
     }
 
     if (osMutexAcquire(g_ws2812b_api_dynamic_lut[device].mutex, MUTEX_TIMEOUT) != osOK) {
-        TRACE_ERR("ClearAnimations: Failed to acquire mutex for device %d\n", device);
+        TRACE_ERR("ClearAnimations: Failed to acquire mutex for device [%d]\n", device);
         
         return false;
     }
@@ -541,7 +541,7 @@ bool WS2812B_API_ClearAnimations (const eWs2812b_t device) {
 
 bool WS2812B_API_Start (const eWs2812b_t device) {
     if (!WS2812B_Config_IsCorrectWs2812b(device)) {
-        TRACE_ERR("Start: Incorrect device %d\n", device);
+        TRACE_ERR("Start: Incorrect device [%d]\n", device);
         
         return false;
     }
@@ -559,7 +559,7 @@ bool WS2812B_API_Start (const eWs2812b_t device) {
     }
 
     if (osMutexAcquire(g_ws2812b_api_dynamic_lut[device].mutex, MUTEX_TIMEOUT) != osOK) {
-        TRACE_ERR("Start: Failed to acquire mutex for device %d\n", device);
+        TRACE_ERR("Start: Failed to acquire mutex for device [%d]\n", device);
         
         return false;
     }
@@ -569,7 +569,7 @@ bool WS2812B_API_Start (const eWs2812b_t device) {
     osEventFlagsClear(g_ws2812b_api_dynamic_lut[device].flag, TRANSFER_SUCCESS_FLAG);
 
     if (!WS2812B_API_Update(device)) {
-        TRACE_ERR("Start: Update failed for device %d\n", device);
+        TRACE_ERR("Start: Update failed for device [%d]\n", device);
         
         osMutexRelease(g_ws2812b_api_dynamic_lut[device].mutex);
         
@@ -590,7 +590,7 @@ bool WS2812B_API_Start (const eWs2812b_t device) {
         return false;
     }
 
-    if (g_ws2812b_api_dynamic_lut[device].dynamic_animations == NULL) {
+    if (g_ws2812b_api_dynamic_lut[device].head == NULL) {
         g_ws2812b_api_dynamic_lut[device].led_state = eWs2812bState_Idle;
 
         osMutexRelease(g_ws2812b_api_dynamic_lut[device].mutex);
@@ -606,7 +606,7 @@ bool WS2812B_API_Start (const eWs2812b_t device) {
 
 bool WS2812B_API_Stop (const eWs2812b_t device) {
     if (!WS2812B_Config_IsCorrectWs2812b(device)) {
-        TRACE_ERR("Stop: Incorrect device %d\n", device);
+        TRACE_ERR("Stop: Incorrect device [%d]\n", device);
         
         return false;
     }
@@ -622,7 +622,7 @@ bool WS2812B_API_Stop (const eWs2812b_t device) {
     }
 
     if (osMutexAcquire(g_ws2812b_api_dynamic_lut[device].mutex, MUTEX_TIMEOUT) != osOK) {
-        TRACE_ERR("Stop: Failed to acquire mutex for device %d\n", device);
+        TRACE_ERR("Stop: Failed to acquire mutex for device [%d]\n", device);
         
         return false;
     }
@@ -646,7 +646,7 @@ bool WS2812B_API_Stop (const eWs2812b_t device) {
 
 bool WS2812B_API_Reset (const eWs2812b_t device) {
     if (!WS2812B_Config_IsCorrectWs2812b(device)) {
-        TRACE_ERR("Reset: Incorrect device %d\n", device);
+        TRACE_ERR("Reset: Incorrect device [%d]\n", device);
         
         return false;
     }
@@ -664,7 +664,7 @@ bool WS2812B_API_Reset (const eWs2812b_t device) {
     }
 
     if (!WS2812B_Driver_Reset(device)) {
-        TRACE_ERR("Reset: Driver reset failed for device %d\n", device);
+        TRACE_ERR("Reset: Driver reset failed for device [%d]\n", device);
         
         return false;
     }
@@ -678,7 +678,7 @@ bool WS2812B_API_Reset (const eWs2812b_t device) {
     }
 
     if (osMutexAcquire(g_ws2812b_api_dynamic_lut[device].mutex, MUTEX_TIMEOUT) != osOK) {
-        TRACE_ERR("Reset: Failed to acquire mutex for device %d\n", device);
+        TRACE_ERR("Reset: Failed to acquire mutex for device [%d]\n", device);
         
         return false;
     }
@@ -704,7 +704,7 @@ bool WS2812B_API_FreeData (void *data) {
 
 uint32_t WS2812B_API_GetLedCount (const eWs2812b_t device) {
     if (!WS2812B_Config_IsCorrectWs2812b(device)) {
-        TRACE_ERR("GetLedCount: Incorrect device %d\n", device);
+        TRACE_ERR("GetLedCount: Incorrect device [%d]\n", device);
         
         return 0;
     }
@@ -720,7 +720,7 @@ uint32_t WS2812B_API_GetLedCount (const eWs2812b_t device) {
 
 bool WS2812B_API_SetColor (const eWs2812b_t device, size_t led_number, const uint8_t red, const uint8_t green, const uint8_t blue) {
     if (!WS2812B_Config_IsCorrectWs2812b(device)) {
-        TRACE_ERR("SetColor: Incorrect device %d\n", device);
+        TRACE_ERR("SetColour: Incorrect device [%d]\n", device);
         
         return false;
     }
@@ -732,7 +732,7 @@ bool WS2812B_API_SetColor (const eWs2812b_t device, size_t led_number, const uin
     }
 
     if (led_number >= g_ws2812b_api_static_lut[device].max_led) {
-        TRACE_ERR("SetColor: Led number %d is out of range\n", led_number);
+        TRACE_ERR("SetColour: Led number [%u] is out of range\n", led_number);
         
         return false;
     }
@@ -748,7 +748,7 @@ bool WS2812B_API_SetColor (const eWs2812b_t device, size_t led_number, const uin
 
 bool WS2812B_API_FillColor (const eWs2812b_t device, const uint8_t red, const uint8_t green, const uint8_t blue) {
     if (!WS2812B_Config_IsCorrectWs2812b(device)) {
-        TRACE_ERR("FillColor: Incorrect device %d\n", device);
+        TRACE_ERR("FillColour: Incorrect device [%d]\n", device);
         
         return false;
     }
@@ -773,7 +773,7 @@ bool WS2812B_API_FillColor (const eWs2812b_t device, const uint8_t red, const ui
 
 bool WS2812B_API_FillSegment (const eWs2812b_t device, const size_t start_led, const size_t end_led, const uint8_t red, const uint8_t green, const uint8_t blue) {
     if (!WS2812B_Config_IsCorrectWs2812b(device)) {
-        TRACE_ERR("FillSegment: Incorrect device %d\n", device);
+        TRACE_ERR("FillSegment: Incorrect device [%d]\n", device);
         
         return false;
     }
@@ -785,7 +785,7 @@ bool WS2812B_API_FillSegment (const eWs2812b_t device, const size_t start_led, c
     }
 
     if (start_led >= end_led || end_led > g_ws2812b_api_static_lut[device].max_led) {
-        TRACE_ERR("FillSegment: Incorrect segment range; start: %d, end: %d\n", start_led, end_led);
+        TRACE_ERR("FillSegment: Incorrect segment range; start: [%u], end: [%u]\n", start_led, end_led);
         
         return false;
     }
