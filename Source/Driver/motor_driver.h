@@ -9,7 +9,6 @@
 #ifdef ENABLE_MOTOR
 #include <stdbool.h>
 #include <stdint.h>
-#include <stddef.h>
 #include "motor_config.h"
 
 /**********************************************************************************************************************
@@ -31,8 +30,8 @@
 bool Motor_Driver_InitAllMotors (void);
 bool Motor_Driver_EnableMotor (const eMotor_t motor);
 bool Motor_Driver_DisableMotor (const eMotor_t motor);
-bool Motor_Driver_SetSpeed (const eMotor_t motor, const eMotorRotation_t rotation_dir, const size_t speed);
-bool Motor_Driver_GetMaxSpeed (const eMotor_t motor, size_t *speed);
+bool Motor_Driver_SetSpeed (const eMotor_t motor, const eMotorRotation_t rotation_dir, const uint16_t speed);
+bool Motor_Driver_GetMaxSpeed (const eMotor_t motor, uint16_t *speed);
 
 #endif /* ENABLE_MOTOR */
 #endif /* SOURCE_DRIVER_MOTOR_DRIVER_H_ */
