@@ -4,12 +4,11 @@
 
 #include "cli_app.h"
 
-#ifdef ENABLE_CLI
+#if defined(ENABLE_CLI)
 
 #include <ctype.h>
 #include "cmsis_os2.h"
 #include "default_cli_lut.h"
-#include "platform_config.h"
 #include "cmd_api.h"
 #include "uart_api.h"
 #include "heap_api.h"
@@ -17,7 +16,7 @@
 #include "message.h"
 #include "error_messages.h"
 
-#ifdef ENABLE_CUSTOM_CMD
+#if defined(ENABLE_CUSTOM_CMD)
 #include "custom_cli_lut.h"
 #endif
 
@@ -33,13 +32,13 @@
  * Private constants
  *********************************************************************************************************************/
 
-#ifdef DEBUG_CLI_APP
+#if defined(DEBUG_CLI_APP)
 CREATE_MODULE_NAME (CLI_APP)
 #else
 CREATE_MODULE_NAME_EMPTY
 #endif /* DEBUG_CLI_APP */
 
-const static osThreadAttr_t g_cli_thread_attributes = {
+static const osThreadAttr_t g_cli_thread_attributes = {
     .name = "CLI_APP_Thread",
     .stack_size = CLI_APP_THREAD_STACK_SIZE,
     .priority = (osPriority_t) CLI_APP_THREAD_PRIORITY
@@ -72,21 +71,21 @@ static void CLI_APP_Thread (void *arg);
  *********************************************************************************************************************/
 
 static void CLI_APP_Thread (void *arg) {
-    while (true) {
+    while (1) {
         if (UART_API_Receive(DEBUG_UART, &g_command, osWaitForever)) {
             eErrorCode_t error_code = eErrorCode_NOTFOUND;
             
-            #ifdef ENABLE_DEFAULT_CMD
+            #if defined(ENABLE_DEFAULT_CMD)
             error_code = CMD_API_FindCommand(g_command, &g_response, g_default_cmd_lut, eCliDefaultCmd_Last);
             #endif /* ENABLE_DEFAULT_CMD */
 
-            #ifdef ENABLE_CUSTOM_CMD
-            if (error_code == eErrorCode_NOTFOUND) {
+            #if defined(ENABLE_CUSTOM_CMD)
+            if (eErrorCode_NOTFOUND == error_code) {
                 error_code = CMD_API_FindCommand(g_command, &g_response, g_custom_cmd_lut, eCliCustomCmd_Last);
             }
             #endif /* ENABLE_CUSTOM_CMD */
 
-            if ((error_code != eErrorCode_OK) && (g_response.data != NULL)) {
+            if ((eErrorCode_OK != error_code) && (NULL != g_response.data)) {
                 TRACE_WRN(g_response.data);
             }
             
@@ -110,17 +109,17 @@ bool CLI_APP_Init (const eBaudrate_t baudrate) {
         return false;
     }
 
-    if (Heap_API_Init() == false) {
+    if (!Heap_API_Init()) {
         return false;
     }
 
-    if (Debug_API_Init(baudrate) == false) {
+    if (!Debug_API_Init(baudrate)) {
         return false;
     }
 
     g_cli_thread_id = osThreadNew(CLI_APP_Thread, NULL, &g_cli_thread_attributes);
 
-    if (g_cli_thread_id == NULL) {
+    if (NULL == g_cli_thread_id) {
         return false;
     }
 

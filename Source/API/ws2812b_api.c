@@ -4,7 +4,7 @@
 
 #include "ws2812b_api.h"
 
-#ifdef ENABLE_WS2812B
+#if defined(ENABLE_WS2812B)
 #include "cmsis_os2.h"
 #include "debug_api.h"
 #include "heap_api.h"
@@ -58,7 +58,7 @@ typedef struct sWs2812bDynamicDesc {
  * Private constants
  *********************************************************************************************************************/
 
-#ifdef DEBUG_WS2812B_API
+#if defined(DEBUG_WS2812B_API)
 CREATE_MODULE_NAME (WS2812B_API)
 #else
 CREATE_MODULE_NAME_EMPTY
@@ -92,14 +92,14 @@ static bool WS2812B_API_QueueDynamicAnimation (const sLedAnimationDesc_t *dynami
  *********************************************************************************************************************/
 
 static void WS2812B_API_TimerCallback (void *arg) {
-    if (arg == NULL) {
+    if (NULL == arg) {
         return;
     }
 
-    sWs2812bApiDynamicDesc_t *timer_arg = (sWs2812bApiDynamicDesc_t *) arg;
+    sWs2812bApiDynamicDesc_t *timer_arg = (sWs2812bApiDynamicDesc_t*) arg;
 
-    if (timer_arg->led_state != eWs2812bState_Running) {
-        if (osMutexAcquire(timer_arg->mutex, MUTEX_TIMEOUT) != osOK) {
+    if (eWs2812bState_Running != timer_arg->led_state) {
+        if (osOK != osMutexAcquire(timer_arg->mutex, MUTEX_TIMEOUT)) {
             return;
         }
             
@@ -108,10 +108,10 @@ static void WS2812B_API_TimerCallback (void *arg) {
 
     sWs2812bSequence_t *sequence = timer_arg->head;
 
-    while (sequence != NULL) {
-        sLedAnimationInstance_t *animation_instance = (sLedAnimationInstance_t *) sequence->data;
+    while (NULL != sequence) {
+        sLedAnimationInstance_t *animation_instance = (sLedAnimationInstance_t*) sequence->data;
 
-        if (animation_instance == NULL) {
+        if (NULL == animation_instance) {
             timer_arg->led_state = eWs2812bState_Idle;
 
             osTimerStop(timer_arg->timer);
@@ -145,11 +145,11 @@ static bool WS2812B_API_Update (const eWs2812b_t device) {
         return false;
     }
 
-    if (g_ws2812b_api_dynamic_lut[device].led_state != eWs2812bState_Running) {
+    if (eWs2812bState_Running != g_ws2812b_api_dynamic_lut[device].led_state) {
         return false;
     }
 
-    if (osMutexAcquire(g_ws2812b_api_dynamic_lut[device].mutex, MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_ws2812b_api_dynamic_lut[device].mutex, MUTEX_TIMEOUT)) {
         return false;
     }
 
@@ -167,13 +167,13 @@ static bool WS2812B_API_Update (const eWs2812b_t device) {
 }
 
 static void WS2812B_API_DriverCallback (void *context, const eLedTransferState_t transfer_state) {
-    if (context == NULL) {
+    if (NULL == context) {
         return;
     }
     
     sWs2812bApiDynamicDesc_t *callback_arg = (sWs2812bApiDynamicDesc_t*) context;
 
-    if (transfer_state == eLedTransferState_Complete) { 
+    if (eLedTransferState_Complete == transfer_state) { 
         osEventFlagsSet(callback_arg->flag, TRANSFER_SUCCESS_FLAG);
     }
 
@@ -181,7 +181,7 @@ static void WS2812B_API_DriverCallback (void *context, const eLedTransferState_t
 }
 
 static bool WS2812B_API_BuildStaticAnimation (const sLedAnimationDesc_t *static_animation_data) {
-    if (static_animation_data == NULL) {
+    if (NULL == static_animation_data) {
         return false;
     }
     
@@ -193,7 +193,7 @@ static bool WS2812B_API_BuildStaticAnimation (const sLedAnimationDesc_t *static_
         return false;
     }
 
-    if (static_animation_data->data == NULL) {
+    if (NULL == static_animation_data->data) {
         return false;
     }
 
@@ -242,7 +242,7 @@ static bool WS2812B_API_BuildStaticAnimation (const sLedAnimationDesc_t *static_
 }
 
 static bool WS2812B_API_QueueDynamicAnimation (const sLedAnimationDesc_t *dynamic_animation_data) {
-    if (dynamic_animation_data == NULL) {
+    if (NULL == dynamic_animation_data) {
         return false;
     }
 
@@ -254,13 +254,13 @@ static bool WS2812B_API_QueueDynamicAnimation (const sLedAnimationDesc_t *dynami
         return false;
     }
 
-    if (dynamic_animation_data->data == NULL) {
+    if (NULL == dynamic_animation_data->data) {
         return false;
     }
 
     sLedAnimationInstance_t *animation_instance =  Heap_API_Malloc(sizeof(sLedAnimationInstance_t));
 
-    if (animation_instance == NULL) {
+    if (NULL == animation_instance) {
         TRACE_ERR("QueueDynamicAnimation: Malloc failed for animation instance\n");
         
         return false;
@@ -273,7 +273,7 @@ static bool WS2812B_API_QueueDynamicAnimation (const sLedAnimationDesc_t *dynami
             sLedRainbow_t *rainbow_context = Heap_API_Malloc(sizeof(sLedRainbow_t));
             sLedAnimationRainbow_t *rainbow_data = Heap_API_Malloc(sizeof(sLedAnimationRainbow_t));
 
-            if ((rainbow_context == NULL) || (rainbow_data == NULL)) {
+            if ((NULL == rainbow_context) || (NULL == rainbow_data)) {
                 TRACE_ERR("QueueDynamicAnimation: Malloc failed for rainbow context or data\n");
                 
                 return false;
@@ -306,7 +306,7 @@ static bool WS2812B_API_QueueDynamicAnimation (const sLedAnimationDesc_t *dynami
 
     sWs2812bSequence_t *new_animation = Heap_API_Malloc(sizeof(sWs2812bSequence_t));
     
-    if (new_animation == NULL) {
+    if (NULL == new_animation) {
         TRACE_ERR("QueueDynamicAnimation: Malloc failed for new animation sequence\n");
         
         return false;
@@ -316,16 +316,16 @@ static bool WS2812B_API_QueueDynamicAnimation (const sLedAnimationDesc_t *dynami
     new_animation->data = animation_instance;
     new_animation->next = NULL;
 
-    if (osMutexAcquire(g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].mutex, MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].mutex, MUTEX_TIMEOUT)) {
         TRACE_ERR("QueueDynamicAnimation: Failed to acquire mutex for device [%d]\n", dynamic_animation_data->device);
         return false;
     }
 
     // Uses FIFO queueing for dynamic animations
-    if (g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].head == NULL) {
+    if (NULL == g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].head) {
         g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].head = new_animation;
     } else {
-        if (g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].tail == NULL) {
+        if (NULL == g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].tail) {
             TRACE_ERR("QueueDynamicAnimation: Tail pointer is NULL while head is not NULL\n");
             
             osMutexRelease(g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].mutex);
@@ -369,7 +369,7 @@ bool WS2812B_API_InitAll (void) {
     for (eWs2812b_t device = eWs2812b_First; device < eWs2812b_Last; device++) {
         const sWs2812bControlDesc_t *desc = WS2812B_Config_GetWs2812bControlDesc(device);
 
-        if (desc == NULL) {
+        if (NULL == desc) {
             TRACE_ERR("Init: No control desc for device [%d]\n", device);
 
             g_ws2812b_api_is_init = false;
@@ -385,25 +385,25 @@ bool WS2812B_API_InitAll (void) {
 
         g_ws2812b_api_dynamic_lut[device].led_data = Heap_API_Calloc(g_ws2812b_api_static_lut[device].max_led * LED_DATA_CHANNELS, sizeof(uint8_t));
 
-        if (g_ws2812b_api_dynamic_lut[device].led_data == NULL) {
+        if (NULL == g_ws2812b_api_dynamic_lut[device].led_data) {
             g_ws2812b_api_is_init = false;
         }
         
         g_ws2812b_api_dynamic_lut[device].timer = osTimerNew(WS2812B_API_TimerCallback, osTimerPeriodic, &g_ws2812b_api_dynamic_lut[device], &g_ws2812b_api_static_lut[device].timer_attributes);
 
-        if (g_ws2812b_api_dynamic_lut[device].timer == NULL) {
+        if (NULL == g_ws2812b_api_dynamic_lut[device].timer) {
             g_ws2812b_api_is_init = false;
         }
 
         g_ws2812b_api_dynamic_lut[device].mutex = osMutexNew(&g_ws2812b_api_static_lut[device].mutex_attributes);
 
-        if (g_ws2812b_api_dynamic_lut[device].mutex == NULL) {
+        if (NULL == g_ws2812b_api_dynamic_lut[device].mutex) {
             g_ws2812b_api_is_init = false;
         }
 
         g_ws2812b_api_dynamic_lut[device].flag = osEventFlagsNew(&g_ws2812b_api_static_lut[device].flag_attributes);
 
-        if (g_ws2812b_api_dynamic_lut[device].flag == NULL) {
+        if (NULL == g_ws2812b_api_dynamic_lut[device].flag) {
             g_ws2812b_api_is_init = false;
         }
 
@@ -414,7 +414,7 @@ bool WS2812B_API_InitAll (void) {
 }
 
 bool WS2812B_API_AddAnimation (sLedAnimationDesc_t *animation_data) {
-    if (animation_data == NULL) {
+    if (NULL == animation_data) {
         TRACE_ERR("AddAnimation: No animation data\n");
         
         return false;
@@ -432,13 +432,13 @@ bool WS2812B_API_AddAnimation (sLedAnimationDesc_t *animation_data) {
         return false;
     }
 
-    if (g_ws2812b_api_dynamic_lut[animation_data->device].led_state != eWs2812bState_Idle) {
+    if (eWs2812bState_Idle != g_ws2812b_api_dynamic_lut[animation_data->device].led_state) {
         TRACE_ERR("AddAnimation: Device state not idle: [%d]\n", g_ws2812b_api_dynamic_lut[animation_data->device].led_state);
         
         return false;
     }
 
-    if (osMutexAcquire(g_ws2812b_api_dynamic_lut[animation_data->device].mutex, MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_ws2812b_api_dynamic_lut[animation_data->device].mutex, MUTEX_TIMEOUT)) {
         TRACE_ERR("AddAnimation: Failed to acquire mutex for device [%d]\n", animation_data->device);
         
         return false;
@@ -479,7 +479,7 @@ bool WS2812B_API_AddAnimation (sLedAnimationDesc_t *animation_data) {
         } break;       
     }
 
-    if (osMutexAcquire(g_ws2812b_api_dynamic_lut[animation_data->device].mutex, MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_ws2812b_api_dynamic_lut[animation_data->device].mutex, MUTEX_TIMEOUT)) {
         TRACE_ERR("AddAnimation: Failed to acquire mutex for state reset\n");
         
         is_execute_successful = false;
@@ -505,27 +505,27 @@ bool WS2812B_API_ClearAnimations (const eWs2812b_t device) {
         return false;
     }
 
-    if (g_ws2812b_api_dynamic_lut[device].led_state != eWs2812bState_Idle) {
+    if (eWs2812bState_Idle != g_ws2812b_api_dynamic_lut[device].led_state) {
         TRACE_ERR("ClearAnimations: Device state not idle: [%d]\n", g_ws2812b_api_dynamic_lut[device].led_state);
 
         return false;
     }
 
-    if (g_ws2812b_api_dynamic_lut[device].head == NULL) {
+    if (NULL == g_ws2812b_api_dynamic_lut[device].head) {
         return true;
     }
 
-    if (osMutexAcquire(g_ws2812b_api_dynamic_lut[device].mutex, MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_ws2812b_api_dynamic_lut[device].mutex, MUTEX_TIMEOUT)) {
         TRACE_ERR("ClearAnimations: Failed to acquire mutex for device [%d]\n", device);
         
         return false;
     }
 
-    while (g_ws2812b_api_dynamic_lut[device].head != NULL) {
+    while (NULL != g_ws2812b_api_dynamic_lut[device].head) {
         sWs2812bSequence_t *sequence = g_ws2812b_api_dynamic_lut[device].head;
-        sLedAnimationInstance_t *instance = (sLedAnimationInstance_t *) sequence->data;
+        sLedAnimationInstance_t *instance = (sLedAnimationInstance_t*) sequence->data;
 
-        if (instance == NULL) {
+        if (NULL == instance) {
             TRACE_ERR("ClearAnimations: No animation instance\n");
             
             osMutexRelease(g_ws2812b_api_dynamic_lut[device].mutex);
@@ -533,7 +533,7 @@ bool WS2812B_API_ClearAnimations (const eWs2812b_t device) {
             return false;
         }
 
-        if (instance->free_animation != NULL && instance->context != NULL) {
+        if ((NULL != instance->free_animation) && (NULL != instance->context)) {
             instance->free_animation(instance->context);
         }
         
@@ -570,13 +570,13 @@ bool WS2812B_API_Start (const eWs2812b_t device) {
         return false;
     }
 
-    if (g_ws2812b_api_dynamic_lut[device].led_state != eWs2812bState_Idle) {
+    if (eWs2812bState_Idle != g_ws2812b_api_dynamic_lut[device].led_state) {
         TRACE_ERR("Start: Device state not idle: [%d]\n", g_ws2812b_api_dynamic_lut[device].led_state);
 
         return false;
     }
 
-    if (osMutexAcquire(g_ws2812b_api_dynamic_lut[device].mutex, MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_ws2812b_api_dynamic_lut[device].mutex, MUTEX_TIMEOUT)) {
         TRACE_ERR("Start: Failed to acquire mutex for device [%d]\n", device);
         
         return false;
@@ -598,7 +598,7 @@ bool WS2812B_API_Start (const eWs2812b_t device) {
 
     osEventFlagsClear(g_ws2812b_api_dynamic_lut[device].flag, TRANSFER_SUCCESS_FLAG);
 
-    if (flag != TRANSFER_SUCCESS_FLAG) {
+    if (TRANSFER_SUCCESS_FLAG != flag) {
         TRACE_ERR("Start: Received incorrect flag: [%ld]\n", (int32_t) flag);
 
         g_ws2812b_api_dynamic_lut[device].led_state = eWs2812bState_Idle;
@@ -608,7 +608,7 @@ bool WS2812B_API_Start (const eWs2812b_t device) {
         return false;
     }
 
-    if (g_ws2812b_api_dynamic_lut[device].head == NULL) {
+    if (NULL == g_ws2812b_api_dynamic_lut[device].head) {
         g_ws2812b_api_dynamic_lut[device].led_state = eWs2812bState_Idle;
 
         osMutexRelease(g_ws2812b_api_dynamic_lut[device].mutex);
@@ -639,7 +639,7 @@ bool WS2812B_API_Stop (const eWs2812b_t device) {
         return true;
     }
 
-    if (osMutexAcquire(g_ws2812b_api_dynamic_lut[device].mutex, MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_ws2812b_api_dynamic_lut[device].mutex, MUTEX_TIMEOUT)) {
         TRACE_ERR("Stop: Failed to acquire mutex for device [%d]\n", device);
         
         return false;
@@ -653,7 +653,7 @@ bool WS2812B_API_Stop (const eWs2812b_t device) {
 
     uint32_t flag = osEventFlagsWait(g_ws2812b_api_dynamic_lut[device].flag, TRANSFER_SUCCESS_FLAG, osFlagsWaitAny, DEFAULT_FLAG_TIMEOUT);
 
-    if (flag != TRANSFER_SUCCESS_FLAG) {
+    if (TRANSFER_SUCCESS_FLAG != flag) {
         TRACE_ERR("Stop: Received incorrect flag: [%ld]\n", (int32_t) flag);
 
         return false;
@@ -675,7 +675,7 @@ bool WS2812B_API_Reset (const eWs2812b_t device) {
         return false;
     }
 
-    if (g_ws2812b_api_dynamic_lut[device].led_state != eWs2812bState_Idle) {
+    if (eWs2812bState_Idle != g_ws2812b_api_dynamic_lut[device].led_state) {
         TRACE_ERR("Reset: Device state not idle: [%d]\n", g_ws2812b_api_dynamic_lut[device].led_state);
 
         return false;
@@ -689,13 +689,13 @@ bool WS2812B_API_Reset (const eWs2812b_t device) {
 
     uint32_t flag = osEventFlagsWait(g_ws2812b_api_dynamic_lut[device].flag, TRANSFER_SUCCESS_FLAG, osFlagsWaitAny, DEFAULT_FLAG_TIMEOUT);
 
-    if (flag != TRANSFER_SUCCESS_FLAG) {
+    if (TRANSFER_SUCCESS_FLAG != flag) {
         TRACE_ERR("Reset: Received incorrect flag: [%ld]\n", (int32_t) flag);
 
         return false;
     }
 
-    if (osMutexAcquire(g_ws2812b_api_dynamic_lut[device].mutex, MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_ws2812b_api_dynamic_lut[device].mutex, MUTEX_TIMEOUT)) {
         TRACE_ERR("Reset: Failed to acquire mutex for device [%d]\n", device);
         
         return false;
@@ -711,7 +711,7 @@ bool WS2812B_API_Reset (const eWs2812b_t device) {
 }
 
 bool WS2812B_API_FreeData (void *data) {
-    if (data == NULL) {
+    if (NULL == data) {
         TRACE_ERR("FreeData: No data to free\n");
         
         return false;
@@ -820,4 +820,4 @@ bool WS2812B_API_FillSegment (const eWs2812b_t device, const size_t start_led, c
     return true;
 }
 
-#endif
+#endif /* ENABLE_WS2812B */

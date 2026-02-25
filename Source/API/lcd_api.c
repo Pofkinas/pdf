@@ -4,11 +4,10 @@
 
 #include "lcd_api.h"
 
-#ifdef ENABLE_LCD
+#if defined(ENABLE_LCD)
 #include "cmsis_os2.h"
-#include "i2c_api.h"
 #include "debug_api.h"
-#include "delay.h"
+#include "i2c_api.h"
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -34,7 +33,7 @@ typedef enum eLcdTxMode {
  * Private constants
  *********************************************************************************************************************/
 
-#ifdef DEBUG_LCD_API
+#if defined(DEBUG_LCD_API)
 CREATE_MODULE_NAME (LCD_API)
 #else
 CREATE_MODULE_NAME_EMPTY
@@ -78,10 +77,10 @@ static bool LCD_API_Send (const eLcd_t lcd, const uint8_t data, const eLcdTxMode
 
     uint8_t send_data[4];
 
-    send_data[0] = lcd_byte.upper_4bits | ((tx_mode == eLcdTxMode_Command) ? COMMAND_HIGH : DATA_HIGH);
-    send_data[1] = lcd_byte.upper_4bits | ((tx_mode == eLcdTxMode_Command) ? COMMAND_LOW : DATA_LOW);
-    send_data[2] = lcd_byte.lower_4bits | ((tx_mode == eLcdTxMode_Command) ? COMMAND_HIGH : DATA_HIGH);
-    send_data[3] = lcd_byte.lower_4bits | ((tx_mode == eLcdTxMode_Command) ? COMMAND_LOW : DATA_LOW);
+    send_data[0] = lcd_byte.upper_4bits | ((eLcdTxMode_Command == tx_mode) ? COMMAND_HIGH : DATA_HIGH);
+    send_data[1] = lcd_byte.upper_4bits | ((eLcdTxMode_Command == tx_mode) ? COMMAND_LOW : DATA_LOW);
+    send_data[2] = lcd_byte.lower_4bits | ((eLcdTxMode_Command == tx_mode) ? COMMAND_HIGH : DATA_HIGH);
+    send_data[3] = lcd_byte.lower_4bits | ((eLcdTxMode_Command == tx_mode) ? COMMAND_LOW : DATA_LOW);
 
     return I2C_API_Write(g_static_lcd_lut[lcd].i2c, g_static_lcd_lut[lcd].i2c_address, send_data, sizeof(send_data), 0, 0, LCD_I2C_TIMEOUT);
 }
@@ -216,7 +215,7 @@ static bool LCD_API_SendBytes (const eLcd_t lcd, const char *data, const size_t 
         return false;
     }
 
-    if (data == NULL || data_size == 0) {
+    if ((NULL == data) || (0 == data_size)) {
         TRACE_ERR("SendBytes: Invalid data or size\n");
         
         return false;
@@ -247,7 +246,7 @@ bool LCD_API_InitAllLcd (void) {
     for (eLcd_t lcd = eLcd_First; lcd < eLcd_Last; lcd++) {
         const sLcdDesc_t *desc = LCD_Config_GetLcdDesc(lcd);
 
-        if (desc == NULL) {
+        if (NULL == desc) {
             TRACE_ERR("InitAllLcd: Failed to get LCD [%d] description\n", lcd);
 
             g_is_lcd_initialized = false;
@@ -284,7 +283,7 @@ bool LCD_API_Clear (const eLcd_t lcd) {
         return false;
     }
 
-    if (!g_is_lcd_initialized) {
+    if (eLcdState_Init != g_lcd_state[lcd]) {
         TRACE_ERR ("Clear: LCD not initialized [%d]\n", lcd);
         
         return false;
@@ -308,7 +307,7 @@ bool LCD_API_TurnOn (const eLcd_t lcd) {
         return false;
     }
     
-    if (!g_is_lcd_initialized) {
+    if (eLcdState_Init != g_lcd_state[lcd]) {
         TRACE_ERR ("TurnOn: LCD not initialized [%d]\n", lcd);
         
         return false;
@@ -330,7 +329,7 @@ bool LCD_API_TurnOff (const eLcd_t lcd) {
         return false;
     }
 
-    if (!g_is_lcd_initialized) {
+    if (eLcdState_Init != g_lcd_state[lcd]) {
         TRACE_ERR ("TurnOff: LCD not initialized [%d]\n", lcd);
         
         return false;
@@ -352,7 +351,7 @@ bool LCD_API_SendCommand (const eLcd_t lcd, const uint8_t command) {
         return false;
     }
 
-    if (!g_is_lcd_initialized) {
+    if (eLcdState_Init != g_lcd_state[lcd]) {
         TRACE_ERR ("SendCommand: LCD not initialized [%d]\n", lcd);
         
         return false;
@@ -374,7 +373,7 @@ bool LCD_API_Print (const eLcd_t lcd, const sMessage_t *message, const eLcdRow_t
         return false;
     }
 
-    if (message == NULL || message->data == NULL || message->size == 0) {
+    if ((NULL == message) || (NULL == message->data) || (0 == message->size)) {
         TRACE_ERR("Print: Invalid message data\n");
         
         return false;
@@ -392,7 +391,7 @@ bool LCD_API_Print (const eLcd_t lcd, const sMessage_t *message, const eLcdRow_t
         return false;
     }
 
-    if (!g_is_lcd_initialized) {
+    if (eLcdState_Init != g_lcd_state[lcd]) {
         TRACE_ERR ("Print: LCD not initialized [%d]\n", lcd);
         
         return false;

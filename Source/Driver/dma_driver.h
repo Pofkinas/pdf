@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_DMA
+#if defined(ENABLE_DMA)
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>

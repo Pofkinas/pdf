@@ -75,6 +75,6 @@ typedef enum eErrorCode {
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
-const char* Error_Message_To_String(eErrorCode_t error_code);
+const char *Error_Message_To_String(eErrorCode_t error_code);
 
 #endif /* SOURCE_UTILITY_ERROR_MESSAGES_H_ */

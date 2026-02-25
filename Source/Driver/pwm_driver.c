@@ -4,7 +4,7 @@
 
 #include "pwm_driver.h"
 
-#ifdef ENABLE_PWM
+#if defined(ENABLE_PWM)
 #include "timer_driver.h"
 
 /**********************************************************************************************************************
@@ -55,7 +55,7 @@ bool PWM_Driver_InitAllDevices (void) {
     for (ePwm_t device = ePwm_First; device < ePwm_Last; device++) {
         const sPwmOcDesc_t *desc = PWM_Config_GetPwmOcDesc(device);
         
-        if (desc == NULL) {
+        if (NULL == desc) {
             g_is_all_device_init = false;
             return false;
         }
@@ -71,15 +71,15 @@ bool PWM_Driver_InitAllDevices (void) {
         channel_oc_init_struct.OCIdleState = g_oc_pwm_lut[device].oc_idle;
         channel_oc_init_struct.OCNIdleState = g_oc_pwm_lut[device].ocn_idle;
 
-        if (LL_TIM_OC_Init(g_oc_pwm_lut[device].periph, g_oc_pwm_lut[device].channel, &channel_oc_init_struct) == ERROR) {
+        if (ERROR == LL_TIM_OC_Init(g_oc_pwm_lut[device].periph, g_oc_pwm_lut[device].channel, &channel_oc_init_struct)) {
             g_is_all_device_init = false;
         }
     
-        if (g_oc_pwm_lut[device].fast_mode_fp != NULL) {
+        if (NULL != g_oc_pwm_lut[device].fast_mode_fp) {
             g_oc_pwm_lut[device].fast_mode_fp(g_oc_pwm_lut[device].periph, g_oc_pwm_lut[device].channel);
         }
     
-        if (g_oc_pwm_lut[device].compare_preload_fp != NULL) {
+        if (NULL != g_oc_pwm_lut[device].compare_preload_fp) {
             g_oc_pwm_lut[device].compare_preload_fp(g_oc_pwm_lut[device].periph, g_oc_pwm_lut[device].channel);
         }
 
@@ -91,7 +91,7 @@ bool PWM_Driver_InitAllDevices (void) {
     return g_is_all_device_init;
 }
 
-bool PWM_Driver_Enable_Device (const ePwm_t device) {
+bool PWM_Driver_EnableDevice (const ePwm_t device) {
     if (!PWM_Config_IsCorrectPwm(device)) {
         return false;
     }
@@ -115,7 +115,7 @@ bool PWM_Driver_Enable_Device (const ePwm_t device) {
     return true;
 }
 
-bool PWM_Driver_Disable_Device (const ePwm_t device) {
+bool PWM_Driver_DisableDevice (const ePwm_t device) {
     if (!PWM_Config_IsCorrectPwm(device)) {
         return false;
     }
@@ -139,7 +139,7 @@ bool PWM_Driver_Disable_Device (const ePwm_t device) {
     return true;
 }
 
-bool PWM_Driver_Change_Duty_Cycle (const ePwm_t device, const uint32_t value) {
+bool PWM_Driver_ChangeDutyCycle (const ePwm_t device, const uint32_t value) {
     if (!PWM_Config_IsCorrectPwm(device)) {
         return false;
     }
@@ -182,7 +182,7 @@ uint32_t PWM_Driver_GetRegAddr (const ePwm_t device) {
         }
         case LL_TIM_CHANNEL_CH4: {
             return (uint32_t) &g_oc_pwm_lut[device].periph->CCR4;
-        }
+        } break;
         default: {
             return 0;
         }

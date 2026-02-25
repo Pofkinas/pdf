@@ -24,7 +24,7 @@
  * Private constants
  *********************************************************************************************************************/
 
-#ifdef DEBUG_LED_APP
+#if defined(DEBUG_LED_APP)
 CREATE_MODULE_NAME (LED_APP)
 #else
 CREATE_MODULE_NAME_EMPTY
@@ -56,20 +56,20 @@ static void LED_APP_Thread (void *arg);
 
 static void LED_APP_Thread (void *arg) {
     while (1) {
-        if (osMessageQueueGet(g_led_message_queue_id, &g_received_task, LED_APP_MESSAGE_QUEUE_PRIORITY, LED_APP_MESSAGE_QUEUE_TIMEOUT) != osOK) {
+        if (osOK != osMessageQueueGet(g_led_message_queue_id, &g_received_task, LED_APP_MESSAGE_QUEUE_PRIORITY, LED_APP_MESSAGE_QUEUE_TIMEOUT)) {
             continue;
         }
 
-        if (g_received_task.data == NULL) {
+        if (NULL == g_received_task.data) {
             TRACE_ERR("No arguments\n");
         }
         
         switch (g_received_task.task) {
-            #ifdef ENABLE_LED
+            #if defined(ENABLE_LED)
             case eLedTask_Set: {
                 sLedCommon_t *arguments = (sLedCommon_t*) g_received_task.data;
 
-                if (arguments == NULL){
+                if (NULL == arguments) {
                     TRACE_ERR("No arguments\n");
 
                     Heap_API_Free(arguments);
@@ -100,7 +100,7 @@ static void LED_APP_Thread (void *arg) {
             case eLedTask_Reset: {
                 sLedCommon_t *arguments = (sLedCommon_t*) g_received_task.data;
 
-                if (arguments == NULL){
+                if (NULL == arguments) {
                     TRACE_ERR("No arguments\n");
 
                     Heap_API_Free(arguments);
@@ -131,7 +131,7 @@ static void LED_APP_Thread (void *arg) {
             case eLedTask_Toggle: {
                 sLedCommon_t *arguments = (sLedCommon_t*) g_received_task.data;
 
-                if (arguments == NULL){
+                if (NULL == arguments) {
                     TRACE_ERR("No arguments\n");
 
                     Heap_API_Free(arguments);
@@ -162,7 +162,7 @@ static void LED_APP_Thread (void *arg) {
             case eLedTask_Blink: {
                 sLedBlink_t *arguments = (sLedBlink_t*) g_received_task.data;
 
-                if (arguments == NULL){
+                if (NULL == arguments) {
                     TRACE_ERR("No arguments\n");
 
                     Heap_API_Free(arguments);
@@ -207,12 +207,11 @@ static void LED_APP_Thread (void *arg) {
                 Heap_API_Free(arguments);
             } break;
             #endif /* ENABLE_LED */
-
-            #ifdef ENABLE_PWM_LED
+            #if defined(ENABLE_PWM_LED)
             case eLedTask_Set_Brightness: {
                 sLedSetBrightness_t *arguments = (sLedSetBrightness_t*) g_received_task.data;
 
-                if (arguments == NULL){
+                if (NULL == arguments) {
                     TRACE_ERR("No arguments\n");
 
                     Heap_API_Free(arguments);
@@ -251,7 +250,7 @@ static void LED_APP_Thread (void *arg) {
             case eLedTask_Pulse: {
                 sLedPulse_t *arguments = (sLedPulse_t*) g_received_task.data;
 
-                if (arguments == NULL){
+                if (NULL == arguments) {
                     TRACE_ERR("No arguments\n");
 
                     Heap_API_Free(arguments);
@@ -318,15 +317,15 @@ bool LED_APP_Init (void) {
         return false;
     }
 
-    g_led_message_queue_id = osMessageQueueNew(CLI_COMMAND_MESSAGE_CAPACITY, sizeof(sLedCommandDesc_t), &g_led_message_queue_attributes);
+    g_led_message_queue_id = osMessageQueueNew(LED_COMMAND_MESSAGE_CAPACITY, sizeof(sLedCommandDesc_t), &g_led_message_queue_attributes);
     
-    if (g_led_message_queue_id == NULL) {
+    if (NULL == g_led_message_queue_id) {
         return false;
     }
 
     g_led_thread_id = osThreadNew(LED_APP_Thread, NULL, &g_led_thread_attributes);
 
-    if (g_led_thread_id == NULL) {
+    if (NULL == g_led_thread_id) {
         return false;
     }
 
@@ -335,16 +334,20 @@ bool LED_APP_Init (void) {
     return g_is_initialized;
 }
 
-bool LED_APP_Add_Task (sLedCommandDesc_t *task_to_message_queue) {
-    if (task_to_message_queue == NULL) {
+bool LED_APP_AddTask (sLedCommandDesc_t *task_to_message_queue) {
+    if (!g_is_initialized) {
+        return false;
+    }   
+    
+    if (NULL == task_to_message_queue) {
         return false;
     }
 
-    if (g_led_message_queue_id == NULL){
+    if (NULL == g_led_message_queue_id) {
         return false;
     }
 
-    if (osMessageQueuePut(g_led_message_queue_id, task_to_message_queue, LED_APP_MESSAGE_QUEUE_PRIORITY, LED_APP_MESSAGE_QUEUE_TIMEOUT) != osOK) {
+    if (osOK != osMessageQueuePut(g_led_message_queue_id, task_to_message_queue, LED_APP_MESSAGE_QUEUE_PRIORITY, LED_APP_MESSAGE_QUEUE_TIMEOUT)) {
         return false;
     }
 

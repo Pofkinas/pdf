@@ -4,7 +4,7 @@
 
 #include "motor_api.h"
 
-#ifdef ENABLE_MOTOR
+#if defined(ENABLE_MOTOR)
 #include <stdint.h>
 #include <math.h>
 #include "cmsis_os2.h"
@@ -15,7 +15,7 @@
 #include "gpio_driver.h"
 #include "float_parts.h"
 
-#ifdef ENABLE_PID_CONTROL
+#if defined(ENABLE_PID_CONTROL)
 #include <stdlib.h>
 #include "odometry_api.h"
 #include "math_utils.h"
@@ -44,7 +44,7 @@ typedef struct sMotorDynamic {
     int16_t step_value;
     eMotorControl_t mode;
     bool is_braking;
-    #ifdef ENABLE_PID_CONTROL
+    #if defined(ENABLE_PID_CONTROL)
     sPID_t rpm_pid;
     uint16_t min_pwm;
     float target_rpm;
@@ -58,7 +58,7 @@ typedef struct sMotorDynamic {
  * Private constants
  *********************************************************************************************************************/
 
-#ifdef DEBUG_MOTOR_API
+#if defined(DEBUG_MOTOR_API)
 CREATE_MODULE_NAME (MOTOR_API)
 #else
 CREATE_MODULE_NAME_EMPTY
@@ -81,10 +81,10 @@ static sMotorDynamic_t g_dynamic_motor_lut[eMotor_Last] = {0};
  * Prototypes of private functions
  *********************************************************************************************************************/
  
-static uint16_t Motor_API_Scale_Speed (const eMotor_t motor, const float speed);
+static uint16_t Motor_API_ScaleSpeed (const eMotor_t motor, const float speed);
 static void Motor_API_TimerCallback (void *arg);
 
-#ifdef ENABLE_PID_CONTROL
+#if defined(ENABLE_PID_CONTROL)
 static void Motor_API_ControlTimerCallback (void *arg);
 #endif /* ENABLE_PID_CONTROL */
 
@@ -92,15 +92,15 @@ static void Motor_API_ControlTimerCallback (void *arg);
  * Definitions of private functions
  *********************************************************************************************************************/
  
-static uint16_t Motor_API_Scale_Speed (const eMotor_t motor, const float speed) {
+static uint16_t Motor_API_ScaleSpeed (const eMotor_t motor, const float speed) {
     if (!Motor_Config_IsCorrectMotor(motor)) {
-        TRACE_ERR("Motor_API_Scale_Speed: Incorrect motor type [%d]\n", motor);
+        TRACE_ERR("Motor_API_ScaleSpeed: Incorrect motor type [%d]\n", motor);
         
         return 0;
     }
 
     if (!Motor_API_IsCorrectSpeed(speed)) {
-        TRACE_ERR("Motor_API_Scale_Speed: Incorrect speed [%ld.%03u]\n", FLOAT_INTEGER_PART(speed), FLOAT_FRACTIONAL_PART(speed, 3));
+        TRACE_ERR("Motor_API_ScaleSpeed: Incorrect speed [%ld.%03u]\n", FLOAT_INTEGER_PART(speed), FLOAT_FRACTIONAL_PART(speed, 3));
         
         return 0;
     }
@@ -121,7 +121,7 @@ static uint16_t Motor_API_Scale_Speed (const eMotor_t motor, const float speed) 
 static void Motor_API_TimerCallback (void *arg) {
     sMotorDynamic_t *motor_desc = (sMotorDynamic_t*) arg;
 
-    if (motor_desc == NULL) {
+    if (NULL == motor_desc) {
         return;
     }
 
@@ -148,10 +148,9 @@ static void Motor_API_TimerCallback (void *arg) {
     switch (motor_desc->mode) {
         case eMotorControl_Ramp: {
             uint16_t speed = motor_desc->speed + motor_desc->step_value;
-
-            if (abs(speed - motor_desc->target_speed) >= MOTOR_RAMP_SPEED_THRESHOLD) {
+            if (abs(speed - motor_desc->target_speed) <= MOTOR_RAMP_SPEED_THRESHOLD) {
                 speed = motor_desc->target_speed;
-
+                
                 osTimerStop(motor_desc->timer);
             }
 
@@ -166,11 +165,11 @@ static void Motor_API_TimerCallback (void *arg) {
     return;
 }
 
-#ifdef ENABLE_PID_CONTROL
+#if defined(ENABLE_PID_CONTROL)
 static void Motor_API_ControlTimerCallback (void *arg) {
     sMotorDynamic_t *motor = (sMotorDynamic_t*)arg;
     
-    if (motor == NULL) {
+    if (NULL == motor) {
         return;
     }
     
@@ -178,7 +177,7 @@ static void Motor_API_ControlTimerCallback (void *arg) {
         return;
     }
 
-    if (motor->direction == eMotorDirection_Brake) {
+    if (eMotorDirection_Brake == motor->direction) {
         if (abs(motor->current_rpm) < BRAKE_RPM_THRESHOLD) {
             motor->direction = motor->new_direction;
             motor->rpm_pid.integral = 0.0f;
@@ -188,12 +187,8 @@ static void Motor_API_ControlTimerCallback (void *arg) {
         }
     }
     
-    float pwm = Math_Utils_PID_Update(&motor->rpm_pid, motor->target_rpm, (float)motor->current_rpm, (float)CONTROL_PERIOD_MS / 1000.0f);
+    float pwm = Math_Utils_PidUpdate(&motor->rpm_pid, motor->target_rpm, (float)motor->current_rpm, (float)CONTROL_PERIOD_MS / 1000.0f);
     float abs_pwm = fabs(pwm);
-
-    if (abs_pwm < 0.0f) {
-        abs_pwm = 0.0f;
-    }
 
     if (abs_pwm < (float)motor->min_pwm) {
         motor->direction = eMotorDirection_Stop;
@@ -216,7 +211,7 @@ static void Motor_API_ControlTimerCallback (void *arg) {
         new_direction = eMotorDirection_Reverse;
     }
     
-    if ((new_direction != motor->direction) && (motor->direction != eMotorDirection_Stop) && (abs(motor->current_rpm) > BRAKE_RPM_THRESHOLD)) {
+    if ((motor->direction != new_direction) && (eMotorDirection_Stop != motor->direction) && (abs(motor->current_rpm) > BRAKE_RPM_THRESHOLD)) {
         motor->direction = eMotorDirection_Brake;
         motor->speed = motor->max_speed;
         motor->new_direction = new_direction;
@@ -275,7 +270,7 @@ bool Motor_API_Init (void) {
     for (eMotor_t motor = eMotor_First; motor < eMotor_Last; motor++) {
         const sMotor_t *desc = Motor_Config_GetMotorDesc(motor);
 
-        if (desc == NULL) {
+        if (NULL == desc) {
             TRACE_ERR("Init: No motor desc for motor [%d]\n", motor);
             
             g_is_all_motors_init = false;
@@ -287,7 +282,7 @@ bool Motor_API_Init (void) {
         
         g_dynamic_motor_lut[motor].mutex = osMutexNew(&g_static_motor_lut[motor].mutex_attributes);
 
-        if (g_dynamic_motor_lut[motor].mutex == NULL) {
+        if (NULL == g_dynamic_motor_lut[motor].mutex) {
             TRACE_ERR("Init: Failed to create mutex for motor [%d]\n", motor);
             
             g_is_all_motors_init = false;
@@ -297,7 +292,7 @@ bool Motor_API_Init (void) {
 
         g_dynamic_motor_lut[motor].timer = osTimerNew(Motor_API_TimerCallback, osTimerPeriodic, &g_dynamic_motor_lut[motor], &g_static_motor_lut[motor].timer_attributes);
 
-        if (g_dynamic_motor_lut[motor].timer == NULL) {
+        if (NULL == g_dynamic_motor_lut[motor].timer) {
             TRACE_ERR("Init: Failed to create soft start timer for motor [%d]\n", motor);
             
             g_is_all_motors_init = false;
@@ -313,10 +308,10 @@ bool Motor_API_Init (void) {
             continue;
         }
 
-        #ifdef ENABLE_PID_CONTROL
+        #if defined(ENABLE_PID_CONTROL)
         g_dynamic_motor_lut[motor].control_timer = osTimerNew(Motor_API_ControlTimerCallback, osTimerPeriodic, &g_dynamic_motor_lut[motor], &g_static_motor_lut[motor].timer_attributes);
 
-        if (g_dynamic_motor_lut[motor].control_timer == NULL) {
+        if (NULL == g_dynamic_motor_lut[motor].control_timer) {
             TRACE_ERR("Init: Failed to create control timer for motor [%d]\n", motor);
             
             g_is_all_motors_init = false;
@@ -326,7 +321,7 @@ bool Motor_API_Init (void) {
 
         const sPID_t *pid_params = Motor_Config_GetMotorPIDParams(motor);
 
-        if (pid_params == NULL) {
+        if (NULL == pid_params) {
             TRACE_ERR("Init: Failed to get PID params for motor [%d]\n", motor);
             
             g_is_all_motors_init = false;
@@ -340,7 +335,7 @@ bool Motor_API_Init (void) {
         g_dynamic_motor_lut[motor].rpm_pid.integral = 0.0f;
         g_dynamic_motor_lut[motor].rpm_pid.prev_error = 0.0f;
 
-        g_dynamic_motor_lut[motor].min_pwm = Motor_API_Scale_Speed(motor, INPUT_MIN_SPEED);
+        g_dynamic_motor_lut[motor].min_pwm = Motor_API_ScaleSpeed(motor, INPUT_MIN_SPEED);
         g_dynamic_motor_lut[motor].new_direction = eMotorDirection_Stop;
         #endif /* ENABLE_PID_CONTROL */
 
@@ -374,49 +369,48 @@ bool Motor_API_SetMotors (const float speed, const eMotorDirection_t direction, 
     bool is_success = true;
 
     for (eMotor_t motor = eMotor_First; motor < eMotor_Last; motor++) {
-        uint16_t target_speed = speed;
+        float target_speed = speed;
 
         switch (direction) {
             case eMotorDirection_Right: {
-                if (g_static_motor_lut[motor].position == eMotorPosition_Left) {
+                if (eMotorPosition_Left == g_static_motor_lut[motor].position) {
                     target_speed = 0;
                 }
             } break;
             case eMotorDirection_RightSoft: {
-                if (g_static_motor_lut[motor].position == eMotorPosition_Left) {
+                if (eMotorPosition_Left == g_static_motor_lut[motor].position) {
                     if (target_speed > SOFT_TURN_SPEED_OFFSET) {
                         target_speed -= SOFT_TURN_SPEED_OFFSET;
                     } else {
-                        TRACE_WRN("SetMotors: Speed [%u] for soft turn too small for motor [%d]\n", target_speed, motor);
+                        TRACE_WRN("SetMotors: Speed [%ld.%03u] for soft turn too small for motor [%d]\n", FLOAT_INTEGER_PART(target_speed), FLOAT_FRACTIONAL_PART(target_speed, 2), motor);
                         target_speed = STOP_SPEED;
                     }
                 }
             } break;
             case eMotorDirection_Left: {
-                if (g_static_motor_lut[motor].position == eMotorPosition_Right) {
+                if (eMotorPosition_Right == g_static_motor_lut[motor].position) {
                     target_speed = 0;
                 }
             } break;
             case eMotorDirection_LeftSoft: {
-                if (g_static_motor_lut[motor].position == eMotorPosition_Right) {
+                if (eMotorPosition_Right == g_static_motor_lut[motor].position) {
                     if (target_speed > SOFT_TURN_SPEED_OFFSET) {
                         target_speed -= SOFT_TURN_SPEED_OFFSET;
                     } else {
-                        TRACE_WRN("SetMotors: Speed [%u] for soft turn too small for motor [%d]\n", target_speed, motor);
+                        TRACE_WRN("SetMotors: Speed [%ld.%03u] for soft turn too small for motor [%d]\n", FLOAT_INTEGER_PART(target_speed), FLOAT_FRACTIONAL_PART(target_speed, 2), motor);
                         target_speed = STOP_SPEED;
                     }
                 }
             } break;
             case eMotorDirection_Stop: {
-                if (target_speed != STOP_SPEED) {
-                    TRACE_WRN("SetMotors: Speed [%u] for stop command, setting to 0 for motor [%d]\n", target_speed, motor);
+                if (STOP_SPEED != target_speed) {
+                    TRACE_WRN("SetMotors: Speed [%ld.%03u] for stop command, setting to 0 for motor [%d]\n", FLOAT_INTEGER_PART(target_speed), FLOAT_FRACTIONAL_PART(target_speed, 2), motor);
 
                     target_speed = STOP_SPEED;
                 }
             } break;
-            default:{
-                break;
-            }
+            default: {
+            } break;
         }
 
         if (!Motor_API_SetMotorSpeed(motor, target_speed, direction, control)) { 
@@ -460,7 +454,7 @@ bool Motor_API_SetMotorSpeed (const eMotor_t motor, const float speed, const eMo
         TRACE_WRN("SetMotorSpeed: Motor [%d] timer running\n", motor);
     }
 
-    #ifdef ENABLE_PID_CONTROL
+    #if defined(ENABLE_PID_CONTROL)
     if (osTimerIsRunning(g_dynamic_motor_lut[motor].control_timer)) {
         osTimerStop(g_dynamic_motor_lut[motor].control_timer);
     }
@@ -482,7 +476,7 @@ bool Motor_API_SetMotorSpeed (const eMotor_t motor, const float speed, const eMo
         return false;
     }
 
-    if (osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT)) {
         TRACE_ERR("SetMotorSpeed: Failed to acquire mutex");
 
         return false;
@@ -497,7 +491,7 @@ bool Motor_API_SetMotorSpeed (const eMotor_t motor, const float speed, const eMo
     uint16_t target_speed = Motor_API_ScaleSpeed(motor, speed);
     eMotorDirection_t new_direction = direction;
 
-    if ((target_speed == current_speed) && (current_direction == direction) && (current_control == control)) {
+    if ((current_speed == target_speed) && (direction == current_direction) && (control == current_control)) {
         return true;
     }
 
@@ -544,7 +538,7 @@ bool Motor_API_SetMotorSpeed (const eMotor_t motor, const float speed, const eMo
         current_speed = target_speed;
     }
 
-    if (osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT)) {
         TRACE_ERR("SetMotorSpeed: Failed to acquire mutex");
         osTimerStop(g_dynamic_motor_lut[motor].timer);
 
@@ -583,7 +577,7 @@ bool Motor_API_StopAllMotors (void) {
             osTimerStop(g_dynamic_motor_lut[motor].timer);
         }
 
-        #ifdef ENABLE_PID_CONTROL
+        #if defined(ENABLE_PID_CONTROL)
         if (osTimerIsRunning(g_dynamic_motor_lut[motor].control_timer)) {
             osTimerStop(g_dynamic_motor_lut[motor].control_timer);
         }
@@ -592,7 +586,7 @@ bool Motor_API_StopAllMotors (void) {
         g_dynamic_motor_lut[motor].rpm_pid.prev_error = 0.0f;
         #endif /* ENABLE_PID_CONTROL */
         
-        if (osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT) != osOK) {
+        if (osOK != osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT)) {
             TRACE_ERR("StopAllMotors: Failed to acquire mutex for motor [%d]\n", motor);
             
             is_success = false;
@@ -665,7 +659,7 @@ bool Motor_API_DisableAllMotors (void) {
             continue;
         }
 
-        if (osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT) != osOK) {
+        if (osOK != osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT)) {
             TRACE_ERR("DisableAllMotors: Failed to acquire mutex for motor [%d]\n", motor);
             
             is_success = false;
@@ -698,7 +692,7 @@ bool Motor_API_IsMotorEnabled (const eMotor_t motor) {
 
     bool is_enabled = false;
 
-    if (osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT)) {
         TRACE_ERR("IsMotorEnabled: Failed to acquire mutex for motor [%d]\n", motor);
         
         return false;
@@ -718,13 +712,13 @@ bool Motor_API_GetMotorRotation (const eMotor_t motor, eMotorRotation_t *rotatio
         return false;
     }
 
-    if (rotation == NULL) {
+    if (NULL == rotation) {
         TRACE_ERR("GetMotorRotation: NULL argument\n");
         
         return false;
     }
 
-    if (osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT)) {
         TRACE_ERR("GetMotorRotation: Failed to acquire mutex for motor [%d]\n", motor);
         
         return false;
@@ -737,22 +731,22 @@ bool Motor_API_GetMotorRotation (const eMotor_t motor, eMotorRotation_t *rotatio
     return true;
 }
 
-#ifdef ENABLE_PID_CONTROL
-bool Motor_API_SetTargetRPM (const eMotor_t motor, const float target_rpm, const eMotorControl_t control) {
+#if defined(ENABLE_PID_CONTROL)
+bool Motor_API_SetTargetRpm (const eMotor_t motor, const float target_rpm, const eMotorControl_t control) {
     if (!Motor_Config_IsCorrectMotor(motor)) {
-        TRACE_ERR("SetTargetRPM: Incorrect motor [%d]\n", motor);
+        TRACE_ERR("SetTargetRpm: Incorrect motor [%d]\n", motor);
         
         return false;
     }
     
-    if (!Motor_API_IsCorrectRPM(target_rpm)) {
-        TRACE_ERR("SetTargetRPM: Incorrect RPM [%ld]\n", (int32_t)(target_rpm + 0.5f));
+    if (!Motor_API_IsCorrectRpm(target_rpm)) {
+        TRACE_ERR("SetTargetRpm: Incorrect RPM [%ld]\n", (int32_t)(target_rpm + 0.5f));
         
         return false;
     }
 
-    if (control != eMotorControl_PID) {
-        TRACE_ERR("SetTargetRPM: Incorrect control type [%d]\n", control);
+    if (eMotorControl_Pid != control) {
+        TRACE_ERR("SetTargetRpm: Incorrect control type [%d]\n", control);
         
         return false;
     }
@@ -761,8 +755,8 @@ bool Motor_API_SetTargetRPM (const eMotor_t motor, const float target_rpm, const
         osTimerStop(g_dynamic_motor_lut[motor].timer);
     }
 
-    if (osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT) != osOK) {
-        TRACE_ERR("SetTargetRPM: Failed to acquire mutex for motor [%d  ]\n", motor);
+    if (osOK != osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT)) {
+        TRACE_ERR("SetTargetRpm: Failed to acquire mutex for motor [%d  ]\n", motor);
         
         return false;
     }
@@ -789,7 +783,7 @@ bool Motor_API_SetTargetRPM (const eMotor_t motor, const float target_rpm, const
     }
 
     if (!Odometry_API_Start()) {
-        TRACE_ERR("SetTargetRPM: Failed to start odometry\n");
+        TRACE_ERR("SetTargetRpm: Failed to start odometry\n");
 
         osMutexRelease(g_dynamic_motor_lut[motor].mutex);
 
@@ -797,8 +791,8 @@ bool Motor_API_SetTargetRPM (const eMotor_t motor, const float target_rpm, const
     }
 
 
-    if (osTimerStart(g_dynamic_motor_lut[motor].control_timer, CONTROL_PERIOD_MS) != osOK) {
-        TRACE_ERR("SetTargetRPM: Failed to start control timer for motor [%d]\n", motor);
+    if (osOK != osTimerStart(g_dynamic_motor_lut[motor].control_timer, CONTROL_PERIOD_MS)) {
+        TRACE_ERR("SetTargetRpm: Failed to start control timer for motor [%d]\n", motor);
 
         osMutexRelease(g_dynamic_motor_lut[motor].mutex);
 
@@ -810,21 +804,21 @@ bool Motor_API_SetTargetRPM (const eMotor_t motor, const float target_rpm, const
     return true;
 }
 
-bool Motor_API_GetCurrentRPM (const eMotor_t motor, int16_t *current_rpm) {
+bool Motor_API_GetCurrentRpm (const eMotor_t motor, int16_t *current_rpm) {
     if (!Motor_Config_IsCorrectMotor(motor)) {
-        TRACE_ERR("GetCurrentRPM: Incorrect motor type [%d]\n", motor);
+        TRACE_ERR("GetCurrentRpm: Incorrect motor type [%d]\n", motor);
         
         return false;
     }
 
-    if (current_rpm == NULL) {
-        TRACE_ERR("GetCurrentRPM: NULL argument\n");
+    if (NULL == current_rpm) {
+        TRACE_ERR("GetCurrentRpm: NULL argument\n");
         
         return false;
     }
 
-    if (osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT) != osOK) {
-        TRACE_ERR("GetCurrentRPM: Failed to acquire mutex for motor [%d]\n", motor);
+    if (osOK != osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT)) {
+        TRACE_ERR("GetCurrentRpm: Failed to acquire mutex for motor [%d]\n", motor);
         
         return false;
     }
@@ -836,21 +830,21 @@ bool Motor_API_GetCurrentRPM (const eMotor_t motor, int16_t *current_rpm) {
     return true;
 }
 
-bool Motor_API_SetPID (const eMotor_t motor, const sPID_t *pid_params) {
+bool Motor_API_SetPid (const eMotor_t motor, const sPID_t *pid_params) {
     if (!Motor_Config_IsCorrectMotor(motor)) {
-        TRACE_ERR("SetPID: Incorrect motor type [%d]\n", motor);
+        TRACE_ERR("SetPid: Incorrect motor type [%d]\n", motor);
         
         return false;
     }
 
-    if (pid_params == NULL) {
-        TRACE_ERR("SetPID: NULL argument\n");
+    if (NULL == pid_params) {
+        TRACE_ERR("SetPid: NULL argument\n");
         
         return false;
     }
 
-    if (osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT) != osOK) {
-        TRACE_ERR("SetPID: Failed to acquire mutex for motor [%d]\n", motor);
+    if (osOK != osMutexAcquire(g_dynamic_motor_lut[motor].mutex, MUTEX_TIMEOUT)) {
+        TRACE_ERR("SetPid: Failed to acquire mutex for motor [%d]\n", motor);
         
         return false;
     }
@@ -876,7 +870,7 @@ bool Motor_API_SetPID (const eMotor_t motor, const sPID_t *pid_params) {
     return true;
 }
 
-bool Motor_API_IsCorrectRPM (const float rpm) {
+bool Motor_API_IsCorrectRpm (const float rpm) {
     float signed_rpm = fabs(rpm);
 
     return (signed_rpm >= MIN_RPM) && (signed_rpm <= MAX_RPM);

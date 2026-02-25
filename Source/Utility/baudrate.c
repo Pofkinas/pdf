@@ -17,7 +17,7 @@
  *********************************************************************************************************************/
 
  /* clang-format off */
-const static uint32_t g_static_baudrate_lut[eBaudrate_Last] = {
+static const uint32_t g_static_baudrate_lut[eBaudrate_Last] = {
     [eBaudrate_Default] = 0,
     [eBaudrate_4800] = 4800,
     [eBaudrate_9600] = 9600,

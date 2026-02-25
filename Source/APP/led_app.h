@@ -24,14 +24,14 @@
 typedef enum eLedTask {
     eLedTask_First = 0,
     
-    #ifdef ENABLE_LED
+    #if defined(ENABLE_LED)
     eLedTask_Set,
     eLedTask_Reset,
     eLedTask_Toggle,
     eLedTask_Blink,
     #endif /* ENABLE_LED */
 
-    #ifdef ENABLE_PWM_LED
+    #if defined(ENABLE_PWM_LED)
     eLedTask_Set_Brightness,
     eLedTask_Pulse,
     #endif /* ENABLE_PWM_LED */
@@ -48,23 +48,23 @@ typedef struct sLedCommon {
     eLed_t led;
 } sLedCommon_t;
 
-#ifdef ENABLE_LED
+#if defined(ENABLE_LED)
 typedef struct sLedBlink {
     eLed_t led;
-    uint8_t blink_time;
+    size_t blink_time;
     uint16_t blink_frequency;
 } sLedBlink_t;
 #endif /* ENABLE_LED */
 
-#ifdef ENABLE_PWM_LED
+#if defined(ENABLE_PWM_LED)
 typedef struct sLedSetBrightness {
     eLedPwm_t led;
-    uint8_t duty_cycle;
+    uint16_t duty_cycle;
 } sLedSetBrightness_t;
 
 typedef struct sLedPulse {
     eLedPwm_t led;
-    uint8_t pulse_time;
+    size_t pulse_time;
     uint16_t pulse_frequency;
 } sLedPulse_t;
 #endif /* ENABLE_PWM_LED */
@@ -79,7 +79,7 @@ typedef struct sLedPulse {
  *********************************************************************************************************************/
 
 bool LED_APP_Init (void);
-bool LED_APP_Add_Task (sLedCommandDesc_t *task_to_message_queue);
+bool LED_APP_AddTask (sLedCommandDesc_t *task_to_message_queue);
 
 #endif /* defined(ENABLE_LED) || defined(ENABLE_PWM_LED) */
 #endif /* SOURCE_APP_LED_APP_H_ */

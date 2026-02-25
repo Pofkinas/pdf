@@ -83,16 +83,15 @@
 // UART CONFIGURATION
 //-----------------------------------------------------------------------------
 
-#ifdef ENABLE_UART
+#if defined(ENABLE_UART)
 // #define UART1 
 // #define UART_1_BAUDRATE
 
 #define UART2 eUart_Debug
 #define UART_2_BAUDRATE eBaudrate_115200
 
-#ifdef ENABLE_UART_DEBUG
-#define DEBUG_UART eUart_Debug
-#endif /* ENABLE_UART_DEBUG */
+#if defined(ENABLE_UART_DEBUG)
+#define DEBUG_UART UART2
 
 #define DEBUG_DELIMITER "\r\n"
 #define DEBUG_MESSAGE_SIZE 256
@@ -100,13 +99,14 @@
 
 #define DEBUG_MESSAGE_TIMEOUT 1000
 #define DEBUG_MUTEX_TIMEOUT 0U
+#endif /* ENABLE_UART_DEBUG */
 #endif /* ENABLE_UART */
 
 //=============================================================================
 // LED CONFIGURATION
 //-----------------------------------------------------------------------------
 
-#ifdef ENABLE_LED
+#if defined(ENABLE_LED)
 /// Blink Maximum time (s)
 #define MAX_BLINK_TIME 59
 /// Blink frequency limits (Hz)
@@ -114,7 +114,7 @@
 #define MAX_BLINK_FREQUENCY 100
 #endif /* ENABLE_LED */
 
-#ifdef ENABLE_PWM_LED
+#if defined(ENABLE_PWM_LED)
 // Pulsing Maximum time (s)
 #define MAX_PULSING_TIME 59
 // Pulsing frequency limits (Hz)
@@ -127,7 +127,7 @@
 // EXTI CONFIGURATION
 //-----------------------------------------------------------------------------
 
-#ifdef ENABLE_EXTI
+#if defined(ENABLE_EXTI)
 #define EXTI0 eExti_StartButton
 // #define EXTI1
 // #define EXTI2
@@ -141,20 +141,20 @@
 // I²C BUS CONFIGURATION
 //-----------------------------------------------------------------------------
 
-#ifdef ENABLE_I2C
+#if defined(ENABLE_I2C)
 #define I2C_1 eI2c_1
 // #define I2C_2
 
 #define I2C_MAX_DATA_SIZE 16
 
-#ifdef I2C_1
+#if defined(I2C_1)
 #define I2C_1_CLOCK_SPEED 100000U
 
 #define LCD_1_ADDRESS 0x27
 #define VL53L0X_1_I2C_ADDRESS 0x62
 #endif /* I2C_1 */
 
-#ifdef I2C_2
+#if defined(I2C_2)
 #endif /* I2C_2 */
 #endif /* ENABLE_I2C */
 
@@ -162,7 +162,7 @@
 // DMA CONFIGURATION
 //-----------------------------------------------------------------------------
 
-#ifdef ENABLE_DMA
+#if defined(ENABLE_DMA)
 // #define DMA_1_STREAM_0
 // #define DMA_1_STREAM_1
 // #define DMA_1_STREAM_2
@@ -186,7 +186,7 @@
 // VL53L0X CONFIGURATION
 //-----------------------------------------------------------------------------
 
-#ifdef ENABLE_VL53L0X
+#if defined(ENABLE_VL53L0X)
 #define VL53L0X_I2C_PHERIPH I2C_1
 #endif /* ENABLE_VL53L0X */
 
@@ -194,8 +194,8 @@
 // DEBUG
 //-----------------------------------------------------------------------------
 
-#ifdef ENABLE_UART_DEBUG
-// APP layer debug flags
+#if defined(ENABLE_UART_DEBUG)
+// Custom debug flags
 #define DEBUG_MAIN
 #define CUSTOM_CLI_CMD_HANDLERS
 
@@ -222,8 +222,8 @@
 // MISCELLANEOUS
 //-----------------------------------------------------------------------------
 
-#ifdef ENABLE_CLI
-#define CLI_APP_THREAD_STACK_SIZE (256 * 4)
+#if defined(ENABLE_CLI)
+#define CLI_APP_THREAD_STACK_SIZE (256 * 6)
 #define CLI_APP_THREAD_PRIORITY osPriorityNormal
 
 #define CLI_COMMAND_MESSAGE_CAPACITY 20

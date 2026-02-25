@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_GPIO
+#if defined(ENABLE_GPIO)
 #include <stdbool.h>
 #include "gpio_config.h"
 

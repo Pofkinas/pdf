@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_I2C
+#if defined(ENABLE_I2C)
 #include <stdbool.h>
 #include <stdint.h>
 #include "i2c_config.h"

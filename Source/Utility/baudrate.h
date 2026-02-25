@@ -1,5 +1,5 @@
-#ifndef SOURCE_UTILITY_UART_BAUDRATE_H_
-#define SOURCE_UTILITY_UART_BAUDRATE_H_
+#ifndef SOURCE_UTILITY_BAUDRATE_H_
+#define SOURCE_UTILITY_BAUDRATE_H_
 /**********************************************************************************************************************
  * Includes
  *********************************************************************************************************************/
@@ -43,4 +43,4 @@ typedef enum eBaudrate {
 
 const uint32_t Baudrate_GetValue (const eBaudrate_t baudrate);
 
-#endif /* SOURCE_UTILITY_UART_BAUDRATE_H_ */
+#endif /* SOURCE_UTILITY_BAUDRATE_H_ */

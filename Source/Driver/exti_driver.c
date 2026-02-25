@@ -4,7 +4,7 @@
 
 #include "exti_driver.h"
 
-#ifdef ENABLE_EXTI
+#if defined(ENABLE_EXTI)
 #include "exti_config.h"
 
 /**********************************************************************************************************************
@@ -30,7 +30,7 @@ typedef struct sExtiDynamic {
  * Private variables
  *********************************************************************************************************************/
 
-static sExtiDesc_t g_exti_lut[eExti_Last];
+static sExtiDesc_t g_exti_lut[eExti_Last] = {0};
 static sExtiDynamic_t g_dynamic_exti_lut[eExti_Last] = {0};
 
 /**********************************************************************************************************************
@@ -42,13 +42,13 @@ static sExtiDynamic_t g_dynamic_exti_lut[eExti_Last] = {0};
  *********************************************************************************************************************/
 
 static void EXTIx_IRQHandler (const eExti_t exti_device);
-void EXTI0_IRQHandler(void);
-void EXTI1_IRQHandler(void);
-void EXTI2_IRQHandler(void);
-void EXTI3_IRQHandler(void);
-void EXTI4_IRQHandler(void);
-void EXTI9_5_IRQHandler(void);
-void EXTI15_10_IRQHandler(void);
+void EXTI0_IRQHandler (void);
+void EXTI1_IRQHandler (void);
+void EXTI2_IRQHandler (void);
+void EXTI3_IRQHandler (void);
+void EXTI4_IRQHandler (void);
+void EXTI9_5_IRQHandler (void);
+void EXTI15_10_IRQHandler (void);
 
 /**********************************************************************************************************************
  * Definitions of private functions
@@ -68,56 +68,56 @@ static void EXTIx_IRQHandler (const eExti_t exti_device) {
     return;
 }
 
-void EXTI0_IRQHandler(void) {
-    #ifdef EXTI0
+void EXTI0_IRQHandler (void) {
+    #if defined(EXTI0)
     EXTIx_IRQHandler(EXTI0);
     #endif /* EXTI0 */
 
     return;
 }
 
-void EXTI1_IRQHandler(void) {
-    #ifdef EXTI1
+void EXTI1_IRQHandler (void) {
+    #if defined(EXTI1)
     EXTIx_IRQHandler(EXTI1);
     #endif /* EXTI1 */
 
     return;
 }
 
-void EXTI2_IRQHandler(void) {
-    #ifdef EXTI2
+void EXTI2_IRQHandler (void) {
+    #if defined(EXTI2)
     EXTIx_IRQHandler(EXTI2);
     #endif /* EXTI2 */
 
     return;
 }
 
-void EXTI3_IRQHandler(void) {
-    #ifdef EXTI3
+void EXTI3_IRQHandler (void) {
+    #if defined(EXTI3)
     EXTIx_IRQHandler(EXTI3);
     #endif /* EXTI3 */
 
     return;
 }
 
-void EXTI4_IRQHandler(void) {
-    #ifdef EXTI4
+void EXTI4_IRQHandler (void) {
+    #if defined(EXTI4)
     EXTIx_IRQHandler(EXTI4);
     #endif /* EXTI4 */
 
     return;
 }
 
-void EXTI9_5_IRQHandler(void) {
-    #ifdef EXTI9_5
+void EXTI9_5_IRQHandler (void) {
+    #if defined(EXTI9_5)
     EXTIx_IRQHandler(EXTI9_5);
     #endif /* EXTI9_5 */
 
     return;
 }
 
-void EXTI15_10_IRQHandler(void) {
-    #ifdef EXTI15_10
+void EXTI15_10_IRQHandler (void) {
+    #if defined(EXTI15_10)
     EXTIx_IRQHandler(EXTI15_10);
     #endif /* EXTI15_10 */
 
@@ -133,7 +133,7 @@ bool Exti_Driver_InitDevice (const eExti_t exti_device, exti_callback_t exti_cal
         return false;
     }
 
-    if (exti_callback == NULL) {
+    if (NULL == exti_callback) {
         return false;
     }
 
@@ -143,7 +143,7 @@ bool Exti_Driver_InitDevice (const eExti_t exti_device, exti_callback_t exti_cal
 
     const sExtiDesc_t *desc = Exti_Config_GetExtiDesc(exti_device);
 
-    if (desc == NULL) {
+    if (NULL == desc) {
         return false;
     }
 
@@ -158,7 +158,7 @@ bool Exti_Driver_InitDevice (const eExti_t exti_device, exti_callback_t exti_cal
     exti_init_struct.Mode = g_exti_lut[exti_device].mode;
     exti_init_struct.Trigger = g_exti_lut[exti_device].trigger;
 
-    if (LL_EXTI_Init(&exti_init_struct) == ERROR) {
+    if (ERROR == LL_EXTI_Init(&exti_init_struct)) {
         return false;
     }
 
@@ -173,7 +173,7 @@ bool Exti_Driver_InitDevice (const eExti_t exti_device, exti_callback_t exti_cal
     return true;
 }
 
-bool Exti_Driver_Disable_IT (const eExti_t exti_device) {
+bool Exti_Driver_DisableIt (const eExti_t exti_device) {
     if (!Exti_Config_IsCorrectExti(exti_device)) {
         return false;
     }
@@ -189,7 +189,7 @@ bool Exti_Driver_Disable_IT (const eExti_t exti_device) {
     return true;
 }
 
-bool Exti_Driver_Enable_IT (const eExti_t exti_device) {
+bool Exti_Driver_EnableIt (const eExti_t exti_device) {
     if (!Exti_Config_IsCorrectExti(exti_device)) {
         return false;
     }

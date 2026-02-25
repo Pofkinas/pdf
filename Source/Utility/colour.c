@@ -11,6 +11,25 @@
  * Private definitions and macros
  *********************************************************************************************************************/
 
+/// HSV uses a 0-255 hue range instead of 0-360 degrees.
+/// The colour wheel has 6 sectors; 256 / 6 = 42.67, rounded to 43.
+#define HSV_HUE_SECTOR_SIZE 43U
+
+/// Number of colour sectors in the HSV wheel.
+#define HSV_SECTOR_COUNT 6U
+
+/// 8-bit maximum value used for saturation/value normalisation.
+#define HSV_CHANNEL_MAX 255U
+
+/// Shift used to normalise the product of two 8-bit values back to [0, 255].
+#define HSV_NORMALISE_SHIFT 8U
+
+/// Hue offset for green sector: 120 / 360 * 256 = 85.3 -> 85
+#define HSV_HUE_OFFSET_GREEN 85U
+
+/// Hue offset for blue sector: 240 / 360 * 256 = 170.7 -> 171
+#define HSV_HUE_OFFSET_BLUE 171U
+
 /**********************************************************************************************************************
  * Private typedef
  *********************************************************************************************************************/
@@ -51,60 +70,60 @@ void Colour_HsvToRgb (const sColourHsv_t hsv, ColourRgb_t *rgb) {
         green = hsv.value;
         blue = hsv.value;
     } else {
-        uint8_t region = hsv.hue / 43;
-        uint8_t remainder = (hsv.hue - region * 43) * 6;
+        uint8_t region = hsv.hue / HSV_HUE_SECTOR_SIZE;
+        uint8_t remainder = (hsv.hue - region * HSV_HUE_SECTOR_SIZE) * HSV_SECTOR_COUNT;
 
-        uint8_t p = (hsv.value * (255 - hsv.saturation)) >> 8;
-        uint8_t q = (hsv.value * (255 - ((hsv.saturation * remainder) >> 8))) >> 8;
-        uint8_t t = (hsv.value * (255 - ((hsv.saturation * (255 - remainder)) >> 8))) >> 8;
+        uint8_t pure = (hsv.value * (HSV_CHANNEL_MAX - hsv.saturation)) >> HSV_NORMALISE_SHIFT;
+        uint8_t quasi = (hsv.value * (HSV_CHANNEL_MAX - ((hsv.saturation * remainder) >> HSV_NORMALISE_SHIFT))) >> HSV_NORMALISE_SHIFT;
+        uint8_t tint = (hsv.value * (HSV_CHANNEL_MAX - ((hsv.saturation * (HSV_CHANNEL_MAX - remainder)) >> HSV_NORMALISE_SHIFT))) >> HSV_NORMALISE_SHIFT;
 
         switch (region) {
             case 0: {
                 red = hsv.value;
-                green = t;
-                blue = p;
+                green = tint;
+                blue = pure;
             } break;
             case 1: {
-                red = q;
+                red = quasi;
                 green = hsv.value;
-                blue = p;
+                blue = pure;
             } break;
             case 2: {
-                red = p;
+                red = pure;
                 green = hsv.value;
-                blue = t;
+                blue = tint;
             } break;
             case 3: {
-                red = p;
-                green = q;
+                red = pure;
+                green = quasi;
                 blue = hsv.value;
             } break;
             case 4: {
-                red = t;
-                green = p;
+                red = tint;
+                green = pure;
                 blue = hsv.value;
             } break;
             default: {
                 red = hsv.value;
-                green = p;
-                blue = q;
+                green = pure;
+                blue = quasi;
             } break;
         }
     }
 
-    *rgb = ((uint32_t)red << 16) | ((uint32_t)green << 8) | blue;
+    *rgb = ((uint32_t)red << RGB_RED_SHIFT) | ((uint32_t)green << RGB_GREEN_SHIFT) | blue;
 
     return;
 }
 
-void Colour_RgbToHsv(const ColourRgb_t rgb, sColourHsv_t *hsv) {
+void Colour_RgbToHsv (const ColourRgb_t rgb, sColourHsv_t *hsv) {
     if (NULL == hsv) {
         return;
     }
 
-    uint8_t red = (rgb >> 16) & 0xFF;
-    uint8_t green = (rgb >> 8) & 0xFF;
-    uint8_t blue = rgb & 0xFF;
+    uint8_t red = (rgb >> RGB_RED_SHIFT) & RGB_BYTE_MASK;
+    uint8_t green = (rgb >> RGB_GREEN_SHIFT) & RGB_BYTE_MASK;
+    uint8_t blue = (rgb >> RGB_BLUE_SHIFT) & RGB_BYTE_MASK;
 
     uint8_t rgb_min = red < green ? (red < blue ? red : blue) : (green < blue ? green : blue);
     uint8_t rgb_max = red > green ? (red > blue ? red : blue) : (green > blue ? green : blue);
@@ -119,7 +138,7 @@ void Colour_RgbToHsv(const ColourRgb_t rgb, sColourHsv_t *hsv) {
         return;
     }
 
-    hsv->saturation = (delta * 255) / rgb_max;
+    hsv->saturation = (delta * HSV_CHANNEL_MAX) / rgb_max;
 
     if (0 == delta) {
         hsv->hue = 0;
@@ -129,11 +148,11 @@ void Colour_RgbToHsv(const ColourRgb_t rgb, sColourHsv_t *hsv) {
     int16_t hue;
 
     if (red == rgb_max) {
-        hue = 0 + 43 * (green - blue) / delta;
+        hue = 0 + HSV_HUE_SECTOR_SIZE * (green - blue) / delta;
     } else if (green == rgb_max) {
-        hue = 85 + 43 * (blue - red) / delta;
+        hue = HSV_HUE_OFFSET_GREEN + HSV_HUE_SECTOR_SIZE * (blue - red) / delta;
     } else {
-        hue = 171 + 43 * (red - green) / delta;
+        hue = HSV_HUE_OFFSET_BLUE + HSV_HUE_SECTOR_SIZE * (red - green) / delta;
     }
 
     if (hue < 0) hue += 256;
@@ -152,7 +171,7 @@ uint8_t Colour_ScaleBrightness (const uint8_t value, const uint8_t brightness) {
         return value;
     }
 
-    return (value * brightness) / MAX_BRIGHTNESS;
+    return ((value * brightness) / MAX_BRIGHTNESS);
 }
 
 #endif /* ENABLE_COLOUR */

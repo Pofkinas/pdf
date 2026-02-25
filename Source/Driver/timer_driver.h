@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_TIMER
+#if defined(ENABLE_TIMER)
 #include <stdbool.h>
 #include <stdint.h>
 #include "timer_config.h"

@@ -18,7 +18,7 @@
  * Private constants
  *********************************************************************************************************************/
 
-const static osMutexAttr_t g_heap_mutex_attributes = {
+static const osMutexAttr_t g_heap_mutex_attributes = {
     .name = "Heap_mutex", 
     .attr_bits = osMutexRecursive | osMutexPrioInherit, 
     .cb_mem = NULL, 
@@ -48,27 +48,27 @@ static osMutexId_t g_heap_mutex = NULL;
  *********************************************************************************************************************/
 
 bool Heap_API_Init (void) {
-    if (g_heap_mutex == NULL) {
+    if (NULL == g_heap_mutex) {
         g_heap_mutex = osMutexNew(&g_heap_mutex_attributes);
     }
 
-    if (g_heap_mutex == NULL) {
+    if (NULL == g_heap_mutex) {
         return false;
     }
 
     return true;
 }
 
-void* Heap_API_MemoryAllocate(const size_t number_of_elements, const size_t size) {
-    if ((number_of_elements == 0) || (size == 0)) {
+void *Heap_API_MemoryAllocate(const size_t number_of_elements, const size_t size) {
+    if ((0 == number_of_elements) || (0 == size)) {
         return NULL;
     }
 
-    if (g_heap_mutex == NULL) {
+    if (NULL == g_heap_mutex) {
         return NULL;
     }
     
-    if (osMutexAcquire(g_heap_mutex, HEAP_API_MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_heap_mutex, HEAP_API_MUTEX_TIMEOUT)) {
         return NULL;
     }
 
@@ -82,11 +82,11 @@ void* Heap_API_MemoryAllocate(const size_t number_of_elements, const size_t size
 }
 
 bool Heap_API_Free (void *pointer_to_memory) {
-    if (pointer_to_memory == NULL) {
+    if (NULL == pointer_to_memory) {
         return false;
     }
     
-    if (osMutexAcquire(g_heap_mutex, HEAP_API_MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_heap_mutex, HEAP_API_MUTEX_TIMEOUT)) {
         return false;
     }
 

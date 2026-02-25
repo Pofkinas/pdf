@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_EXTI
+#if defined(ENABLE_EXTI)
 #include <stdbool.h>
 #include "exti_config.h"
 
@@ -29,8 +29,8 @@ typedef void (*exti_callback_t) (void *context);
  *********************************************************************************************************************/
 
 bool Exti_Driver_InitDevice (const eExti_t exti_device, exti_callback_t exti_callback, void *callback_context);
-bool Exti_Driver_Disable_IT (const eExti_t exti_device);
-bool Exti_Driver_Enable_IT (const eExti_t exti_device);
+bool Exti_Driver_DisableIt (const eExti_t exti_device);
+bool Exti_Driver_EnableIt (const eExti_t exti_device);
 bool Exti_Driver_ClearFlag (const eExti_t exti_device);
 
 #endif /* ENABLE_EXTI */

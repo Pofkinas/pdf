@@ -4,7 +4,7 @@
 
 #include "gpio_driver.h"
 
-#ifdef ENABLE_GPIO
+#if defined(ENABLE_GPIO)
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -53,7 +53,7 @@ bool GPIO_Driver_InitAllPins (void) {
     for (eGpio_t pin = eGpio_First; pin < eGpio_Last; pin++) {
         const sGpioDesc_t *desc = GPIO_Config_GetGpioDesc(pin);
         
-        if (desc == NULL) {
+        if (NULL == desc) {
             g_is_all_pin_initialized = false;
             return false;
         }
@@ -70,7 +70,7 @@ bool GPIO_Driver_InitAllPins (void) {
         gpio_init_struct.Pull = g_gpio_lut[pin].pull;
         gpio_init_struct.Alternate = g_gpio_lut[pin].alternate;
 
-        if (LL_GPIO_Init(g_gpio_lut[pin].port, &gpio_init_struct) == ERROR) {
+        if (ERROR == LL_GPIO_Init(g_gpio_lut[pin].port, &gpio_init_struct)) {
             g_is_all_pin_initialized = false;
         }
     }
@@ -87,7 +87,7 @@ bool GPIO_Driver_WritePin (const eGpio_t gpio_pin, const bool pin_state) {
         return false;
     }
 
-    if (LL_GPIO_GetPinMode(g_gpio_lut[gpio_pin].port, g_gpio_lut[gpio_pin].pin) != LL_GPIO_MODE_OUTPUT) {
+    if (LL_GPIO_MODE_OUTPUT != LL_GPIO_GetPinMode(g_gpio_lut[gpio_pin].port, g_gpio_lut[gpio_pin].pin)) {
         return false;
     }
 
@@ -109,16 +109,16 @@ bool GPIO_Driver_ReadPin (const eGpio_t gpio_pin, bool *pin_state) {
         return false;
     }
 
-    if (pin_state == NULL) {
+    if (NULL == pin_state) {
         return false;
     }
 
     switch (g_gpio_lut[gpio_pin].mode) {
         case LL_GPIO_MODE_INPUT: {
-            *pin_state = (LL_GPIO_ReadInputPort(g_gpio_lut[gpio_pin].port) & g_gpio_lut[gpio_pin].pin) != 0;
+            *pin_state = (0 != (LL_GPIO_ReadInputPort(g_gpio_lut[gpio_pin].port) & g_gpio_lut[gpio_pin].pin));
         } break;
         case LL_GPIO_MODE_OUTPUT: {
-            *pin_state = (LL_GPIO_ReadOutputPort(g_gpio_lut[gpio_pin].port) & g_gpio_lut[gpio_pin].pin) != 0;
+            *pin_state = (0 != (LL_GPIO_ReadOutputPort(g_gpio_lut[gpio_pin].port) & g_gpio_lut[gpio_pin].pin));
         } break;
         default: {
             return false;

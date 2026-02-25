@@ -30,13 +30,13 @@
  * Prototypes of private functions
  *********************************************************************************************************************/
  
-static void Animation_Solidcolour_FillBuffer (sSolidAnimationData_t *data);
+static void Animation_SolidColour_FillBuffer (sSolidAnimationData_t *data);
 
 /**********************************************************************************************************************
  * Definitions of private functions
  *********************************************************************************************************************/
 
-static void Animation_Solidcolour_FillBuffer (sSolidAnimationData_t *data) {
+static void Animation_SolidColour_FillBuffer (sSolidAnimationData_t *data) {
     if (NULL == data) {
         return;
     }
@@ -45,9 +45,9 @@ static void Animation_Solidcolour_FillBuffer (sSolidAnimationData_t *data) {
         return;
     }
 
-    uint8_t r = (data->rgb >> 16) & 0xFF;
-    uint8_t g = (data->rgb >> 8) & 0xFF;
-    uint8_t b = data->rgb & 0xFF;
+    uint8_t r = (data->rgb >> RGB_RED_SHIFT) & RGB_BYTE_MASK;
+    uint8_t g = (data->rgb >> RGB_GREEN_SHIFT) & RGB_BYTE_MASK;
+    uint8_t b = data->rgb & RGB_BYTE_MASK;
 
     r = Colour_ScaleBrightness(r, data->brightness);
     g = Colour_ScaleBrightness(g, data->brightness);
@@ -67,7 +67,7 @@ void Animation_SolidColour_Run (void *context) {
         return;
     }
     
-    Animation_Solidcolour_FillBuffer((sSolidAnimationData_t*) context);
+    Animation_SolidColour_FillBuffer((sSolidAnimationData_t*) context);
 
     return;
 }

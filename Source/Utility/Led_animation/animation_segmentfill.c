@@ -4,7 +4,7 @@
 
 #include "animation_segmentfill.h"
 
-#ifdef ENABLE_LED_ANIMATION
+#if defined(ENABLE_LED_ANIMATION)
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -30,14 +30,14 @@
  * Prototypes of private functions
  *********************************************************************************************************************/
 
-void Animation_SegmentFill_FillBuffer (sSegmentFillData_t *data);
+static void Animation_SegmentFill_FillBuffer (sSegmentFillData_t *data);
 
 /**********************************************************************************************************************
  * Definitions of private functions
  *********************************************************************************************************************/
  
-void Animation_SegmentFill_FillBuffer (sSegmentFillData_t *data) {
-    if (data == NULL) {
+static void Animation_SegmentFill_FillBuffer (sSegmentFillData_t *data) {
+    if (NULL == data) {
         return;
     }
     
@@ -45,19 +45,19 @@ void Animation_SegmentFill_FillBuffer (sSegmentFillData_t *data) {
         return;
     }
 
-    if (data->brightness == 0) {
+    if (0 == data->brightness) {
         return;
     }
 
-    uint8_t r_base = (data->base_rgb >> 16) & 0xFF;
-    uint8_t g_base = (data->base_rgb >> 8) & 0xFF;
-    uint8_t b_base = data->base_rgb & 0xFF;
+    uint8_t r_base = (data->base_rgb >> RGB_RED_SHIFT) & RGB_BYTE_MASK;
+    uint8_t g_base = (data->base_rgb >> RGB_GREEN_SHIFT) & RGB_BYTE_MASK;
+    uint8_t b_base = data->base_rgb & RGB_BYTE_MASK;
 
-    uint8_t r_segment = (data->segment_rgb >> 16) & 0xFF;
-    uint8_t g_segment = (data->segment_rgb >> 8) & 0xFF;
-    uint8_t b_segment = data->segment_rgb & 0xFF;
+    uint8_t r_segment = (data->segment_rgb >> RGB_RED_SHIFT) & RGB_BYTE_MASK;
+    uint8_t g_segment = (data->segment_rgb >> RGB_GREEN_SHIFT) & RGB_BYTE_MASK;
+    uint8_t b_segment = data->segment_rgb & RGB_BYTE_MASK;
 
-    if (r_base != 0 || g_base != 0 || b_base != 0) {
+    if ((0 != r_base) || (0 != g_base) || (0 != b_base)) {
         r_base = Colour_ScaleBrightness(r_base, data->brightness);
         g_base = Colour_ScaleBrightness(g_base, data->brightness);
         b_base = Colour_ScaleBrightness(b_base, data->brightness);
@@ -65,7 +65,7 @@ void Animation_SegmentFill_FillBuffer (sSegmentFillData_t *data) {
         WS2812B_API_FillColour(data->device, r_base, g_base, b_base);
     }
 
-    if (r_segment != 0 || g_segment != 0 || b_segment != 0) {
+    if ((0 != r_segment) || (0 != g_segment) || (0 != b_segment)) {
         r_segment = Colour_ScaleBrightness(r_segment, data->brightness);
         g_segment = Colour_ScaleBrightness(g_segment, data->brightness);
         b_segment = Colour_ScaleBrightness(b_segment, data->brightness);
@@ -87,11 +87,11 @@ void Animation_SegmentFill_FillBuffer (sSegmentFillData_t *data) {
  *********************************************************************************************************************/
 
 void Animation_SegmentFill_Run (void *context) {
-    if (context == NULL) {
+    if (NULL == context) {
         return;
     }
 
-    Animation_SegmentFill_FillBuffer((sSegmentFillData_t *)context);
+    Animation_SegmentFill_FillBuffer((sSegmentFillData_t*)context);
 
     return;
 }

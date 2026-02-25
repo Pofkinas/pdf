@@ -4,7 +4,7 @@
 
 #include <odometry_api.h>
 
-#ifdef ENABLE_ODOMETRY
+#if defined(ENABLE_ODOMETRY)
 #include <math.h>
 #include "debug_api.h"
 #include "motor_api.h"
@@ -35,7 +35,7 @@ typedef enum eOdometryState {
  * Private constants
  *********************************************************************************************************************/
 
-#ifdef DEBUG_ODOMETRY_API
+#if defined(DEBUG_ODOMETRY_API)
 CREATE_MODULE_NAME (ODOMETRY_API)
 #else
 CREATE_MODULE_NAME_EMPTY
@@ -74,8 +74,8 @@ static bool Odometry_API_UpdateOdometry (const int16_t right_rpm, const int16_t 
  *********************************************************************************************************************/
 
 static void Odometry_API_TimerCallback (void *arg) {
-    if (g_odometry_state == eOdometryState_WaitingData) {
-        if (osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT) == osOK) {
+    if (eOdometryState_WaitingData == g_odometry_state) {
+        if (osOK == osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT)) {
             g_odometry_data.stale_count++;
             g_odometry_data.data_state = Odometry_API_GetDataState(g_odometry_data.stale_count);
             
@@ -89,18 +89,18 @@ static void Odometry_API_TimerCallback (void *arg) {
 }
 
 static eOdomDataState_t Odometry_API_GetDataState (uint32_t stale_count) {
-    if (g_odometry_state == eOdometryState_Last) {
+    if (eOdometryState_Last == g_odometry_state) {
         return eOdomDataState_Fault;
     }
     
     if (stale_count >= ODOMETRY_DATA_FAULT_THRESHOLD) {
-        if (g_odometry_event_flag != NULL) {
+        if (NULL != g_odometry_event_flag) {
             osEventFlagsSet(g_odometry_event_flag, ODOMETRY_DATA_FAULT_FLAG);
         }
 
         return eOdomDataState_Fault;
     } else if (stale_count >= ODOMETRY_DATA_STALE_THRESHOLD) {
-        if (g_odometry_event_flag != NULL) {
+        if (NULL != g_odometry_event_flag) {
             osEventFlagsSet(g_odometry_event_flag, ODOMETRY_DATA_STALE_FLAG);
         }
         
@@ -111,14 +111,14 @@ static eOdomDataState_t Odometry_API_GetDataState (uint32_t stale_count) {
 }
 
 static bool Odometry_API_UpdateOdometry (const int16_t right_rpm, const int16_t left_rpm, const sOdometryData_t old_data) {
-    if ((g_odometry_state != eOdometryState_WaitingData)) {
+    if (eOdometryState_WaitingData != g_odometry_state) {
         return false;
     }
 
     uint32_t current_time = osKernelGetTickCount();
     
-    if (old_data.timestamp == 0) {
-        if (osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT) != osOK) {
+    if (0 == old_data.timestamp) {
+        if (osOK != osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT)) {
             return false;
         }
 
@@ -127,7 +127,7 @@ static bool Odometry_API_UpdateOdometry (const int16_t right_rpm, const int16_t 
         
         osMutexRelease(g_odometry_mutex);
 
-        if (g_odometry_event_flag != NULL) {
+        if (NULL != g_odometry_event_flag) {
             osEventFlagsSet(g_odometry_event_flag, ODOMETRY_NEW_DATA_READY_FLAG);
         }
         
@@ -148,7 +148,7 @@ static bool Odometry_API_UpdateOdometry (const int16_t right_rpm, const int16_t 
     float new_x = old_data.x_pos + (delta_distance * cos(new_heading));
     float new_y = old_data.y_pos + (delta_distance * sin(new_heading));
     
-    if (osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT)) {
         return false;
     }
 
@@ -166,7 +166,7 @@ static bool Odometry_API_UpdateOdometry (const int16_t right_rpm, const int16_t 
 
     osMutexRelease(g_odometry_mutex);
 
-    if (g_odometry_event_flag != NULL) {
+    if (NULL != g_odometry_event_flag) {
         osEventFlagsSet(g_odometry_event_flag, ODOMETRY_NEW_DATA_READY_FLAG);
     }
 
@@ -180,14 +180,14 @@ static bool Odometry_API_UpdateOdometry (const int16_t right_rpm, const int16_t 
  *********************************************************************************************************************/
 
 bool Odometry_API_Init (osEventFlagsId_t *event_flags_id) {
-    if (g_odometry_state != eOdometryState_Last) {
+    if (eOdometryState_Last != g_odometry_state) {
         return true;
     }
 
     for (eEncoder_t encoder = eEncoder_First; encoder < eEncoder_Last; encoder++) {
         const sEncoderDesc_t *encoder_desc = Odometry_Config_GetEncoderDesc(encoder);
         
-        if (encoder_desc == NULL) {
+        if (NULL == encoder_desc) {
             return false;
         }
 
@@ -196,17 +196,17 @@ bool Odometry_API_Init (osEventFlagsId_t *event_flags_id) {
 
     g_odometry_timer_id = osTimerNew(Odometry_API_TimerCallback, osTimerPeriodic, NULL, &g_odometry_timer_attributes);
 
-    if (g_odometry_timer_id == NULL) {
+    if (NULL == g_odometry_timer_id) {
         return false;
     }
 
     g_odometry_mutex = osMutexNew(&g_odometry_mutex_attributes);
 
-    if (g_odometry_mutex == NULL) {
+    if (NULL == g_odometry_mutex) {
         return false;
     }
 
-    if (event_flags_id != NULL) {
+    if (NULL != event_flags_id) {
         g_odometry_event_flag = *event_flags_id;
     }
     
@@ -215,20 +215,20 @@ bool Odometry_API_Init (osEventFlagsId_t *event_flags_id) {
     return true;
 }
 
-bool Odometry_API_Start(void) {
-    if (g_odometry_state == eOdometryState_Last) {
+bool Odometry_API_Start (void) {
+    if (eOdometryState_Last == g_odometry_state) {
         return false;
     }
 
-    if (g_odometry_state == eOdometryState_Running) {
+    if (eOdometryState_Running == g_odometry_state) {
         return true;
     }
 
-    if (osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT)) {
         return false;
     }
 
-    if (osTimerStart(g_odometry_timer_id, ODOMETRY_UPDATE_RATE_MS) != osOK) {
+    if (osOK != osTimerStart(g_odometry_timer_id, ODOMETRY_UPDATE_RATE_MS)) {
         return false;
     }
 
@@ -239,18 +239,18 @@ bool Odometry_API_Start(void) {
     return true;
 }
 
-bool Odometry_API_Stop(void) {
-    if ((g_odometry_state != eOdometryState_Running) && (g_odometry_state != eOdometryState_WaitingData)) {
+bool Odometry_API_Stop (void) {
+    if ((eOdometryState_Running != g_odometry_state) && (eOdometryState_WaitingData != g_odometry_state)) {
         return true;
     }
 
     if (osTimerIsRunning(g_odometry_timer_id)) {
-        if (osTimerStop(g_odometry_timer_id) != osOK) {
+        if (osOK != osTimerStop(g_odometry_timer_id)) {
             return false;
         }
     }
 
-    if (osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT)) {
         return false;
     }
 
@@ -261,12 +261,12 @@ bool Odometry_API_Stop(void) {
     return true;
 }
 
-void Odometry_API_Reset(void) {
-    if (g_odometry_state == eOdometryState_Last) {
+void Odometry_API_Reset (void) {
+    if (eOdometryState_Last == g_odometry_state) {
         return;
     }
 
-    if (osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT)) {
         return;
     }
 
@@ -277,7 +277,7 @@ void Odometry_API_Reset(void) {
         g_encoder_data[encoder].timestamp = 0;
     }
 
-    if (g_odometry_state == eOdometryState_Stopped) {
+    if (eOdometryState_Stopped == g_odometry_state) {
         g_odometry_state = eOdometryState_Init;
     }
 
@@ -287,16 +287,17 @@ void Odometry_API_Reset(void) {
 }
 
 bool Odometry_API_UpdateRpm (const uint16_t encoder_rpm[], const size_t encoder_count) {
-    if (encoder_rpm == NULL) {
+    if (NULL == encoder_rpm) {
         return false;
     }
 
-    // TODO: Parse encoder IDs from arguments binary data.
-    // arguments.size indicates how many encoder IDs are requested.
-    // arguments.data first arg before separator is some size_t representing Encoder ID combination, 
-    // eg. 0b00000001 for ENCODER_RIGHT_1, 0b00000010 for ENCODER_LEFT_1, etc.
+    /* TODO: Parse encoder IDs from arguments binary data.
+     * arguments.size indicates how many encoder IDs are requested.
+     * arguments.data first arg before separator is some size_t representing Encoder ID combination,
+     * eg. 0b00000001 for ENCODER_RIGHT_1, 0b00000010 for ENCODER_LEFT_1, etc.
+     * */
 
-    if (encoder_count != eEncoder_Last) {
+    if (eEncoder_Last != encoder_count) {
         return false;
     }
 
@@ -308,7 +309,7 @@ bool Odometry_API_UpdateRpm (const uint16_t encoder_rpm[], const size_t encoder_
     uint32_t current_time = osKernelGetTickCount();
     eMotorRotation_t current_rotation = eMotorRotation_Last;
 
-    if (osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT)) {
         return false;
     }
 
@@ -316,7 +317,7 @@ bool Odometry_API_UpdateRpm (const uint16_t encoder_rpm[], const size_t encoder_
         int16_t signed_rpm = (int16_t)encoder_rpm[encoder];
         
         if (Motor_API_GetMotorRotation(g_static_encoder_lut[encoder].motor, &current_rotation)) {
-            if (current_rotation != g_static_encoder_lut[encoder].positive_dir) {
+            if (g_static_encoder_lut[encoder].positive_dir != current_rotation) {
                 signed_rpm = -signed_rpm;
             }
         }
@@ -333,11 +334,12 @@ bool Odometry_API_UpdateRpm (const uint16_t encoder_rpm[], const size_t encoder_
                 left_rpm_sum += signed_rpm;
                 left_encoder_count++;
             } break;
-            default:
+            default: {
                 continue;
+            }
         }
     }
-
+    
     osMutexRelease(g_odometry_mutex);
 
     int16_t right_rpm_avg = (right_encoder_count > 0) ? (int16_t)(right_rpm_sum / right_encoder_count) : 0;
@@ -346,12 +348,12 @@ bool Odometry_API_UpdateRpm (const uint16_t encoder_rpm[], const size_t encoder_
     return Odometry_API_UpdateOdometry(right_rpm_avg, left_rpm_avg, g_odometry_data);
 }
 
-bool Odometry_API_RequestRPM (void) {
-    if (g_odometry_state == eOdometryState_Last) {
+bool Odometry_API_RequestRpm (void) {
+    if (eOdometryState_Last == g_odometry_state) {
         return false;
     }
 
-    if (osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT)) {
         return false;
     }
 
@@ -359,12 +361,13 @@ bool Odometry_API_RequestRPM (void) {
 
     osMutexRelease(g_odometry_mutex);
 
-    // TODO: Make specific encoder RPM requests.
-    // params.size indicates how many encoder IDs are requested.
-    // params.data first arg before separator is some size_t representing Encoder ID combination, 
-    // eg. 0b00000001 for ENCODER_RIGHT_1, 0b00000010 for ENCODER_LEFT_1, etc.
+    /* TODO: Make specific encoder RPM requests.
+     * params.size indicates how many encoder IDs are requested.
+     * params.data first arg before separator is some size_t representing Encoder ID combination,
+     * eg. 0b00000001 for ENCODER_RIGHT_1, 0b00000010 for ENCODER_LEFT_1, etc.
+     * */
 
-    if (g_request_rpm_callback == NULL) {
+    if (NULL == g_request_rpm_callback) {
         TRACE_ERR("Odometry RPM request callback not set\n");
         
         return false;
@@ -373,8 +376,8 @@ bool Odometry_API_RequestRPM (void) {
     return g_request_rpm_callback();
 }
 
-void Odometry_API_SetRequestRpmCallback(Odometry_API_RequestRPM_Callback callback) {
-    if (callback == NULL) {
+void Odometry_API_SetRequestRpmCallback (Odometry_API_RequestRpm_Callback callback) {
+    if (NULL == callback) {
         TRACE_ERR("Invalid Odometry RPM request callback\n");
         
         return;
@@ -385,20 +388,20 @@ void Odometry_API_SetRequestRpmCallback(Odometry_API_RequestRPM_Callback callbac
     return;
 }
 
-bool Odometry_API_GetRPM(const eEncoder_t encoder, int16_t *rpm) {
-    if (encoder < eEncoder_First || encoder >= eEncoder_Last) {
+bool Odometry_API_GetRpm (const eEncoder_t encoder, int16_t *rpm) {
+    if ((encoder < eEncoder_First) || (encoder >= eEncoder_Last)) {
         return false;
     }
 
-    if (rpm == NULL) {
+    if (NULL == rpm) {
         return false;
     }
     
-    if (g_odometry_state == eOdometryState_Last) {
+    if (eOdometryState_Last == g_odometry_state) {
         return false;
     }
 
-    if (osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_odometry_mutex, ODOMETRY_MUTEX_TIMEOUT)) {
         return false;
     }
 
@@ -409,8 +412,8 @@ bool Odometry_API_GetRPM(const eEncoder_t encoder, int16_t *rpm) {
     return true;
 }
 
-void Odometry_API_SetEventFlag(osEventFlagsId_t *event_flags_id) {
-    if (event_flags_id == NULL) {
+void Odometry_API_SetEventFlag (osEventFlagsId_t *event_flags_id) {
+    if (NULL == event_flags_id) {
         TRACE_ERR("Invalid event flags ID pointer\n");
         
         return;
@@ -421,11 +424,11 @@ void Odometry_API_SetEventFlag(osEventFlagsId_t *event_flags_id) {
     return;
 }
 
-osEventFlagsId_t *Odometry_API_GetEventFlag(void) {
+osEventFlagsId_t *Odometry_API_GetEventFlag (void) {
     return &g_odometry_event_flag;
 }
 
-sOdometryData_t *Odometry_API_GetDataPointer(void) {
+sOdometryData_t *Odometry_API_GetDataPointer (void) {
     return &g_odometry_data;
 }
 

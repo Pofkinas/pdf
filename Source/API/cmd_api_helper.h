@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_CMD_HELPER
+#if defined(ENABLE_CMD_HELPER)
 #include <stddef.h>
 #include "message.h"
 #include "error_messages.h"

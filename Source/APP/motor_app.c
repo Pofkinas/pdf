@@ -4,7 +4,7 @@
 
 #include "motor_app.h"
 
-#ifdef ENABLE_MOTOR
+#if defined(ENABLE_MOTOR)
 
 #include <stddef.h>
 #include "cmsis_os2.h"
@@ -26,7 +26,7 @@
  * Private constants
  *********************************************************************************************************************/
 
-#ifdef DEBUG_MOTOR_APP
+#if defined(DEBUG_MOTOR_APP)
 CREATE_MODULE_NAME (MOTOR_APP)
 #else
 CREATE_MODULE_NAME_EMPTY
@@ -58,13 +58,13 @@ static void Motor_APP_Thread (void *arg);
  
 static void Motor_APP_Thread (void *arg) {
     while (1) {
-        if (osMessageQueueGet(g_motor_message_queue_id, &g_received_task, MOTOR_MESSAGE_QUEUE_PRIORITY, MOTOR_MESSAGE_QUEUE_TIMEOUT) != osOK) {
+        if (osOK != osMessageQueueGet(g_motor_message_queue_id, &g_received_task, MOTOR_MESSAGE_QUEUE_PRIORITY, MOTOR_MESSAGE_QUEUE_TIMEOUT)) {
             continue;
         }
 
         switch (g_received_task.task) {
             case eMotorTask_Set: {
-                if (g_received_task.data == NULL) {
+                if (NULL == g_received_task.data) {
                     TRACE_ERR("No arguments\n");
 
                     break;
@@ -72,7 +72,7 @@ static void Motor_APP_Thread (void *arg) {
 
                 sMotorSet_t *arguments = (sMotorSet_t*) g_received_task.data;
 
-                if (arguments == NULL){
+                if (NULL == arguments) {
                     TRACE_ERR("No arguments\n");
 
                     Heap_API_Free(arguments);
@@ -125,9 +125,9 @@ static void Motor_APP_Thread (void *arg) {
 
                 TRACE_INFO("Motors Stopped\n");
             } break;
-            #ifdef ENABLE_PID_CONTROL
+            #if defined(ENABLE_PID_CONTROL)
             case eMotorTask_SetRpm: {
-                if (g_received_task.data == NULL) {
+                if (NULL == g_received_task.data) {
                     TRACE_ERR("No arguments\n");
 
                     break;
@@ -135,7 +135,7 @@ static void Motor_APP_Thread (void *arg) {
 
                 sMotorSetRpm_t *arguments = (sMotorSetRpm_t*) g_received_task.data;
 
-                if (arguments == NULL){
+                if (NULL == arguments) {
                     TRACE_ERR("No arguments\n");
 
                     Heap_API_Free(arguments);
@@ -167,7 +167,7 @@ static void Motor_APP_Thread (void *arg) {
                     break;
                 }
 
-                if (!Motor_API_SetTargetRPM(arguments->motor, arguments->target_rpm, arguments->mode)) {
+                if (!Motor_API_SetTargetRpm(arguments->motor, arguments->target_rpm, arguments->mode)) {
                     TRACE_ERR("Motor Set Target RPM Failed\n");
 
                     Heap_API_Free(arguments);
@@ -202,13 +202,13 @@ bool Motor_APP_Init (void) {
 
     g_motor_message_queue_id = osMessageQueueNew(MOTOR_MESSAGE_QUEUE_CAPACITY, sizeof(sMotorCommandDesc_t), &g_motor_message_queue_attributes);
 
-    if (g_motor_message_queue_id == NULL) {
+    if (NULL == g_motor_message_queue_id) {
         return false;
     }
 
     g_motor_thread_id = osThreadNew(Motor_APP_Thread, NULL, &g_motor_thread_attributes);
 
-    if (g_motor_thread_id == NULL) {
+    if (NULL == g_motor_thread_id) {
         return false;
     }
 
@@ -217,16 +217,16 @@ bool Motor_APP_Init (void) {
     return g_is_initialized;
 }
 
-bool Motor_APP_Add_Task (sMotorCommandDesc_t *task_to_message_queue) {
-    if (task_to_message_queue == NULL) {
+bool Motor_APP_AddTask (sMotorCommandDesc_t *task_to_message_queue) {
+    if (NULL == task_to_message_queue) {
         return false;
     }
 
-    if (g_motor_message_queue_id == NULL){
+    if (NULL == g_motor_message_queue_id) {
         return false;
     }
 
-    if (osMessageQueuePut(g_motor_message_queue_id, task_to_message_queue, MOTOR_MESSAGE_QUEUE_PRIORITY, MOTOR_MESSAGE_QUEUE_TIMEOUT) != osOK) {
+    if (osOK != osMessageQueuePut(g_motor_message_queue_id, task_to_message_queue, MOTOR_MESSAGE_QUEUE_PRIORITY, MOTOR_MESSAGE_QUEUE_TIMEOUT)) {
         return false;
     }
 

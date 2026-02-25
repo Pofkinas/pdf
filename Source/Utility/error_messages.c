@@ -16,7 +16,7 @@
  * Private constants
  *********************************************************************************************************************/
 
-const static char* g_static_error_messages [eErrorCode_Last] = {
+static const char *g_static_error_messages [eErrorCode_Last] = {
     [eErrorCode_OK]         = "OK",
 
     [eErrorCode_SYNTAX]     = "Syntax error",
@@ -74,7 +74,7 @@ const static char* g_static_error_messages [eErrorCode_Last] = {
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-const char* Error_Message_To_String(eErrorCode_t error_code) {
+const char *Error_Message_To_String(eErrorCode_t error_code) {
     if ((error_code < eErrorCode_First) || (error_code >= eErrorCode_Last)) {
         return g_static_error_messages[eErrorCode_UNKWN];
     }

@@ -43,7 +43,7 @@ typedef struct sLedRainbow {
     uint8_t hue_offset;
     eRainbowState_t state;
     sLedAnimationRainbow_t *parameters;
-    size_t frame_counter;
+    uint32_t frame_counter;
 } sLedRainbow_t;
 
 /**********************************************************************************************************************

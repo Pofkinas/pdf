@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_UART
+#if defined(ENABLE_UART)
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -34,7 +34,7 @@
 
 bool UART_API_Init (const eUart_t uart, const eBaudrate_t baudrate, const char *delimiter);
 bool UART_API_Send (const eUart_t uart, const sMessage_t message, const uint32_t timeout);
-bool UART_API_Receive (const eUart_t uart, sMessage_t *message, const uint32_t  timeout);
+bool UART_API_Receive (const eUart_t uart, sMessage_t *message, const uint32_t timeout);
 
 #endif /* ENABLE_UART */
 #endif /* SOURCE_API_UART_API_H_ */

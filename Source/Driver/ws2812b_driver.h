@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_WS2812B
+#if defined(ENABLE_WS2812B)
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>

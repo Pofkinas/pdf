@@ -15,6 +15,14 @@
  * Exported definitions and macros
  *********************************************************************************************************************/
 
+/// Bit positions of R, G, B bytes in a packed 24-bit ColourRgb_t value.
+#define RGB_RED_SHIFT 16U
+#define RGB_GREEN_SHIFT 8U
+#define RGB_BLUE_SHIFT 0U
+#define RGB_BYTE_MASK 0xFF
+
+#define CHANNEL_MAX 255U
+
 /**********************************************************************************************************************
  * Exported types
  *********************************************************************************************************************/

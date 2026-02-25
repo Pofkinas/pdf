@@ -4,7 +4,7 @@
 
 #include "timer_driver.h"
 
-#ifdef ENABLE_TIMER
+#if defined(ENABLE_TIMER)
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -54,7 +54,7 @@ bool Timer_Driver_InitAllTimers (void) {
     for (eTimer_t timer = eTimer_First; timer < eTimer_Last; timer++) {
         const sTimerDesc_t *desc = Timer_Config_GetTimerDesc(timer);
 
-        if (desc == NULL) {
+        if (NULL == desc) {
             g_is_all_timers_init = false;
             return false;
         }
@@ -73,27 +73,27 @@ bool Timer_Driver_InitAllTimers (void) {
         timer_init_struct.Autoreload = g_timer_lut[timer].auto_reload;
         timer_init_struct.ClockDivision = g_timer_lut[timer].clock_division;
         
-        if (LL_TIM_Init(g_timer_lut[timer].periph, &timer_init_struct) == ERROR) {
+        if (ERROR == LL_TIM_Init(g_timer_lut[timer].periph, &timer_init_struct)) {
             g_is_all_timers_init = false;
         }
         
-        if (g_timer_lut[timer].clock_source_fp != NULL) {
+        if (NULL != g_timer_lut[timer].clock_source_fp) {
             g_timer_lut[timer].clock_source_fp(g_timer_lut[timer].periph, g_timer_lut[timer].clock_source);
         }
 
-        if (g_timer_lut[timer].auto_relead_preload_fp != NULL) {
+        if (NULL != g_timer_lut[timer].auto_relead_preload_fp) {
             g_timer_lut[timer].auto_relead_preload_fp(g_timer_lut[timer].periph);
         }
 
-        if (g_timer_lut[timer].master_slave_mode_fp != NULL) {
+        if (NULL != g_timer_lut[timer].master_slave_mode_fp) {
             g_timer_lut[timer].master_slave_mode_fp(g_timer_lut[timer].periph);
         }
 
-        if (g_timer_lut[timer].set_slave_mode_fp != NULL) {
+        if (NULL != g_timer_lut[timer].set_slave_mode_fp) {
             g_timer_lut[timer].set_slave_mode_fp(g_timer_lut[timer].periph, g_timer_lut[timer].slave_mode);
         }
 
-        if (g_timer_lut[timer].set_trigger != NULL) {
+        if (NULL != g_timer_lut[timer].set_trigger) {
             g_timer_lut[timer].set_trigger(g_timer_lut[timer].periph, g_timer_lut[timer].triger_sync);
         }
     }

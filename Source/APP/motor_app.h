@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_MOTOR
+#if defined(ENABLE_MOTOR)
 #include <stdbool.h>
 #include <stdint.h>
 #include "motor_api.h"
@@ -25,7 +25,7 @@ typedef enum eMotorTask {
     eMotorTask_First,
     eMotorTask_Set = eMotorTask_First,
     eMotorTask_Stop,
-    #ifdef ENABLE_PID_CONTROL
+    #if defined(ENABLE_PID_CONTROL)
     eMotorTask_SetRpm,
     #endif /* ENABLE_PID_CONTROL */
     eMotorTask_Last
@@ -42,7 +42,7 @@ typedef struct sMotorSet {
     eMotorControl_t mode;
 } sMotorSet_t;
 
-#ifdef ENABLE_PID_CONTROL
+#if defined(ENABLE_PID_CONTROL)
 typedef struct sMotorSetRpm {
     eMotor_t motor;
     float target_rpm;
@@ -60,7 +60,7 @@ typedef struct sMotorSetRpm {
  *********************************************************************************************************************/
 
 bool Motor_APP_Init (void);
-bool Motor_APP_Add_Task (sMotorCommandDesc_t *task_to_message_queue);
+bool Motor_APP_AddTask (sMotorCommandDesc_t *task_to_message_queue);
 
 #endif /* ENABLE_MOTOR */
 #endif /* SOURCE_APP_MOTOR_APP_H_ */

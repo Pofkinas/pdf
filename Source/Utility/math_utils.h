@@ -34,6 +34,6 @@ uint32_t Math_Utils_RandomRange (uint32_t min, uint32_t max);
 uint32_t Math_Utils_MapValue (uint32_t input, uint32_t input_min, uint32_t input_max, uint32_t output_min, uint32_t output_max);
 float Math_Utils_DegreesToRadians (float degrees);
 float Math_Utils_RadiansToDegrees (float radians);
-float Math_Utils_PID_Update (sPID_t *pid, float set_point, float process_value, float dt);
+float Math_Utils_PidUpdate (sPID_t *pid, float set_point, float process_value, float dt);
 
 #endif /* SOURCE_UTILITY_MATH_UTILS_H_ */

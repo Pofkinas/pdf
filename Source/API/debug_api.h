@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_UART_DEBUG
+#if defined(ENABLE_UART_DEBUG)
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -21,15 +21,15 @@
 #define CREATE_MODULE_NAME(file_name) static const char *trace_module_name = #file_name;
 #define CREATE_MODULE_NAME_EMPTY static const char *trace_module_name __attribute__((unused)) = NULL;
 
-#ifdef ENABLE_UART_DEBUG
-#define TRACE_INFO(format, ...) Debug_API_Print(eTraceLevel_Info, trace_module_name,__FILE__, __LINE__, format, ##__VA_ARGS__)
-#define TRACE_WRN(format, ...) Debug_API_Print(eTraceLevel_Warning, trace_module_name,__FILE__, __LINE__, format, ##__VA_ARGS__)
+#if defined(ENABLE_UART_DEBUG)
+#define TRACE_INFO(format, ...) Debug_API_Print(eTraceLevel_Info, trace_module_name, __FILE__, __LINE__, format, ##__VA_ARGS__)
+#define TRACE_WRN(format, ...) Debug_API_Print(eTraceLevel_Warning, trace_module_name, __FILE__, __LINE__, format, ##__VA_ARGS__)
 #define TRACE_ERR(format, ...) Debug_API_Print(eTraceLevel_Error, trace_module_name, __FILE__, __LINE__, format, ##__VA_ARGS__)
 #else
 #define TRACE_INFO(format, ...)
 #define TRACE_WRN(format, ...)
 #define TRACE_ERR(format, ...)
-#endif
+#endif /* ENABLE_UART_DEBUG */
 
 /**********************************************************************************************************************
  * Exported types

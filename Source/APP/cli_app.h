@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_CLI
+#if defined(ENABLE_CLI)
 #include <stdbool.h>
 #include "baudrate.h"
 

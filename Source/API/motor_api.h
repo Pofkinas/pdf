@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_MOTOR
+#if defined(ENABLE_MOTOR)
 #include <stdbool.h>
 #include <stdint.h>
 #include "motor_config.h"
@@ -24,8 +24,8 @@ typedef enum eMotorControl {
     eMotorControl_First = 0,
     eMotorControl_None = eMotorControl_First,
     eMotorControl_Ramp,
-    #ifdef ENABLE_PID_CONTROL
-    eMotorControl_PID,
+    #if defined(ENABLE_PID_CONTROL)
+    eMotorControl_Pid,
     // TODO: Implement PID control after ramping 
     // eMotorControl_Ramp_PID,
     #endif /* ENABLE_PID_CONTROL */
@@ -52,12 +52,12 @@ bool Motor_API_IsCorrectMode (const eMotorControl_t mode);
 bool Motor_API_IsMotorEnabled (const eMotor_t motor);
 bool Motor_API_GetMotorRotation (const eMotor_t motor, eMotorRotation_t *rotation);
 
-#ifdef ENABLE_PID_CONTROL
-bool Motor_API_SetTargetRPM (const eMotor_t motor, const float target_rpm, const eMotorControl_t control);
-bool Motor_API_GetCurrentRPM (const eMotor_t motor, int16_t *current_rpm);
-bool Motor_API_SetPID (const eMotor_t motor, const sPID_t *pid_params);
+#if defined(ENABLE_PID_CONTROL)
+bool Motor_API_SetTargetRpm (const eMotor_t motor, const float target_rpm, const eMotorControl_t control);
+bool Motor_API_GetCurrentRpm (const eMotor_t motor, int16_t *current_rpm);
+bool Motor_API_SetPid (const eMotor_t motor, const sPID_t *pid_params);
 
-bool Motor_API_IsCorrectRPM (const float rpm);
+bool Motor_API_IsCorrectRpm (const float rpm);
 #endif /* ENABLE_PID_CONTROL */
 
 #endif /* ENABLE_MOTOR */

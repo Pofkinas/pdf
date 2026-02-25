@@ -4,9 +4,9 @@
 
 #include "default_cli_lut.h"
 
-#ifdef ENABLE_DEFAULT_CMD
+#if defined(ENABLE_DEFAULT_CMD)
 
-#include "cli_cmd_handlers.h"
+#include "cli_cmd.h"
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -32,62 +32,62 @@
 
 /* clang-format off */
 sCmdDesc_t g_default_cmd_lut[eCliDefaultCmd_Last] = {
-    #ifdef ENABLE_LED
+    #if defined(ENABLE_LED)
     [eCliDefaultCmd_Led_Set] = {
         DEFINE_CMD("led_set:"),
-        .handler = CLI_APP_Led_Handlers_Set
+        .handler = CLI_CMD_Led_Set
         /* e. g. led_set:<eLed_t> */
     },
     [eCliDefaultCmd_Led_Reset] = {
         DEFINE_CMD("led_reset:"),
-        .handler = CLI_APP_Led_Handlers_Reset
+        .handler = CLI_CMD_Led_Reset
         /* e. g. led_reset:<eLed_t> */
     },
     [eCliDefaultCmd_Led_Toggle] = {
         DEFINE_CMD("led_toggle:"),
-        .handler = CLI_APP_Led_Handlers_Toggle
+        .handler = CLI_CMD_Led_Toggle
         /* e. g. led_toggle:<eLed_t> */
     },
     [eCliDefaultCmd_Led_Blink] = {
         DEFINE_CMD("led_blink:"),
-        .handler = CLI_APP_Led_Handlers_Blink
+        .handler = CLI_CMD_Led_Blink
         /* e. g. led_blink:<eLed_t>, <duration>, <frequency> */
     },
-    #endif
+    #endif /* ENABLE_LED */
 
-    #ifdef ENABLE_PWM_LED
-    [eCliDefaultCmd_Pwm_Led_SetBrightness] = {
+    #if defined(ENABLE_PWM_LED)
+    [eCliDefaultCmd_Pwm_LedSetBrightness] = {
         DEFINE_CMD("led_setb:"),
-        .handler = CLI_APP_Pwm_Led_Handlers_Set_Brightness
+        .handler = CLI_CMD_Pwm_LedSetBrightness
         /* e. g. led_setb:<eLedPwm_t>, <duty_cycle> */
     },
-    [eCliDefaultCmd_Pwm_Led_Pulse] = {
+    [eCliDefaultCmd_Pwm_LedPulse] = {
         DEFINE_CMD("led_pulse:"),
-        .handler = CLI_APP_Pwm_Led_Handlers_Pulse
+        .handler = CLI_CMD_Pwm_LedPulse
         /* e. g. led_pulse:<eLedPwm_t>, <pulse_time>, <pulse_frequency> */
     },
-    #endif
+    #endif /* ENABLE_PWM_LED */
 
-    #ifdef ENABLE_MOTOR
+    #if defined(ENABLE_MOTOR)
     [eCliDefaultCmd_Motors_Set] = {
         DEFINE_CMD("motors_set:"),
-        .handler = CLI_APP_Motors_Handlers_Set
+        .handler = CLI_CMD_Motors_Set
         /* e. g. motors_set:<speed %>, <eMotorDirection_t>, <eMotorControl_t> */
     },
     [eCliDefaultCmd_Motors_Stop] = {
         DEFINE_CMD("motors_stop"),
-        .handler = CLI_APP_Motors_Handlers_Stop
+        .handler = CLI_CMD_Motors_Stop
         /* e. g. motors_stop */
     },
-    #ifdef ENABLE_PID_CONTROL
-    [eCliDefaultCmd_Motors_SetTargetRPM] = {
+    #if defined(ENABLE_PID_CONTROL)
+    [eCliDefaultCmd_Motors_SetTargetRpm] = {
         DEFINE_CMD("motors_setrpm:"),
-        .handler = CLI_APP_Motors_Handlers_SetTargetRPM
+        .handler = CLI_CMD_Motors_SetTargetRpm
         /* e. g. motors_setrpm:<eMotor_t>, <target_rpm>, <eMotorControl_t> */
     },
-    [eCliDefaultCmd_Motors_SetPID] = {
+    [eCliDefaultCmd_Motors_SetPid] = {
         DEFINE_CMD("motors_setpid:"),
-        .handler = CLI_APP_Motors_Handlers_SetPID
+        .handler = CLI_CMD_Motors_SetPid
         /* e. g. motors_setpid:<eMotor_t>, <Kp>, <Ki>, <Kd> */
     },
     #endif /* ENABLE_PID_CONTROL */
@@ -95,14 +95,15 @@ sCmdDesc_t g_default_cmd_lut[eCliDefaultCmd_Last] = {
     
     [eCliDefaultCmd_RgbToHsv] = {
         DEFINE_CMD("rgb:"),
-        .handler = CLI_APP_Led_Handlers_RgbToHsv
+        .handler = CLI_CMD_Led_RgbToHsv
         /* e. g. rgb:<r>, <g>, <b> */
     },
     [eCliDefaultCmd_HsvToRgb] = {
         DEFINE_CMD("hsv:"),
-        .handler = CLI_APP_Led_Handlers_HsvToRgb
+        .handler = CLI_CMD_Led_HsvToRgb
         /* e. g. hsv:<h>, <s>, <v> */
     }
+    // TODO: Add VL53L0X calibration
 };
 /* clang-format on */
 

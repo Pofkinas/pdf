@@ -1,5 +1,5 @@
-#ifndef SOURCE_UTILITY_LED_ANIMATION_ANIMATION_SOLIDcolour_H_
-#define SOURCE_UTILITY_LED_ANIMATION_ANIMATION_SOLIDcolour_H_
+#ifndef SOURCE_UTILITY_LED_ANIMATION_ANIMATION_SOLIDCOLOUR_H_
+#define SOURCE_UTILITY_LED_ANIMATION_ANIMATION_SOLIDCOLOUR_H_
 /**********************************************************************************************************************
  * Includes
  *********************************************************************************************************************/
@@ -40,4 +40,4 @@ typedef struct sLedAnimationSolidColour {
 void Animation_SolidColour_Run (void *context);
 
 #endif /* ENABLE_LED_ANIMATION */
-#endif /* SOURCE_UTILITY_LED_ANIMATION_ANIMATION_SOLIDcolour_H_ */
+#endif /* SOURCE_UTILITY_LED_ANIMATION_ANIMATION_SOLIDCOLOUR_H_ */

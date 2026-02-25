@@ -1,5 +1,5 @@
-#ifndef SOURCE_DRIVER_RING_BUFFER_H_
-#define SOURCE_DRIVER_RING_BUFFER_H_
+#ifndef SOURCE_UTILITY_RING_BUFFER_H_
+#define SOURCE_UTILITY_RING_BUFFER_H_
 /**********************************************************************************************************************
  * Includes
  *********************************************************************************************************************/
@@ -34,4 +34,4 @@ bool Ring_Buffer_IsEmpty (RingBuffer_Handle ring_buffer);
 bool Ring_Buffer_Push (RingBuffer_Handle ring_buffer, uint8_t data);
 bool Ring_Buffer_Pop (RingBuffer_Handle ring_buffer, uint8_t *data);
 
-#endif /* SOURCE_DRIVER_RING_BUFFER_H_ */
+#endif /* SOURCE_UTILITY_RING_BUFFER_H_ */

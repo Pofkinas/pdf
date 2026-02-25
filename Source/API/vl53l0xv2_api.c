@@ -4,7 +4,7 @@
 
 #include "vl53l0xv2_api.h"
 
-#ifdef ENABLE_VL53L0X
+#if defined(ENABLE_VL53L0X)
 #include "cmsis_os2.h"
 #include "debug_api.h"
 #include "vl53l0x_api.h"
@@ -25,7 +25,7 @@
  * Private constants
  *********************************************************************************************************************/
 
-#ifdef DEBUG_VL53L0X_API 
+#if defined(DEBUG_VL53L0X_API)
 CREATE_MODULE_NAME (VL53L0XV2_API)
 #else
 CREATE_MODULE_NAME_EMPTY
@@ -65,7 +65,7 @@ static bool VL53L0X_API_InitDevice (const eVl53l0x_t vl53l0x) {
         return false;
     }
 
-    if (g_dynamic_vl53l0x_lut[vl53l0x].state != eVl53l0xState_Off) {
+    if (eVl53l0xState_Off != g_dynamic_vl53l0x_lut[vl53l0x].state) {
         return true;
     }
 
@@ -92,7 +92,7 @@ static bool VL53L0X_API_InitDevice (const eVl53l0x_t vl53l0x) {
     VL53L0X_Error status = VL53L0X_ERROR_NONE;
     status = VL53L0X_DataInit(&g_dynamic_vl53l0x_lut[vl53l0x].device);
 
-    if (status != VL53L0X_ERROR_NONE) {
+    if (VL53L0X_ERROR_NONE != status) {
         TRACE_ERR("InitDevice: DataInit failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
@@ -100,7 +100,7 @@ static bool VL53L0X_API_InitDevice (const eVl53l0x_t vl53l0x) {
 
     status = VL53L0X_SetDeviceAddress(&g_dynamic_vl53l0x_lut[vl53l0x].device, (g_static_vl53l0x_lut[vl53l0x].i2c_address << 1));
 
-    if (status != VL53L0X_ERROR_NONE) {
+    if (VL53L0X_ERROR_NONE != status) {
         TRACE_ERR("InitDevice: SetDeviceAddress failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
@@ -110,7 +110,7 @@ static bool VL53L0X_API_InitDevice (const eVl53l0x_t vl53l0x) {
 
     status = VL53L0X_StaticInit(&g_dynamic_vl53l0x_lut[vl53l0x].device);
 
-    if (status != VL53L0X_ERROR_NONE) {
+    if (VL53L0X_ERROR_NONE != status) {
         TRACE_ERR("InitDevice: StaticInit failed for [%d], status [%d]\n", vl53l0x, status);
 
         return false;
@@ -127,7 +127,7 @@ static bool VL53L0X_API_ConfigureDevice (const eVl53l0x_t vl53l0x) {
         return false;
     }
 
-    if (g_dynamic_vl53l0x_lut[vl53l0x].state != eVl53l0xState_Init) {
+    if (eVl53l0xState_Init != g_dynamic_vl53l0x_lut[vl53l0x].state) {
         return false;
     }
 
@@ -136,7 +136,7 @@ static bool VL53L0X_API_ConfigureDevice (const eVl53l0x_t vl53l0x) {
     if (!g_dynamic_vl53l0x_lut[vl53l0x].has_calib_data) {
         status = VL53L0X_PerformRefSpadManagement(&g_dynamic_vl53l0x_lut[vl53l0x].device, &g_dynamic_vl53l0x_lut[vl53l0x].calib_SpadCount, &g_dynamic_vl53l0x_lut[vl53l0x].calib_isApertureSpads);
 
-        if (status != VL53L0X_ERROR_NONE) {
+        if (VL53L0X_ERROR_NONE != status) {
             TRACE_ERR("ConfigureDevice: PerformRefSpadManagement failed for [%d], status [%d]\n", vl53l0x, status);
             
             return false;
@@ -144,7 +144,7 @@ static bool VL53L0X_API_ConfigureDevice (const eVl53l0x_t vl53l0x) {
 
         status = VL53L0X_PerformRefCalibration(&g_dynamic_vl53l0x_lut[vl53l0x].device, &g_dynamic_vl53l0x_lut[vl53l0x].calib_VhvSettings, &g_dynamic_vl53l0x_lut[vl53l0x].calib_PhaseCal);
 
-        if (status != VL53L0X_ERROR_NONE) {
+        if (VL53L0X_ERROR_NONE != status) {
             TRACE_ERR("ConfigureDevice: PerformRefCalibration failed for [%d], status [%d]\n", vl53l0x, status);
             
             return false;
@@ -152,7 +152,7 @@ static bool VL53L0X_API_ConfigureDevice (const eVl53l0x_t vl53l0x) {
 
         status = VL53L0X_PerformOffsetCalibration(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_default_offset_calibration_distance, &g_dynamic_vl53l0x_lut[vl53l0x].offset);
 
-        if (status != VL53L0X_ERROR_NONE) {
+        if (VL53L0X_ERROR_NONE != status) {
             TRACE_ERR("ConfigureDevice: PerformOffsetCalibration failed for [%d], status [%d]\n", vl53l0x, status);
             
             return false;
@@ -161,7 +161,7 @@ static bool VL53L0X_API_ConfigureDevice (const eVl53l0x_t vl53l0x) {
         if (g_static_vl53l0x_lut[vl53l0x].crosstalk_compensation_en) {
             status = VL53L0X_PerformXTalkCalibration(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_static_vl53l0x_lut[vl53l0x].crosstalk_distance, &g_dynamic_vl53l0x_lut[vl53l0x].crosstalk_value); 
 
-            if (status != VL53L0X_ERROR_NONE) {
+            if (VL53L0X_ERROR_NONE != status) {
                 TRACE_ERR("ConfigureDevice: PerformXTalkCalibration failed for [%d], status [%d]\n", vl53l0x, status);
                 
                 return false;
@@ -175,7 +175,7 @@ static bool VL53L0X_API_ConfigureDevice (const eVl53l0x_t vl53l0x) {
 
     status = VL53L0X_SetReferenceSpads(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_dynamic_vl53l0x_lut[vl53l0x].calib_SpadCount, g_dynamic_vl53l0x_lut[vl53l0x].calib_isApertureSpads); 
 
-    if (status != VL53L0X_ERROR_NONE) {
+    if (VL53L0X_ERROR_NONE != status) {
         TRACE_ERR("ConfigureDevice: SetReferenceSpads failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
@@ -183,7 +183,7 @@ static bool VL53L0X_API_ConfigureDevice (const eVl53l0x_t vl53l0x) {
 
     status = VL53L0X_SetRefCalibration(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_dynamic_vl53l0x_lut[vl53l0x].calib_VhvSettings, g_dynamic_vl53l0x_lut[vl53l0x].calib_PhaseCal); 
 
-    if (status != VL53L0X_ERROR_NONE) {
+    if (VL53L0X_ERROR_NONE != status) {
         TRACE_ERR("ConfigureDevice: SetRefCalibration failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
@@ -191,7 +191,7 @@ static bool VL53L0X_API_ConfigureDevice (const eVl53l0x_t vl53l0x) {
 
     status = VL53L0X_SetOffsetCalibrationDataMicroMeter(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_dynamic_vl53l0x_lut[vl53l0x].offset);
 
-    if (status != VL53L0X_ERROR_NONE) {
+    if (VL53L0X_ERROR_NONE != status) {
         TRACE_ERR("ConfigureDevice: SetOffsetCalibrationDataMicroMeter failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
@@ -200,7 +200,7 @@ static bool VL53L0X_API_ConfigureDevice (const eVl53l0x_t vl53l0x) {
     if (g_static_vl53l0x_lut[vl53l0x].crosstalk_compensation_en) {
         status = VL53L0X_SetXTalkCompensationRateMegaCps(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_dynamic_vl53l0x_lut[vl53l0x].crosstalk_value); 
 
-        if (status != VL53L0X_ERROR_NONE) {
+        if (VL53L0X_ERROR_NONE != status) {
             TRACE_ERR("ConfigureDevice: SetXTalkCompensationRateMegaCps failed for [%d], status [%d]\n", vl53l0x, status);
             
             return false;
@@ -208,7 +208,7 @@ static bool VL53L0X_API_ConfigureDevice (const eVl53l0x_t vl53l0x) {
 
         status = VL53L0X_SetXTalkCompensationEnable(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_static_vl53l0x_lut[vl53l0x].crosstalk_compensation_en);
     
-        if (status != VL53L0X_ERROR_NONE) {
+        if (VL53L0X_ERROR_NONE != status) {
             TRACE_ERR("ConfigureDevice: SetXTalkCompensationEnable failed for [%d], status [%d]\n", vl53l0x, status);
             
             return false;
@@ -217,7 +217,7 @@ static bool VL53L0X_API_ConfigureDevice (const eVl53l0x_t vl53l0x) {
 
     status = VL53L0X_SetDeviceMode(&g_dynamic_vl53l0x_lut[vl53l0x].device, g_static_vl53l0x_lut[vl53l0x].device_mode);
 
-    if (status != VL53L0X_ERROR_NONE) {
+    if (VL53L0X_ERROR_NONE != status) {
         TRACE_ERR("ConfigureDevice: SetDeviceMode failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
@@ -282,7 +282,7 @@ static bool VL53L0X_API_SetRangeProfile (const eVl53l0x_t vl53l0x, const eVl53l0
 
     status = VL53L0X_SetLimitCheckValue(&g_dynamic_vl53l0x_lut[vl53l0x].device, VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, FIX1616_FROM_FLOAT(signal_rate));
 
-    if (status != VL53L0X_ERROR_NONE) {
+    if (VL53L0X_ERROR_NONE != status) {
         TRACE_ERR("SetRangeProfile: SetLimitCheckValue failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
@@ -290,7 +290,7 @@ static bool VL53L0X_API_SetRangeProfile (const eVl53l0x_t vl53l0x, const eVl53l0
 
     status = VL53L0X_SetLimitCheckValue(&g_dynamic_vl53l0x_lut[vl53l0x].device, VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, FIX1616_FROM_FLOAT(sigma));
 
-    if (status != VL53L0X_ERROR_NONE) {
+    if (VL53L0X_ERROR_NONE != status) {
         TRACE_ERR("SetRangeProfile: SetLimitCheckValue failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
@@ -298,16 +298,16 @@ static bool VL53L0X_API_SetRangeProfile (const eVl53l0x_t vl53l0x, const eVl53l0
 
     status = VL53L0X_SetMeasurementTimingBudgetMicroSeconds(&g_dynamic_vl53l0x_lut[vl53l0x].device, measurement_time); 
 
-    if (status != VL53L0X_ERROR_NONE) {
+    if (VL53L0X_ERROR_NONE != status) {
         TRACE_ERR("SetRangeProfile: SetMeasurementTimingBudgetMicroSeconds failed for [%d], status [%d]\n", vl53l0x, status);
         
         return false;
     }
 
-    if (profile == eVl53l0xRangeProfile_LongRange) {
+    if (eVl53l0xRangeProfile_LongRange == profile) {
         status = VL53L0X_SetVcselPulsePeriod(&g_dynamic_vl53l0x_lut[vl53l0x].device, VL53L0X_VCSEL_PERIOD_PRE_RANGE, 18);
 
-        if (status != VL53L0X_ERROR_NONE) {
+        if (VL53L0X_ERROR_NONE != status) {
             TRACE_ERR("SetRangeProfile: SetVcselPulsePeriod failed for [%d], status [%d]\n", vl53l0x, status);
             
             return false;
@@ -315,7 +315,7 @@ static bool VL53L0X_API_SetRangeProfile (const eVl53l0x_t vl53l0x, const eVl53l0
 
         status = VL53L0X_SetVcselPulsePeriod(&g_dynamic_vl53l0x_lut[vl53l0x].device, VL53L0X_VCSEL_PERIOD_FINAL_RANGE, 14);
         
-        if (status != VL53L0X_ERROR_NONE) {
+        if (VL53L0X_ERROR_NONE != status) {
             TRACE_ERR("SetRangeProfile: SetVcselPulsePeriod failed for [%d], status [%d]\n", vl53l0x, status);
             
             return false;
@@ -326,7 +326,7 @@ static bool VL53L0X_API_SetRangeProfile (const eVl53l0x_t vl53l0x, const eVl53l0
 }
 
 static void VL53L0X_API_GetTimeout (const eVl53l0xRangeProfile_t profile, uint32_t *timeout) {
-    if (timeout == NULL) {
+    if (NULL == timeout) {
         return;
     }
     
@@ -369,7 +369,7 @@ static bool VL53L0X_API_MeasureContinuous (const eVl53l0x_t vl53l0x, VL53L0X_Ran
         return false;
     }
     
-    if (ranging_data == NULL) {
+    if (NULL == ranging_data) {
         return false;
     }
 
@@ -381,7 +381,7 @@ static bool VL53L0X_API_MeasureContinuous (const eVl53l0x_t vl53l0x, VL53L0X_Ran
     while (elapsed_ms < timeout) {
         error = VL53L0X_GetMeasurementDataReady(&g_dynamic_vl53l0x_lut[vl53l0x].device, &data_status);
 
-        if (error == VL53L0X_ERROR_NONE && data_status != 0) {
+        if ((VL53L0X_ERROR_NONE == error) && (0 != data_status)) {
             break;
         }
 
@@ -396,7 +396,7 @@ static bool VL53L0X_API_MeasureContinuous (const eVl53l0x_t vl53l0x, VL53L0X_Ran
         return false;
     }
 
-    if (data_status == 0) {
+    if (0 == data_status) {
         TRACE_ERR("MeasureContinuous: Sensor [%d] data_status 0\n", vl53l0x);
         
         return false;
@@ -404,7 +404,7 @@ static bool VL53L0X_API_MeasureContinuous (const eVl53l0x_t vl53l0x, VL53L0X_Ran
 
     error = VL53L0X_GetRangingMeasurementData(&g_dynamic_vl53l0x_lut[vl53l0x].device, ranging_data);
 
-    if (error != VL53L0X_ERROR_NONE) {
+    if (VL53L0X_ERROR_NONE != error) {
         TRACE_ERR("MeasureContinuous: GetRangingMeasurementData failed for [%d], error [%d]\n", vl53l0x, error);
         
         return false;
@@ -412,7 +412,7 @@ static bool VL53L0X_API_MeasureContinuous (const eVl53l0x_t vl53l0x, VL53L0X_Ran
 
     error = VL53L0X_ClearInterruptMask(&g_dynamic_vl53l0x_lut[vl53l0x].device, 0);
 
-    if (error != VL53L0X_ERROR_NONE) {
+    if (VL53L0X_ERROR_NONE != error) {
         TRACE_ERR("MeasureContinuous: ClearInterruptMask failed for [%d], error [%d]\n", vl53l0x, error);
         
         return false;
@@ -438,7 +438,7 @@ bool VL53L0X_API_InitAll (void) {
         const sVl53l0xStaticDesc_t *static_desc = VL53L0XV2_Config_GetVl53l0xStaticDesc(vl53l0x);
         const sVl53l0xDynamicDesc_t *dynamic_desc = VL53L0XV2_Config_GetVl53l0xDynamicDesc(vl53l0x);
 
-        if (static_desc == NULL || dynamic_desc == NULL) {
+        if ((NULL == static_desc) || (NULL == dynamic_desc)) {
             TRACE_ERR("InitAll: Failed to get [%d] description\n", vl53l0x);
             
             return false;
@@ -478,18 +478,18 @@ bool VL53L0X_API_StartMeasuring (const eVl53l0x_t vl53l0x) {
         return false;
     }
 
-    if (g_dynamic_vl53l0x_lut[vl53l0x].state == eVl53l0xState_Off) {
+    if (eVl53l0xState_Off == g_dynamic_vl53l0x_lut[vl53l0x].state) {
         return false;
     }
 
-    if (g_dynamic_vl53l0x_lut[vl53l0x].state == eVl53l0xState_Measuring) {
+    if (eVl53l0xState_Measuring == g_dynamic_vl53l0x_lut[vl53l0x].state) {
         return true;
     }
 
-    if (g_static_vl53l0x_lut[vl53l0x].device_mode == VL53L0X_DEVICEMODE_CONTINUOUS_RANGING) {
+    if (VL53L0X_DEVICEMODE_CONTINUOUS_RANGING == g_static_vl53l0x_lut[vl53l0x].device_mode) {
         VL53L0X_Error status = VL53L0X_StartMeasurement(&g_dynamic_vl53l0x_lut[vl53l0x].device);
     
-        if (status != VL53L0X_ERROR_NONE) {
+        if (VL53L0X_ERROR_NONE != status) {
             TRACE_ERR("StartMeasuring: StartMeasurement failed for [%d], status [%d]\n", vl53l0x, status);
             
             return false;
@@ -506,19 +506,19 @@ bool VL53L0X_API_StopMeasuring (const eVl53l0x_t vl53l0x) {
         return false;
     }
 
-    if (g_dynamic_vl53l0x_lut[vl53l0x].state == eVl53l0xState_Off) {
+    if (eVl53l0xState_Off == g_dynamic_vl53l0x_lut[vl53l0x].state) {
         return false;
     }
 
-    if (g_dynamic_vl53l0x_lut[vl53l0x].state == eVl53l0xState_SwStandby) {
+    if (eVl53l0xState_SwStandby == g_dynamic_vl53l0x_lut[vl53l0x].state) {
         return true;
     }
 
-    if (g_static_vl53l0x_lut[vl53l0x].device_mode == VL53L0X_DEVICEMODE_CONTINUOUS_RANGING) {
+    if (VL53L0X_DEVICEMODE_CONTINUOUS_RANGING == g_static_vl53l0x_lut[vl53l0x].device_mode) {
         uint32_t stop_status = 0;
         VL53L0X_Error error = VL53L0X_StopMeasurement(&g_dynamic_vl53l0x_lut[vl53l0x].device);
 
-        if (error != VL53L0X_ERROR_NONE) {
+        if (VL53L0X_ERROR_NONE != error) {
             TRACE_ERR("StopMeasuring: StopMeasurement failed for [%d] [%d]\n", vl53l0x, error);
             
             return false;
@@ -529,7 +529,7 @@ bool VL53L0X_API_StopMeasuring (const eVl53l0x_t vl53l0x) {
         while ((osKernelGetTickCount() - start_tick) < DEFAULT_STOP_TIMEOUT_MS) {
             error = VL53L0X_GetStopCompletedStatus(&g_dynamic_vl53l0x_lut[vl53l0x].device, &stop_status);
 
-            if (error == VL53L0X_ERROR_NONE && stop_status == 0) {
+            if ((VL53L0X_ERROR_NONE == error) && (0 == stop_status)) {
                 break;
             }
         }
@@ -552,11 +552,11 @@ bool VL53L0X_API_TurnOff (const eVl53l0x_t vl53l0x) {
         return false;
     }
 
-    if (g_dynamic_vl53l0x_lut[vl53l0x].state == eVl53l0xState_Off) {
+    if (eVl53l0xState_Off == g_dynamic_vl53l0x_lut[vl53l0x].state) {
         return true;
     }
 
-    if (g_dynamic_vl53l0x_lut[vl53l0x].state == eVl53l0xState_Measuring) {
+    if (eVl53l0xState_Measuring == g_dynamic_vl53l0x_lut[vl53l0x].state) {
         if (!VL53L0X_API_StopMeasuring(vl53l0x)) {
             TRACE_ERR("TurnOff: Failed to stop sensor [%d] before turning off\n", vl53l0x);
             
@@ -579,7 +579,7 @@ bool VL53L0X_API_TurnOn (const eVl53l0x_t vl53l0x) {
         return false;
     }
 
-    if (g_dynamic_vl53l0x_lut[vl53l0x].state != eVl53l0xState_Off) {
+    if (eVl53l0xState_Off != g_dynamic_vl53l0x_lut[vl53l0x].state) {
         return true;
     }
 
@@ -603,11 +603,11 @@ bool VL53L0X_API_GetDistance (const eVl53l0x_t vl53l0x, uint16_t *distance, uint
         return false;
     }
 
-    if (distance == NULL) {
+    if (NULL == distance) {
         return false;
     }
 
-    if (g_dynamic_vl53l0x_lut[vl53l0x].state != eVl53l0xState_Measuring) {
+    if (eVl53l0xState_Measuring != g_dynamic_vl53l0x_lut[vl53l0x].state) {
         return false;
     }
 
@@ -620,7 +620,7 @@ bool VL53L0X_API_GetDistance (const eVl53l0x_t vl53l0x, uint16_t *distance, uint
         case VL53L0X_DEVICEMODE_SINGLE_RANGING: {
             VL53L0X_Error error = VL53L0X_PerformSingleRangingMeasurement(&g_dynamic_vl53l0x_lut[vl53l0x].device, &ranging_data);
 
-            if (error != VL53L0X_ERROR_NONE) {
+            if (VL53L0X_ERROR_NONE != error) {
                 TRACE_ERR("GetDistance: PerformSingleRangingMeasurement failed for [%d], error [%d]\n", vl53l0x, error);
                 
                 return false;
@@ -646,8 +646,8 @@ bool VL53L0X_API_GetDistance (const eVl53l0x_t vl53l0x, uint16_t *distance, uint
         } break;
     }
 
-    #ifdef DEBUG_VL53L0X_DETAILS
-    if ((ranging_data.RangeStatus != 0) || (ranging_data.RangeMilliMeter <= 10U)) {
+    #if defined(DEBUG_VL53L0X_DETAILS)
+    if ((0 != ranging_data.RangeStatus) || (ranging_data.RangeMilliMeter <= 10U)) {
         // Convert 16.16 fixpoint MCPS to milli-MCPS with rounding.
         int32_t sr_mmcps = (int32_t)((((int64_t)ranging_data.SignalRateRtnMegaCps * 1000) + 0x8000) >> 16);
         int32_t amb_mmcps = (int32_t)((((int64_t)ranging_data.AmbientRateRtnMegaCps * 1000) + 0x8000) >> 16);
@@ -657,13 +657,12 @@ bool VL53L0X_API_GetDistance (const eVl53l0x_t vl53l0x, uint16_t *distance, uint
         uint16_t eff_spad_int = (uint16_t)(ranging_data.EffectiveSpadRtnCount >> 8);
         uint16_t eff_spad_frac_2dp = (uint16_t)(((uint16_t)(ranging_data.EffectiveSpadRtnCount & 0xFFU) * 100U + 128U) / 256U);
 
-        TRACE_INFO("Meas[%d]: d=%u status=%d dmax=%u SR=%ld.%03d amb=%ld.%03d sigmaEst=%d.%03d effSpad=%d.%02d\n", vl53l0x, ranging_data.RangeMilliMeter, ranging_data.RangeStatus, ranging_data.RangeDMaxMilliMeter, (int)(sr_mmcps / 1000), (int)(sr_mmcps < 0 ? -(sr_mmcps % 1000) : (sr_mmcps % 1000)), (int)(amb_mmcps / 1000), (int)(amb_mmcps < 0 ? -(amb_mmcps % 1000) : (amb_mmcps % 1000)), (int)(sigma_est_mmm / 1000), (int)(sigma_est_mmm < 0 ? -(sigma_est_mmm % 1000) : (sigma_est_mmm % 1000)), eff_spad_int, eff_spad_frac_2dp
-        );
+        TRACE_INFO("Meas[%d]: d=%u status=%d dmax=%u SR=%ld.%03d amb=%ld.%03d sigmaEst=%d.%03d effSpad=%d.%02d\n", vl53l0x, ranging_data.RangeMilliMeter, ranging_data.RangeStatus, ranging_data.RangeDMaxMilliMeter, (int)(sr_mmcps / 1000), (int)(sr_mmcps < 0 ? -(sr_mmcps % 1000) : (sr_mmcps % 1000)), (int)(amb_mmcps / 1000), (int)(amb_mmcps < 0 ? -(amb_mmcps % 1000) : (amb_mmcps % 1000)), (int)(sigma_est_mmm / 1000), (int)(sigma_est_mmm < 0 ? -(sigma_est_mmm % 1000) : (sigma_est_mmm % 1000)), eff_spad_int, eff_spad_frac_2dp);
     }
     #endif
 
-    if (ranging_data.RangeStatus != 0) {
-        #ifdef DEBUG_VL53L0X_RANGE_STATUS
+    if (0 != ranging_data.RangeStatus) {
+        #if defined(DEBUG_VL53L0X_RANGE_STATUS)
         TRACE_ERR("GetDistance: sensor [%d] RangeStatus [%d]\n", vl53l0x, ranging_data.RangeStatus);
         #endif
 

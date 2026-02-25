@@ -4,7 +4,7 @@
 
 #include "dma_driver.h"
 
-#ifdef ENABLE_DMA
+#if defined(ENABLE_DMA)
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -45,22 +45,22 @@ static sDmaDynamicDesc_t g_dynamic_dma_lut[eDma_Last] = {0};
 
 static bool DMA_Driver_IsCorrectFlag (const eDma_Flags_t flag);
 static void DMAx_Streamx_ISRHandler(const eDma_t stream, const eDma_Flags_t flag);
-void DMA1_Stream0_IRQHandler(void);
-void DMA1_Stream1_IRQHandler(void);
-void DMA1_Stream2_IRQHandler(void);
-void DMA1_Stream3_IRQHandler(void);
-void DMA1_Stream4_IRQHandler(void);
-void DMA1_Stream5_IRQHandler(void);
-void DMA1_Stream6_IRQHandler(void);
-void DMA1_Stream7_IRQHandler(void);
-void DMA2_Stream0_IRQHandler(void);
-void DMA2_Stream1_IRQHandler(void);
-void DMA2_Stream2_IRQHandler(void);
-void DMA2_Stream3_IRQHandler(void);
-void DMA2_Stream4_IRQHandler(void);
-void DMA2_Stream5_IRQHandler(void);
-void DMA2_Stream6_IRQHandler(void);
-void DMA2_Stream7_IRQHandler(void);
+void DMA1_Stream0_IRQHandler (void);
+void DMA1_Stream1_IRQHandler (void);
+void DMA1_Stream2_IRQHandler (void);
+void DMA1_Stream3_IRQHandler (void);
+void DMA1_Stream4_IRQHandler (void);
+void DMA1_Stream5_IRQHandler (void);
+void DMA1_Stream6_IRQHandler (void);
+void DMA1_Stream7_IRQHandler (void);
+void DMA2_Stream0_IRQHandler (void);
+void DMA2_Stream1_IRQHandler (void);
+void DMA2_Stream2_IRQHandler (void);
+void DMA2_Stream3_IRQHandler (void);
+void DMA2_Stream4_IRQHandler (void);
+void DMA2_Stream5_IRQHandler (void);
+void DMA2_Stream6_IRQHandler (void);
+void DMA2_Stream7_IRQHandler (void);
 
 /**********************************************************************************************************************
  * Definitions of private functions
@@ -70,7 +70,7 @@ static bool DMA_Driver_IsCorrectFlag (const eDma_Flags_t flag) {
     return (flag >= eDma_Flags_First) && (flag < eDma_Flags_Last);
 }
 
-static void DMAx_Streamx_ISRHandler(const eDma_t stream, const eDma_Flags_t flag) {
+static void DMAx_Streamx_ISRHandler (const eDma_t stream, const eDma_Flags_t flag) {
     if (!DMA_Config_IsCorrectDma(stream)) {
         return;
     }
@@ -83,7 +83,7 @@ static void DMAx_Streamx_ISRHandler(const eDma_t stream, const eDma_Flags_t flag
         return;
     }
 
-    if (g_dynamic_dma_lut[stream].isr_callback == NULL) {
+    if (NULL == g_dynamic_dma_lut[stream].isr_callback) {
         return;
     }
 
@@ -94,8 +94,8 @@ static void DMAx_Streamx_ISRHandler(const eDma_t stream, const eDma_Flags_t flag
     return;
 }
 
-void DMA1_Stream0_IRQHandler(void) {
-    #ifdef DMA_1_STREAM_0
+void DMA1_Stream0_IRQHandler (void) {
+    #if defined(DMA_1_STREAM_0)
     if (LL_DMA_IsActiveFlag_TC0(DMA1)) {
         DMAx_Streamx_ISRHandler(DMA_1_STREAM_0, eDma_Flags_TC);
     }
@@ -112,8 +112,8 @@ void DMA1_Stream0_IRQHandler(void) {
     return;
 }
 
-void DMA1_Stream1_IRQHandler(void) {
-    #ifdef DMA_1_STREAM_1
+void DMA1_Stream1_IRQHandler (void) {
+    #if defined(DMA_1_STREAM_1)
     if (LL_DMA_IsActiveFlag_TC1(DMA1)) {
         DMAx_Streamx_ISRHandler(DMA_1_STREAM_1, eDma_Flags_TC);
     }
@@ -130,8 +130,8 @@ void DMA1_Stream1_IRQHandler(void) {
     return;
 }
 
-void DMA1_Stream2_IRQHandler(void) {
-    #ifdef DMA_1_STREAM_2
+void DMA1_Stream2_IRQHandler (void) {
+    #if defined(DMA_1_STREAM_2)
     if (LL_DMA_IsActiveFlag_TC2(DMA1)) {
         DMAx_Streamx_ISRHandler(DMA_1_STREAM_2, eDma_Flags_TC);
     }
@@ -148,8 +148,8 @@ void DMA1_Stream2_IRQHandler(void) {
     return;
 }
 
-void DMA1_Stream3_IRQHandler(void) {
-    #ifdef DMA_1_STREAM_3
+void DMA1_Stream3_IRQHandler (void) {
+    #if defined(DMA_1_STREAM_3)
     if (LL_DMA_IsActiveFlag_TC3(DMA1)) {
         DMAx_Streamx_ISRHandler(DMA_1_STREAM_3, eDma_Flags_TC);
     }
@@ -166,8 +166,8 @@ void DMA1_Stream3_IRQHandler(void) {
     return;
 }
 
-void DMA1_Stream4_IRQHandler(void) {
-    #ifdef DMA_1_STREAM_4
+void DMA1_Stream4_IRQHandler (void) {
+    #if defined(DMA_1_STREAM_4)
     if (LL_DMA_IsActiveFlag_TC4(DMA1)) {
         DMAx_Streamx_ISRHandler(DMA_1_STREAM_4, eDma_Flags_TC);
     }
@@ -184,8 +184,8 @@ void DMA1_Stream4_IRQHandler(void) {
     return;
 }
 
-void DMA1_Stream5_IRQHandler(void) {
-    #ifdef DMA_1_STREAM_5
+void DMA1_Stream5_IRQHandler (void) {
+    #if defined(DMA_1_STREAM_5)
     if (LL_DMA_IsActiveFlag_TC5(DMA1)) {
         DMAx_Streamx_ISRHandler(DMA_1_STREAM_5, eDma_Flags_TC);
     }
@@ -202,8 +202,8 @@ void DMA1_Stream5_IRQHandler(void) {
     return;
 }
 
-void DMA1_Stream6_IRQHandler(void) {
-    #ifdef DMA_1_STREAM_6
+void DMA1_Stream6_IRQHandler (void) {
+    #if defined(DMA_1_STREAM_6)
     if (LL_DMA_IsActiveFlag_TC6(DMA1)) {
         DMAx_Streamx_ISRHandler(DMA_1_STREAM_6, eDma_Flags_TC);
     }
@@ -220,8 +220,8 @@ void DMA1_Stream6_IRQHandler(void) {
     return;
 }
 
-void DMA1_Stream7_IRQHandler(void) {
-    #ifdef DMA_1_STREAM_7
+void DMA1_Stream7_IRQHandler (void) {
+    #if defined(DMA_1_STREAM_7)
     if (LL_DMA_IsActiveFlag_TC7(DMA1)) {
         DMAx_Streamx_ISRHandler(DMA_1_STREAM_7, eDma_Flags_TC);
     }
@@ -238,8 +238,8 @@ void DMA1_Stream7_IRQHandler(void) {
     return;
 }
 
-void DMA2_Stream0_IRQHandler(void) {
-    #ifdef DMA_2_STREAM_0
+void DMA2_Stream0_IRQHandler (void) {
+    #if defined(DMA_2_STREAM_0)
     if (LL_DMA_IsActiveFlag_TC0(DMA2)) {
         DMAx_Streamx_ISRHandler(DMA_2_STREAM_0, eDma_Flags_TC);
     }
@@ -256,8 +256,8 @@ void DMA2_Stream0_IRQHandler(void) {
     return;
 }
 
-void DMA2_Stream1_IRQHandler(void) {
-    #ifdef DMA_2_STREAM_1
+void DMA2_Stream1_IRQHandler (void) {
+    #if defined(DMA_2_STREAM_1)
     if (LL_DMA_IsActiveFlag_TC1(DMA2)) {
         DMAx_Streamx_ISRHandler(DMA_2_STREAM_1, eDma_Flags_TC);
     }
@@ -274,8 +274,8 @@ void DMA2_Stream1_IRQHandler(void) {
     return;
 }
 
-void DMA2_Stream2_IRQHandler(void) {
-    #ifdef DMA_2_STREAM_2
+void DMA2_Stream2_IRQHandler (void) {
+    #if defined(DMA_2_STREAM_2)
     if (LL_DMA_IsActiveFlag_TC2(DMA2)) {
         DMAx_Streamx_ISRHandler(DMA_2_STREAM_2, eDma_Flags_TC);
     }
@@ -292,8 +292,8 @@ void DMA2_Stream2_IRQHandler(void) {
     return;
 }
 
-void DMA2_Stream3_IRQHandler(void) {
-    #ifdef DMA_2_STREAM_3
+void DMA2_Stream3_IRQHandler (void) {
+    #if defined(DMA_2_STREAM_3)
     if (LL_DMA_IsActiveFlag_TC3(DMA2)) {
         DMAx_Streamx_ISRHandler(DMA_2_STREAM_3, eDma_Flags_TC);
     }
@@ -310,8 +310,8 @@ void DMA2_Stream3_IRQHandler(void) {
     return;
 }
 
-void DMA2_Stream4_IRQHandler(void) {
-    #ifdef DMA_2_STREAM_4
+void DMA2_Stream4_IRQHandler (void) {
+    #if defined(DMA_2_STREAM_4)
     if (LL_DMA_IsActiveFlag_TC4(DMA2)) {
         DMAx_Streamx_ISRHandler(DMA_2_STREAM_4, eDma_Flags_TC);
     }
@@ -328,8 +328,8 @@ void DMA2_Stream4_IRQHandler(void) {
     return;
 }
 
-void DMA2_Stream5_IRQHandler(void) {
-    #ifdef DMA_2_STREAM_5
+void DMA2_Stream5_IRQHandler (void) {
+    #if defined(DMA_2_STREAM_5)
     if (LL_DMA_IsActiveFlag_TC5(DMA2)) {
         DMAx_Streamx_ISRHandler(DMA_2_STREAM_5, eDma_Flags_TC);
     }
@@ -346,8 +346,8 @@ void DMA2_Stream5_IRQHandler(void) {
     return;
 }
 
-void DMA2_Stream6_IRQHandler(void) {
-    #ifdef DMA_2_STREAM_6
+void DMA2_Stream6_IRQHandler (void) {
+    #if defined(DMA_2_STREAM_6)
     if (LL_DMA_IsActiveFlag_TC6(DMA2)) {
         DMAx_Streamx_ISRHandler(DMA_2_STREAM_6, eDma_Flags_TC);
     }
@@ -364,8 +364,8 @@ void DMA2_Stream6_IRQHandler(void) {
     return;
 }
 
-void DMA2_Stream7_IRQHandler(void) {
-    #ifdef DMA_2_STREAM_7
+void DMA2_Stream7_IRQHandler (void) {
+    #if defined(DMA_2_STREAM_7)
     if (LL_DMA_IsActiveFlag_TC7(DMA2)) {
         DMAx_Streamx_ISRHandler(DMA_2_STREAM_7, eDma_Flags_TC);
     }
@@ -387,7 +387,7 @@ void DMA2_Stream7_IRQHandler(void) {
  *********************************************************************************************************************/
 
 bool DMA_Driver_Init (sDmaInit_t *data) {
-    if (data == NULL) {
+    if (NULL == data) {
         return false;
     }
 
@@ -403,7 +403,7 @@ bool DMA_Driver_Init (sDmaInit_t *data) {
     const sDmaIsActiveFlags_t *is_active_flags_fp = DMA_Config_GetDmaIsActiveFlagsFp(data->stream);
     const sDmaClearFlags_t *clear_flags_fp = DMA_Config_GetDmaClearFlagsFp(data->stream);
 
-    if ((desc == NULL) || (is_active_flags_fp == NULL) || (clear_flags_fp == NULL)) {
+    if ((NULL == desc) || (NULL == is_active_flags_fp) || (NULL == clear_flags_fp)) {
         return false;
     }
 
@@ -429,13 +429,13 @@ bool DMA_Driver_Init (sDmaInit_t *data) {
 
     LL_DMA_DisableStream(g_dma_desc_lut[data->stream].dma, g_dma_desc_lut[data->stream].stream);
 
-    if (LL_DMA_Init(g_dma_desc_lut[data->stream].dma, g_dma_desc_lut[data->stream].stream, &dma_init_struct) == ERROR) {
+    if (ERROR == LL_DMA_Init(g_dma_desc_lut[data->stream].dma, g_dma_desc_lut[data->stream].stream, &dma_init_struct)) {
         return false;
     }
 
     g_dma_desc_lut[data->stream].fifo_mode_fp(g_dma_desc_lut[data->stream].dma, g_dma_desc_lut[data->stream].stream);
 
-    if (data->isr_callback != NULL) {
+    if (NULL != data->isr_callback) {
         g_dynamic_dma_lut[data->stream].isr_callback = data->isr_callback;
         g_dynamic_dma_lut[data->stream].isr_callback_context = data->isr_callback_context;
         
@@ -475,15 +475,15 @@ bool DMA_Driver_ConfigureStream (const eDma_t stream, uint32_t *src_address, uin
         return false;
     }
 
-    if (src_address != NULL) {
+    if (NULL != src_address) {
         g_dynamic_dma_lut[stream].periph_or_src_addr = src_address;
     }
 
-    if (dst_address != NULL) {
+    if (NULL != dst_address) {
         g_dynamic_dma_lut[stream].mem_or_dest_addr = dst_address;
     }
 
-    if (size == 0) {
+    if (0 == size) {
         return false;
     }
 

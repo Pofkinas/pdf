@@ -31,26 +31,22 @@
  * Prototypes of private functions
  *********************************************************************************************************************/
 
-void Animation_Rainbow_FillBuffer (sLedRainbow_t *context);
+static void Animation_Rainbow_FillBuffer (sLedRainbow_t *context);
 
 /**********************************************************************************************************************
  * Definitions of private functions
  *********************************************************************************************************************/
 
-void Animation_Rainbow_FillBuffer (sLedRainbow_t *context) {
-    if (context == NULL) {
+static void Animation_Rainbow_FillBuffer (sLedRainbow_t *context) {
+    if (NULL == context) {
         return;
     }
 
-    if (context->parameters == NULL) {
+    if (NULL == context->parameters) {
         return;
     }
     
-    if (!WS2812B_Config_IsCorrectWs2812b(context->device)) {
-        return;
-    }
-
-    if (context->brightness == 0) {
+    if (!WS2812B_Config_IsCorrectWs2812b(context->device) || (0 == context->brightness)) {
         return;
     }
 
@@ -68,11 +64,11 @@ void Animation_Rainbow_FillBuffer (sLedRainbow_t *context) {
 
             context->hue_offset = rainbow_data->start_hsv_colour.hue;
             context->frame_counter = 0;
-
             context->state = eRainbowState_Run;
+            /* fall through */
         }
         case eRainbowState_Run: {
-            if (context->frame_counter < rainbow_data->frames_per_update) {
+            if (0 != (context->frame_counter % rainbow_data->frames_per_update)) {
                 context->frame_counter++;
                 
                 return;
@@ -89,14 +85,14 @@ void Animation_Rainbow_FillBuffer (sLedRainbow_t *context) {
             uint8_t green;
             uint8_t blue;
 
-            if (rainbow_data->hue_step == 0) {
+            if (0 == rainbow_data->hue_step) {
                 hsv.hue = context->hue_offset;
 
                 Colour_HsvToRgb(hsv, &rgb);
 
-                red = Colour_ScaleBrightness(((rgb >> 16) & 0xFF), context->brightness);
-                green = Colour_ScaleBrightness(((rgb >> 8) & 0xFF), context->brightness);
-                blue = Colour_ScaleBrightness((rgb & 0xFF), context->brightness);
+                red = Colour_ScaleBrightness(((rgb >> RGB_RED_SHIFT) & RGB_BYTE_MASK), context->brightness);
+                green = Colour_ScaleBrightness(((rgb >> RGB_GREEN_SHIFT) & RGB_BYTE_MASK), context->brightness);
+                blue = Colour_ScaleBrightness((rgb & RGB_BYTE_MASK), context->brightness);
                 
                 for (size_t led = rainbow_data->segment_start_led; led <= rainbow_data->segment_end_led; led++) {
                     if (!WS2812B_API_SetColour(context->device, led, red, green, blue)) {
@@ -111,9 +107,9 @@ void Animation_Rainbow_FillBuffer (sLedRainbow_t *context) {
 
                     Colour_HsvToRgb(hsv, &rgb);
 
-                    red = Colour_ScaleBrightness(((rgb >> 16) & 0xFF), context->brightness);
-                    green = Colour_ScaleBrightness(((rgb >> 8) & 0xFF), context->brightness);
-                    blue = Colour_ScaleBrightness((rgb & 0xFF), context->brightness);
+                    red = Colour_ScaleBrightness(((rgb >> RGB_RED_SHIFT) & RGB_BYTE_MASK), context->brightness);
+                    green = Colour_ScaleBrightness(((rgb >> RGB_GREEN_SHIFT) & RGB_BYTE_MASK), context->brightness);
+                    blue = Colour_ScaleBrightness((rgb & RGB_BYTE_MASK), context->brightness);
 
                     if (!WS2812B_API_SetColour(context->device, led, red, green, blue)) {
                         context->state = eRainbowState_Init;
@@ -123,18 +119,16 @@ void Animation_Rainbow_FillBuffer (sLedRainbow_t *context) {
                 }
             }
 
-            if (rainbow_data->direction == eDirection_Up) {
+            if (eDirection_Up == rainbow_data->direction) {
                 context->hue_offset -= rainbow_data->speed;
             } else {
                 context->hue_offset += rainbow_data->speed;
             }
-
-            context->frame_counter = 0;
         } break;
-        default: {
-            return;
-        }
+        default: {}
     }
+
+    return;
 }
 
 /**********************************************************************************************************************
@@ -142,7 +136,7 @@ void Animation_Rainbow_FillBuffer (sLedRainbow_t *context) {
  *********************************************************************************************************************/
 
 void Animation_Rainbow_Run (void *context) {
-    if (context == NULL) {
+    if (NULL == context) {
         return;
     }
 
@@ -152,13 +146,13 @@ void Animation_Rainbow_Run (void *context) {
 }
 
 void Animation_Rainbow_Free (void *context) {
-    if (context == NULL) {
+    if (NULL == context) {
         return;
     }
 
     sLedRainbow_t *rainbow = (sLedRainbow_t*) context;
 
-    if (rainbow->parameters != NULL) {
+    if (NULL != rainbow->parameters) {
         WS2812B_API_FreeData(rainbow->parameters);
     }
 
@@ -168,7 +162,7 @@ void Animation_Rainbow_Free (void *context) {
 }
 
 bool Animation_Rainbow_IsCorrectSpeed (const uint8_t speed) {
-    return (speed != 0);
+    return (0 != speed);
 }
 
 #endif /* ENABLE_LED_ANIMATION */

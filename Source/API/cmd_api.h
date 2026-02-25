@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_CMD
+#if defined(ENABLE_CMD)
 #include <stdbool.h>
 #include <stddef.h>
 #include "error_messages.h"

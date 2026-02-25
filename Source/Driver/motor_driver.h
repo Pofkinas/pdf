@@ -6,7 +6,7 @@
 
  #include "framework_config.h"
 
-#ifdef ENABLE_MOTOR
+#if defined(ENABLE_MOTOR)
 #include <stdbool.h>
 #include <stdint.h>
 #include "motor_config.h"

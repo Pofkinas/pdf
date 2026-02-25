@@ -4,10 +4,10 @@
 
 #include "motor_driver.h"
 
-#ifdef ENABLE_MOTOR
+#if defined(ENABLE_MOTOR)
 #include "pwm_driver.h"
 #include "timer_driver.h"
-#ifdef USE_TB6612FNG
+#if defined(USE_TB6612FNG)
 #include "gpio_driver.h"
 #endif /* USE_TB6612FNG */
 
@@ -63,7 +63,7 @@ bool Motor_Driver_InitAllMotors (void) {
     for (eMotor_t motor = eMotor_First; motor < eMotor_Last; motor++) {
         const sMotorDriverDesc_t *desc = Motor_Config_GetMotorDriverDesc(motor);
 
-        if (desc == NULL) {
+        if (NULL == desc) {
             g_is_all_motor_init = false;
             return false;
         }
@@ -73,7 +73,7 @@ bool Motor_Driver_InitAllMotors (void) {
         g_dynamic_motor_lut[motor].current_speed = STOP_SPEED;
         g_dynamic_motor_lut[motor].max_speed = Timer_Driver_GetResolution(g_motor_lut[motor].timer);
 
-        #ifdef USE_TB6612FNG
+        #if defined(USE_TB6612FNG)
         if (!GPIO_Driver_WritePin(g_motor_lut[motor].in1, false)) {
             g_is_all_motor_init = false;
             return false;
@@ -101,12 +101,12 @@ bool Motor_Driver_EnableMotor (const eMotor_t motor) {
         return true;
     }
 
-    if (!PWM_Driver_Enable_Device(g_motor_lut[motor].pwm_1)) {
+    if (!PWM_Driver_EnableDevice(g_motor_lut[motor].pwm1)) {
         return false;
     }
 
-    #ifdef USE_MX1508
-    if (!PWM_Driver_Enable_Device(g_motor_lut[motor].pwm_2)) {
+    #if defined(USE_MX1508)
+    if (!PWM_Driver_EnableDevice(g_motor_lut[motor].pwm2)) {
         return false;
     }
     #endif /* USE_MX1508 */
@@ -129,17 +129,17 @@ bool Motor_Driver_DisableMotor (const eMotor_t motor) {
         return true;
     }
 
-    if (!PWM_Driver_Disable_Device(g_motor_lut[motor].pwm_1)) {
+    if (!PWM_Driver_DisableDevice(g_motor_lut[motor].pwm1)) {
         return false;
     }
 
-    #ifdef USE_MX1508
-    if (!PWM_Driver_Disable_Device(g_motor_lut[motor].pwm_2)) {
+    #if defined(USE_MX1508)
+    if (!PWM_Driver_DisableDevice(g_motor_lut[motor].pwm2)) {
         return false;
     }
     #endif /* USE_MX1508 */
 
-    #ifdef USE_TB6612FNG
+    #if defined(USE_TB6612FNG)
     if (!GPIO_Driver_WritePin(g_motor_lut[motor].in1, false)) {
         return false;
     }
@@ -176,17 +176,17 @@ bool Motor_Driver_SetSpeed (const eMotor_t motor, const eMotorRotation_t rotatio
 
     switch (rotation_dir) {
         case eMotorRotation_CW: {
-            #ifdef USE_MX1508
-            if (!PWM_Driver_Change_Duty_Cycle(g_motor_lut[motor].pwm_2, STOP_SPEED)) {
+            #if defined(USE_MX1508)
+            if (!PWM_Driver_ChangeDutyCycle(g_motor_lut[motor].pwm2, STOP_SPEED)) {
                 return false;
             }
             #endif /* USE_MX1508 */
             
-            if (!PWM_Driver_Change_Duty_Cycle(g_motor_lut[motor].pwm_1, speed)) {
+            if (!PWM_Driver_ChangeDutyCycle(g_motor_lut[motor].pwm1, speed)) {
                 return false;
             }
 
-            #ifdef USE_TB6612FNG
+            #if defined(USE_TB6612FNG)
             if (!GPIO_Driver_WritePin(g_motor_lut[motor].in1, true)) {
                 return false;
             }
@@ -196,18 +196,18 @@ bool Motor_Driver_SetSpeed (const eMotor_t motor, const eMotorRotation_t rotatio
             #endif /* USE_TB6612FNG */
         } break;
         case eMotorRotation_CCW: {
-            #ifdef USE_MX1508
-            if (!PWM_Driver_Change_Duty_Cycle(g_motor_lut[motor].pwm_1, STOP_SPEED)) {
+            #if defined(USE_MX1508)
+            if (!PWM_Driver_ChangeDutyCycle(g_motor_lut[motor].pwm1, STOP_SPEED)) {
                 return false;
             }
             
-            if (!PWM_Driver_Change_Duty_Cycle(g_motor_lut[motor].pwm_2, speed)) {
+            if (!PWM_Driver_ChangeDutyCycle(g_motor_lut[motor].pwm2, speed)) {
                 return false;
             }
             #endif /* USE_MX1508 */
 
-            #ifdef USE_TB6612FNG
-            if (!PWM_Driver_Change_Duty_Cycle(g_motor_lut[motor].pwm_1, speed)) {
+            #if defined(USE_TB6612FNG)
+            if (!PWM_Driver_ChangeDutyCycle(g_motor_lut[motor].pwm1, speed)) {
                 return false;
             }
 
@@ -221,17 +221,17 @@ bool Motor_Driver_SetSpeed (const eMotor_t motor, const eMotorRotation_t rotatio
             #endif /* USE_TB6612FNG */
         } break;
         case eMotorRotation_Stop: {
-            if (!PWM_Driver_Change_Duty_Cycle(g_motor_lut[motor].pwm_1, STOP_SPEED)) {
+            if (!PWM_Driver_ChangeDutyCycle(g_motor_lut[motor].pwm1, STOP_SPEED)) {
                 return false;
             }
 
-            #ifdef USE_MX1508
-            if (!PWM_Driver_Change_Duty_Cycle(g_motor_lut[motor].pwm_2, STOP_SPEED)) {
+            #if defined(USE_MX1508)
+            if (!PWM_Driver_ChangeDutyCycle(g_motor_lut[motor].pwm2, STOP_SPEED)) {
                 return false;
             }
             #endif /* USE_MX1508 */
 
-            #ifdef USE_TB6612FNG
+            #if defined(USE_TB6612FNG)
             if (!GPIO_Driver_WritePin(g_motor_lut[motor].in1, false)) {
                 return false;
             }
@@ -242,17 +242,17 @@ bool Motor_Driver_SetSpeed (const eMotor_t motor, const eMotorRotation_t rotatio
             #endif /* USE_TB6612FNG */
         } break;
         case eMotorRotation_Brake: {
-            if (!PWM_Driver_Change_Duty_Cycle(g_motor_lut[motor].pwm_1, speed)) {
+            if (!PWM_Driver_ChangeDutyCycle(g_motor_lut[motor].pwm1, speed)) {
                 return false;
             }
 
-            #ifdef USE_MX1508
-            if (!PWM_Driver_Change_Duty_Cycle(g_motor_lut[motor].pwm_2, speed)) {
+            #if defined(USE_MX1508)
+            if (!PWM_Driver_ChangeDutyCycle(g_motor_lut[motor].pwm2, speed)) {
                 return false;
             }
             #endif /* USE_MX1508 */
 
-            #ifdef USE_TB6612FNG
+            #if defined(USE_TB6612FNG)
             if (!GPIO_Driver_WritePin(g_motor_lut[motor].in1, true)) {
                 return false;
             }
@@ -275,7 +275,7 @@ bool Motor_Driver_GetMaxSpeed (const eMotor_t motor, uint16_t *speed) {
         return false;
     }
 
-    if (speed == NULL) {
+    if (NULL == speed) {
         return false;
     }
 

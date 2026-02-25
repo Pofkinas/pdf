@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_PWM
+#if defined(ENABLE_PWM)
 #include <stdbool.h>
 #include <stdint.h>
 #include "pwm_config.h"
@@ -28,9 +28,9 @@
  *********************************************************************************************************************/
 
 bool PWM_Driver_InitAllDevices (void);
-bool PWM_Driver_Enable_Device (const ePwm_t device);
-bool PWM_Driver_Disable_Device (const ePwm_t device);
-bool PWM_Driver_Change_Duty_Cycle (const ePwm_t device, const uint32_t value);
+bool PWM_Driver_EnableDevice (const ePwm_t device);
+bool PWM_Driver_DisableDevice (const ePwm_t device);
+bool PWM_Driver_ChangeDutyCycle (const ePwm_t device, const uint32_t value);
 uint32_t PWM_Driver_GetRegAddr (const ePwm_t device);
 uint16_t PWM_Driver_GetDeviceTimerResolution (const ePwm_t device);
 uint32_t PWM_Driver_GetCompareValue (const ePwm_t device);

@@ -4,7 +4,7 @@
 
 #include "debug_api.h"
 
-#ifdef ENABLE_UART_DEBUG
+#if defined(ENABLE_UART_DEBUG)
 
 #include "cmsis_os2.h"
 #include "uart_api.h"
@@ -22,7 +22,7 @@
  * Private constants
  *********************************************************************************************************************/
 
-const static osMutexAttr_t g_debug_api_mutex_attributes = {
+static const osMutexAttr_t g_debug_api_mutex_attributes = {
     .name = "Debug_API_mutex", 
     .attr_bits = osMutexRecursive | osMutexPrioInherit, 
     .cb_mem = NULL, 
@@ -62,11 +62,13 @@ bool Debug_API_Init (const eBaudrate_t baudrate) {
         return false;
     }
 
-    if (g_debug_api_mutex == NULL) {
-        g_debug_api_mutex = osMutexNew(&g_debug_api_mutex_attributes);
+    g_debug_api_mutex = osMutexNew(&g_debug_api_mutex_attributes);
+
+    if (NULL == g_debug_api_mutex) {
+        return false;
     }
 
-    g_is_initialized = UART_API_Init(eUart_Debug, baudrate, DEBUG_DELIMITER);
+    g_is_initialized = UART_API_Init(DEBUG_UART, baudrate, DEBUG_DELIMITER);
 
     return g_is_initialized;
 }
@@ -76,16 +78,16 @@ bool Debug_API_Print (const eTraceLevel_t trace_level, const char *file_trace, c
         return false;
     }
 
-    if ((file_trace == NULL) || (format == NULL) || (file_name == NULL) || (format == NULL)) {
+    if ((NULL == file_trace) || (NULL == format) || (NULL == file_name)) {
         return false;
     }
 
-    if (osMutexAcquire(g_debug_api_mutex, DEBUG_MUTEX_TIMEOUT) != osOK) {
+    if (osOK != osMutexAcquire(g_debug_api_mutex, DEBUG_MUTEX_TIMEOUT)) {
         return false;
     }
 
     static sMessage_t debug_message = {.data = NULL, .size = 0};
-    static size_t message_lenght = 0;
+    static size_t message_length = 0;
 
     va_list arguments;
     
@@ -93,13 +95,13 @@ bool Debug_API_Print (const eTraceLevel_t trace_level, const char *file_trace, c
 
     switch (trace_level) {
         case eTraceLevel_Info: {
-            message_lenght = sprintf(debug_message.data, "[%s.INF] ", file_trace);
+            message_length = sprintf(debug_message.data, "[%s.INF] ", file_trace);
         } break;
         case eTraceLevel_Warning: {
-            message_lenght = sprintf(debug_message.data, "[%s.WRN] ", file_trace);
+            message_length = sprintf(debug_message.data, "[%s.WRN] ", file_trace);
         } break;
         case eTraceLevel_Error: {
-            message_lenght = sprintf(debug_message.data, "[%s.ERR] (file: %s, line: %d) ", file_trace, file_name, line_number);
+            message_length = sprintf(debug_message.data, "[%s.ERR] (file: %s, line: %d) ", file_trace, file_name, line_number);
         } break;
         default: {
         } break;
@@ -107,12 +109,12 @@ bool Debug_API_Print (const eTraceLevel_t trace_level, const char *file_trace, c
 
     va_start(arguments, format);
 
-    message_lenght += vsprintf((debug_message.data + message_lenght), format, arguments);
+    message_length += vsprintf((debug_message.data + message_length), format, arguments);
 
     va_end(arguments);
     
-    debug_message.size = message_lenght;
-    bool is_sent = UART_API_Send(eUart_Debug, debug_message, DEBUG_MESSAGE_TIMEOUT);
+    debug_message.size = message_length;
+    bool is_sent = UART_API_Send(DEBUG_UART, debug_message, DEBUG_MESSAGE_TIMEOUT);
     
     osMutexRelease(g_debug_api_mutex);
 

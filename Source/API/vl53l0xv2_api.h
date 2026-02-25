@@ -12,7 +12,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_VL53L0X
+#if defined(ENABLE_VL53L0X)
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>

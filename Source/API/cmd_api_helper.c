@@ -4,7 +4,7 @@
 
 #include "cmd_api_helper.h"
 
-#ifdef ENABLE_CMD_HELPER
+#if defined(ENABLE_CMD_HELPER)
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -42,11 +42,11 @@
  *********************************************************************************************************************/
 
 eErrorCode_t CMD_API_Helper_ParseToken (char **token, sMessage_t *argument, char *separator, sMessage_t *response) {
-    if ((token == NULL) || (separator == NULL) || (response == NULL)) {
+    if ((NULL == token) || (NULL == separator) || (NULL == response)) {
         return eErrorCode_NULLPTR;
     }
 
-    if (argument->size == 0) {
+    if (0 == argument->size) {
         snprintf(response->data, response->size, "Missing argument\n");
 
         return eErrorCode_ARGFEW;
@@ -54,7 +54,7 @@ eErrorCode_t CMD_API_Helper_ParseToken (char **token, sMessage_t *argument, char
 
     *token = strstr(argument->data, separator);
         
-    if (*token != NULL) {
+    if (NULL != *token) {
         **token = '\0';
     }
 
@@ -62,24 +62,24 @@ eErrorCode_t CMD_API_Helper_ParseToken (char **token, sMessage_t *argument, char
 }
 
 eErrorCode_t CMD_API_Helper_FindNextArgUInt (sMessage_t *argument, size_t *return_argument, char *separator, const size_t separator_lenght, sMessage_t *response) {
-    char *argument_token;
-    char *invalid_character;
+    char *argument_token = NULL;
+    char *invalid_character = NULL;
 
     eErrorCode_t error = CMD_API_Helper_ParseToken(&argument_token, argument, separator, response);
 
-    if (error != eErrorCode_OK) {
+    if (eErrorCode_OK != error) {
         return error;
     }
 
     *return_argument = strtoul(argument->data, &invalid_character, BASE_10);
 
-    if (*invalid_character != '\0') {
+    if ('\0' != *invalid_character) {
         snprintf(response->data, response->size, "[%s]: Invalid argument; Use digits separated by: '%s'\n", invalid_character, separator);
 
         return eErrorCode_INVAL;
     }
 
-    if (argument_token == NULL) {
+    if (NULL == argument_token) {
         argument->size = 0;
         
         return eErrorCode_OK;
@@ -92,24 +92,24 @@ eErrorCode_t CMD_API_Helper_FindNextArgUInt (sMessage_t *argument, size_t *retur
 }
 
 eErrorCode_t CMD_API_Helper_FindNextArgInt (sMessage_t *argument, int *return_argument, char *separator, const size_t separator_lenght, sMessage_t *response) {
-    char *argument_token;
-    char *invalid_character;
+    char *argument_token = NULL;
+    char *invalid_character = NULL;
 
     eErrorCode_t error = CMD_API_Helper_ParseToken(&argument_token, argument, separator, response);
 
-    if (error != eErrorCode_OK) {
+    if (eErrorCode_OK != error) {
         return error;
     }
 
     *return_argument = strtol(argument->data, &invalid_character, BASE_10);
 
-    if (*invalid_character != '\0') {
+    if ('\0' != *invalid_character) {
         snprintf(response->data, response->size, "[%s]: Invalid argument; Use digits separated by: '%s'\n", invalid_character, separator);
 
         return eErrorCode_INVAL;
     }
 
-    if (argument_token == NULL) {
+    if (NULL == argument_token) {
         argument->size = 0;
         
         return eErrorCode_OK;
@@ -122,24 +122,24 @@ eErrorCode_t CMD_API_Helper_FindNextArgInt (sMessage_t *argument, int *return_ar
 }
 
 eErrorCode_t CMD_API_Helper_FindNextArgFloat (sMessage_t *argument, float *return_argument, char *separator, const size_t separator_lenght, sMessage_t *response) {
-    char *argument_token;
-    char *invalid_character;
+    char *argument_token = NULL;
+    char *invalid_character = NULL;
 
     eErrorCode_t error = CMD_API_Helper_ParseToken(&argument_token, argument, separator, response);
 
-    if (error != eErrorCode_OK) {
+    if (eErrorCode_OK != error) {
         return error;
     }
 
     *return_argument = strtof(argument->data, &invalid_character);
 
-    if (*invalid_character != '\0') {
+    if ('\0' != *invalid_character) {
         snprintf(response->data, response->size, "[%s]: Invalid argument; Use float separated by: '%s'\n", invalid_character, separator);
 
         return eErrorCode_INVAL;
     }
 
-    if (argument_token == NULL) {
+    if (NULL == argument_token) {
         argument->size = 0;
         
         return eErrorCode_OK;
@@ -152,17 +152,17 @@ eErrorCode_t CMD_API_Helper_FindNextArgFloat (sMessage_t *argument, float *retur
 }
 
 eErrorCode_t CMD_API_Helper_FindNextArgChar (sMessage_t *argument, char *return_argument, char *separator, const size_t separator_lenght, sMessage_t *response) {
-    char *argument_token;
+    char *argument_token = NULL;
 
     eErrorCode_t error = CMD_API_Helper_ParseToken(&argument_token, argument, separator, response);
 
-    if (error != eErrorCode_OK) {
+    if (eErrorCode_OK != error) {
         return error;
     }
 
     *return_argument = argument->data[0];
 
-    if (argument_token == NULL) {
+    if (NULL == argument_token) {
         argument->size = 0;
         
         return eErrorCode_OK;

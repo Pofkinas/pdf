@@ -6,7 +6,7 @@
 
 #include "framework_config.h"
 
-#ifdef ENABLE_UART
+#if defined(ENABLE_UART)
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>

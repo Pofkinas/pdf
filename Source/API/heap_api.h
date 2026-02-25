@@ -14,7 +14,7 @@
  * Exported definitions and macros
  *********************************************************************************************************************/
 
-#define Heap_API_Malloc(size) Heap_API_MemoryAllocate(1 ,size)
+#define Heap_API_Malloc(size) Heap_API_MemoryAllocate(1, size)
 #define Heap_API_Calloc(number_of_elements, size) Heap_API_MemoryAllocate(number_of_elements, size)
 
 /**********************************************************************************************************************
@@ -30,7 +30,7 @@
  *********************************************************************************************************************/
 
 bool Heap_API_Init (void);
-void* Heap_API_MemoryAllocate(const size_t number_of_elements, const size_t size);
+void *Heap_API_MemoryAllocate (const size_t number_of_elements, const size_t size);
 bool Heap_API_Free (void *pointer_to_memory);
 
 #endif /* SOURCE_API_HEAP_API_H_ */
