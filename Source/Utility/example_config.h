@@ -41,6 +41,12 @@
 #define ENABLE_DEFAULT_CMD
 #define ENABLE_CUSTOM_CMD
 
+/// -- CMD                     // Enable Command API modules
+#define ENABLE_CMD
+#define ENABLE_CMD_HELPER
+#define ENABLE_DEFAULT_CMD
+#define ENABLE_CUSTOM_CMD
+
 /// -- LEDs                    // Enable LED functionality
 #define ENABLE_LED
 #define ENABLE_PWM_LED
@@ -68,9 +74,13 @@
 
 /// -- Motors                  // Enable Motor functionality
 #define ENABLE_MOTOR
+#define ENABLE_ODOMETRY
 
 /// -- LCD                     // Enable LCD functionality
 #define ENABLE_LCD
+
+/// Utilities
+#define ENABLE_COLOUR
 
 //=============================================================================
 // SYSTEM CONFIGURATION
@@ -85,7 +95,7 @@
 
 #if defined(ENABLE_UART)
 // #define UART1 
-// #define UART_1_BAUDRATE
+// #define UART_1_BAUDRATE eBaudrate_115200
 
 #define UART2 eUart_Debug
 #define UART_2_BAUDRATE eBaudrate_115200
@@ -100,6 +110,10 @@
 #define DEBUG_MESSAGE_TIMEOUT 1000
 #define DEBUG_MUTEX_TIMEOUT 0U
 #endif /* ENABLE_UART_DEBUG */
+
+#define MESSAGE_QUEUE_PRIORITY 0U
+#define MESSAGE_QUEUE_CAPACITY 10
+#define MESSAGE_QUEUE_PUT_TIMEOUT 0U
 #endif /* ENABLE_UART */
 
 //=============================================================================
@@ -112,6 +126,10 @@
 /// Blink frequency limits (Hz)
 #define MIN_BLINK_FREQUENCY 2
 #define MAX_BLINK_FREQUENCY 100
+
+#define LED_COMMAND_MESSAGE_CAPACITY 10
+#define LED_APP_MESSAGE_QUEUE_PRIORITY 0U
+#define LED_APP_MESSAGE_QUEUE_TIMEOUT osWaitForever
 #endif /* ENABLE_LED */
 
 #if defined(ENABLE_PWM_LED)
@@ -151,7 +169,7 @@
 #define I2C_1_CLOCK_SPEED 100000U
 
 #define LCD_1_ADDRESS 0x27
-#define VL53L0X_1_I2C_ADDRESS 0x62
+#define VL53L0X_1_I2C_ADDRESS 0x30
 #endif /* I2C_1 */
 
 #if defined(I2C_2)
@@ -188,6 +206,7 @@
 
 #if defined(ENABLE_VL53L0X)
 #define VL53L0X_I2C_PHERIPH I2C_1
+#define NEXT_MEASUREMENT_POLL_DELAY 10U
 #endif /* ENABLE_VL53L0X */
 
 //=============================================================================
@@ -199,24 +218,49 @@
 #define DEBUG_MAIN
 #define CUSTOM_CLI_CMD_HANDLERS
 
+// APP layer debug flags
 #define DEBUG_CLI_APP
 #define DEBUG_DEFAULT_CMD
+#define DEBUG_CUSTOM_CMD
 #define DEBUG_LED_APP
 #define DEBUG_MOTOR_APP
 
 // API layer debug flags
-// #define DEBUG_CMD_API
-// #define DEBUG_CMD_API_HELPER
-// #define DEBUG_DEFAULT_CMD
-// #define DEBUG_UART_API
-// #define DEBUG_I2C_API
-// #define DEBUG_IO_API
-// #define DEBUG_LCD_API
-// #define DEBUG_LED_API
-// #define DEBUG_MOTOR_API
-// #define DEBUG_VL53L0XV2_API
-// #define DEBUG_WS2812B_API
+#define DEBUG_CMD_API
+#define DEBUG_CMD_API_HELPER
+#define DEBUG_UART_API
+#define DEBUG_I2C_API
+#define DEBUG_IO_API
+#define DEBUG_LCD_API
+#define DEBUG_LED_API
+#define DEBUG_MOTOR_API
+#if defined(ENABLE_ODOMETRY)
+#define DEBUG_ODOMETRY_API
+#endif /* ENABLE_ODOMETRY */
+#define DEBUG_VL53L0X_API
+// #define DEBUG_VL53L0X_RANGE_STATUS
+// #define DEBUG_VL53L0X_DETAILS
+#define DEBUG_WS2812B_API
 #endif /* ENABLE_UART_DEBUG */
+
+//=============================================================================
+// MOTOR CONFIGURATION
+//-----------------------------------------------------------------------------
+
+#if defined(ENABLE_MOTOR)
+// #define USE_MX1508
+#define USE_TB6612FNG
+
+#define MOTOR_MESSAGE_QUEUE_CAPACITY 10
+#define MOTOR_MESSAGE_QUEUE_PRIORITY 0U
+#define MOTOR_MESSAGE_QUEUE_TIMEOUT osWaitForever
+
+// #define ENABLE_PID_CONTROL
+#endif /* ENABLE_MOTOR */
+
+#if defined(ENABLE_ODOMETRY)
+#define ODOMETRY_MUTEX_TIMEOUT 0U
+#endif /* ENABLE_ODOMETRY */
 
 //=============================================================================
 // MISCELLANEOUS
@@ -231,9 +275,19 @@
 #define CMD_SEPARATOR ","
 #endif /* ENABLE_CLI */
 
+#if defined(ENABLE_DEFAULT_CMD) || defined(ENABLE_CUSTOM_CMD)
+#define CMD_SEPARATOR ","
+#define CMD_SEPARATOR_LENGTH (sizeof(CMD_SEPARATOR) - 1)
+#endif /* ENABLE_DEFAULT_CMD || ENABLE_CUSTOM_CMD */
+
 #define HEAP_API_MUTEX_TIMEOUT 0U
 
 #define BYTE 8
 #define BASE_10 10
+#define MAX_PID_DT 0.5f  // Maximum dt for PID update to avoid large jumps
+
+//=============================================================================
+// CUSTOM FLAGS
+//-----------------------------------------------------------------------------
 
 #endif /* SOURCE_UTILITY_EXAMPLE_CONFIG_H_ */
