@@ -20,7 +20,6 @@
  * Exported types
  *********************************************************************************************************************/
 
-/* clang-format off */
 typedef enum eRainbowState {
     eRainbowState_First = 0,
     eRainbowState_Init = eRainbowState_First,
@@ -28,16 +27,24 @@ typedef enum eRainbowState {
     eRainbowState_Last
 } eRainbowState_t;
 
+typedef struct sLedAnimationRainbow {
+    eDirection_t direction;
+    sColourHsv_t start_hsv_colour;
+    size_t segment_start_led;
+    size_t segment_end_led;
+    uint8_t speed;
+    uint8_t hue_step;
+    size_t frames_per_update;
+} sLedAnimationRainbow_t;
+
 typedef struct sLedRainbow {
     eWs2812b_t device;
     uint8_t brightness;
+    uint8_t hue_offset;
     eRainbowState_t state;
     sLedAnimationRainbow_t *parameters;
-    
     size_t frame_counter;
-    uint8_t hue_offset;
 } sLedRainbow_t;
-/* clang-format on */
 
 /**********************************************************************************************************************
  * Exported variables

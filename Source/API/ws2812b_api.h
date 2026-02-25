@@ -49,27 +49,6 @@ typedef struct sLedAnimationInstance {
     void (*free_animation)(void *context);
 } sLedAnimationInstance_t;
 
-typedef struct sLedAnimationSolidColor {
-    sLedColorRgb_t rgb;
-} sLedAnimationSolidColor_t;
-
-typedef struct sLedAnimationSegmentFill {
-    sLedColorRgb_t rgb_base;
-    sLedColorRgb_t rgb_segment;
-    size_t segment_start_led;
-    size_t segment_end_led;
-} sLedAnimationSegmentFill_t;
-
-typedef struct sLedAnimationRainbow {
-    eDirection_t direction;
-    sLedColorHsv_t start_hsv_color;
-    size_t segment_start_led;
-    size_t segment_end_led;
-    uint8_t speed;
-    uint8_t hue_step;
-    size_t frames_per_update;
-} sLedAnimationRainbow_t;
-
 /**********************************************************************************************************************
  * Exported variables
  *********************************************************************************************************************/

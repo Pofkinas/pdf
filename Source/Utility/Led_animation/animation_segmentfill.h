@@ -20,7 +20,6 @@
  * Exported types
  *********************************************************************************************************************/
 
-/* clang-format off */
 typedef struct sSegmentFillData {
     eWs2812b_t device;
     uint8_t brightness;
@@ -29,7 +28,13 @@ typedef struct sSegmentFillData {
     size_t start_led;
     size_t end_led;
 } sSegmentFillData_t;
-/* clang-format on */
+
+typedef struct sLedAnimationSegmentFill {
+    ColourRgb_t rgb_base;
+    ColourRgb_t rgb_segment;
+    size_t segment_start_led;
+    size_t segment_end_led;
+} sLedAnimationSegmentFill_t;
 
 /**********************************************************************************************************************
  * Exported variables
