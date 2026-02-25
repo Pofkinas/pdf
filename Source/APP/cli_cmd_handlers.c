@@ -16,8 +16,7 @@
 #include "led_api.h"
 #include "motor_api.h"
 #include "debug_api.h"
-#include "led_config.h"
-#include "led_color.h"
+#include "colour.h"
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -76,11 +75,11 @@ static eErrorCode_t CLI_APP_Led_Handlers_Common (sMessage_t arguments, sMessage_
     eLed_t led;
     size_t led_value = 0;
 
-    eErrorCode_t error = eErrorCode_OSOK;
+    eErrorCode_t error = eErrorCode_OK;
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &led_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
@@ -120,7 +119,7 @@ static eErrorCode_t CLI_APP_Led_Handlers_Common (sMessage_t arguments, sMessage_
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 #endif /* ENABLE_LED */
 
@@ -164,23 +163,23 @@ eErrorCode_t CLI_APP_Led_Handlers_Blink (sMessage_t arguments, sMessage_t *respo
     size_t led_value = 0;
     size_t blink_time = 0;
     size_t blink_frequency = 0;
-    eErrorCode_t error = eErrorCode_OSOK;
+    eErrorCode_t error = eErrorCode_OK;
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &led_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
     
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &blink_time, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
     
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &blink_frequency, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
     
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
     
@@ -234,7 +233,7 @@ eErrorCode_t CLI_APP_Led_Handlers_Blink (sMessage_t arguments, sMessage_t *respo
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 #endif /* ENABLE_LED */
 
@@ -255,17 +254,17 @@ eErrorCode_t CLI_APP_Pwm_Led_Handlers_Set_Brightness (sMessage_t arguments, sMes
     eLedPwm_t led;
     size_t led_value = 0;
     size_t duty_cycle = 0;
-    eErrorCode_t error = eErrorCode_OSOK;
+    eErrorCode_t error = eErrorCode_OK;
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &led_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
     
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &duty_cycle, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
@@ -312,7 +311,7 @@ eErrorCode_t CLI_APP_Pwm_Led_Handlers_Set_Brightness (sMessage_t arguments, sMes
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 
 eErrorCode_t CLI_APP_Pwm_Led_Handlers_Pulse (sMessage_t arguments, sMessage_t *response) {
@@ -332,23 +331,23 @@ eErrorCode_t CLI_APP_Pwm_Led_Handlers_Pulse (sMessage_t arguments, sMessage_t *r
     size_t led_value = 0;
     size_t pulse_time = 0;
     size_t pulse_frequency = 0;
-    eErrorCode_t error = eErrorCode_OSOK;
+    eErrorCode_t error = eErrorCode_OK;
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &led_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
     
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &pulse_time, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &pulse_frequency, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
@@ -402,7 +401,7 @@ eErrorCode_t CLI_APP_Pwm_Led_Handlers_Pulse (sMessage_t arguments, sMessage_t *r
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 #endif /* ENABLE_PWM_LED */
 
@@ -436,7 +435,7 @@ eErrorCode_t CLI_APP_Motors_Handlers_Stop (sMessage_t arguments, sMessage_t *res
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 
 eErrorCode_t CLI_APP_Motors_Handlers_Set (sMessage_t arguments, sMessage_t *response) {
@@ -457,23 +456,23 @@ eErrorCode_t CLI_APP_Motors_Handlers_Set (sMessage_t arguments, sMessage_t *resp
     size_t speed = 0;
     size_t direction_value = 0;
     size_t mode_value = 0;
-    eErrorCode_t error = eErrorCode_OSOK;
+    eErrorCode_t error = eErrorCode_OK;
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &speed, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &direction_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &mode_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
@@ -528,7 +527,7 @@ eErrorCode_t CLI_APP_Motors_Handlers_Set (sMessage_t arguments, sMessage_t *resp
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 #endif /* ENABLE_MOTOR */
 
@@ -552,23 +551,23 @@ CLI_APP_Motors_Handlers_SetTargetRPM (sMessage_t arguments, sMessage_t *response
     size_t mode_value = 0;
     float target_rpm;
 
-    eErrorCode_t error = eErrorCode_OSOK;
+    eErrorCode_t error = eErrorCode_OK;
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &motor_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &mode_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgFloat(&arguments, &target_rpm, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
     
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
@@ -620,7 +619,7 @@ CLI_APP_Motors_Handlers_SetTargetRPM (sMessage_t arguments, sMessage_t *response
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 
 eErrorCode_t Custom_CLI_APP_Handlers_SetPID (sMessage_t arguments, sMessage_t *response) {
@@ -639,35 +638,35 @@ eErrorCode_t Custom_CLI_APP_Handlers_SetPID (sMessage_t arguments, sMessage_t *r
     sPID_t pid_params = {0};
     sMotor_t motor;
     size_t motor_value = 0;
-    eErrorCode_t error = eErrorCode_OSOK;
+    eErrorCode_t error = eErrorCode_OK;
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &motor_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
     
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgFloat(&arguments, &pid_params.kp, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgFloat(&arguments, &pid_params.ki, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgFloat(&arguments, &pid_params.kd, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgFloat(&arguments, &pid_params.integral_limit, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
@@ -695,7 +694,7 @@ eErrorCode_t Custom_CLI_APP_Handlers_SetPID (sMessage_t arguments, sMessage_t *r
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 #endif /* ENABLE_PID_CONTROL */
 
@@ -709,29 +708,29 @@ eErrorCode_t CLI_APP_Led_Handlers_RgbToHsv (sMessage_t arguments, sMessage_t *re
     if ((response->data == NULL)) {
         TRACE_ERR("Invalid response data pointer\n");
 
-        return eErrorCode_FAILED;
+        return eErrorCode_NULLPTR;
     }
 
     size_t red = 0;
     size_t green = 0;
     size_t blue = 0;
-    eErrorCode_t error = eErrorCode_OSOK;
+    eErrorCode_t error = eErrorCode_OK;
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &red, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &green, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &blue, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
     
@@ -757,7 +756,7 @@ eErrorCode_t CLI_APP_Led_Handlers_RgbToHsv (sMessage_t arguments, sMessage_t *re
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 
 eErrorCode_t CLI_APP_Led_Handlers_HsvToRgb (sMessage_t arguments, sMessage_t *response) {
@@ -776,23 +775,23 @@ eErrorCode_t CLI_APP_Led_Handlers_HsvToRgb (sMessage_t arguments, sMessage_t *re
     size_t hue = 0;
     size_t saturation = 0;
     size_t value = 0;
-    eErrorCode_t error = eErrorCode_OSOK;
+    eErrorCode_t error = eErrorCode_OK;
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &hue, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &saturation, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
     error = CMD_API_Helper_FindNextArgUInt(&arguments, &value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
     
@@ -821,7 +820,7 @@ eErrorCode_t CLI_APP_Led_Handlers_HsvToRgb (sMessage_t arguments, sMessage_t *re
     
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 
 #endif /* ENABLE_DEFAULT_CMD */

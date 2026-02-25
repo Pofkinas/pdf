@@ -58,7 +58,7 @@ eErrorCode_t CMD_API_Helper_ParseToken (char **token, sMessage_t *argument, char
         **token = '\0';
     }
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 
 eErrorCode_t CMD_API_Helper_FindNextArgUInt (sMessage_t *argument, size_t *return_argument, char *separator, const size_t separator_lenght, sMessage_t *response) {
@@ -67,7 +67,7 @@ eErrorCode_t CMD_API_Helper_FindNextArgUInt (sMessage_t *argument, size_t *retur
 
     eErrorCode_t error = CMD_API_Helper_ParseToken(&argument_token, argument, separator, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
@@ -82,13 +82,13 @@ eErrorCode_t CMD_API_Helper_FindNextArgUInt (sMessage_t *argument, size_t *retur
     if (argument_token == NULL) {
         argument->size = 0;
         
-        return eErrorCode_OSOK;
+        return eErrorCode_OK;
     }
 
     argument->size -= (argument_token - argument->data + separator_lenght);
     argument->data = argument_token + separator_lenght;
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 
 eErrorCode_t CMD_API_Helper_FindNextArgInt (sMessage_t *argument, int *return_argument, char *separator, const size_t separator_lenght, sMessage_t *response) {
@@ -97,7 +97,7 @@ eErrorCode_t CMD_API_Helper_FindNextArgInt (sMessage_t *argument, int *return_ar
 
     eErrorCode_t error = CMD_API_Helper_ParseToken(&argument_token, argument, separator, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
@@ -112,13 +112,13 @@ eErrorCode_t CMD_API_Helper_FindNextArgInt (sMessage_t *argument, int *return_ar
     if (argument_token == NULL) {
         argument->size = 0;
         
-        return eErrorCode_OSOK;
+        return eErrorCode_OK;
     }
 
     argument->size -= (argument_token - argument->data + separator_lenght);
     argument->data = argument_token + separator_lenght;
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 
 eErrorCode_t CMD_API_Helper_FindNextArgFloat (sMessage_t *argument, float *return_argument, char *separator, const size_t separator_lenght, sMessage_t *response) {
@@ -127,7 +127,7 @@ eErrorCode_t CMD_API_Helper_FindNextArgFloat (sMessage_t *argument, float *retur
 
     eErrorCode_t error = CMD_API_Helper_ParseToken(&argument_token, argument, separator, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
@@ -142,13 +142,13 @@ eErrorCode_t CMD_API_Helper_FindNextArgFloat (sMessage_t *argument, float *retur
     if (argument_token == NULL) {
         argument->size = 0;
         
-        return eErrorCode_OSOK;
+        return eErrorCode_OK;
     }
 
     argument->size -= (argument_token - argument->data + separator_lenght);
     argument->data = argument_token + separator_lenght;
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 
 eErrorCode_t CMD_API_Helper_FindNextArgChar (sMessage_t *argument, char *return_argument, char *separator, const size_t separator_lenght, sMessage_t *response) {
@@ -156,7 +156,7 @@ eErrorCode_t CMD_API_Helper_FindNextArgChar (sMessage_t *argument, char *return_
 
     eErrorCode_t error = CMD_API_Helper_ParseToken(&argument_token, argument, separator, response);
 
-    if (error != eErrorCode_OSOK) {
+    if (error != eErrorCode_OK) {
         return error;
     }
 
@@ -165,13 +165,13 @@ eErrorCode_t CMD_API_Helper_FindNextArgChar (sMessage_t *argument, char *return_
     if (argument_token == NULL) {
         argument->size = 0;
         
-        return eErrorCode_OSOK;
+        return eErrorCode_OK;
     }
 
     argument->size -= (argument_token - argument->data + separator_lenght);
     argument->data = argument_token + separator_lenght;
 
-    return eErrorCode_OSOK;
+    return eErrorCode_OK;
 }
 
 #endif /* ENABLE_CMD_HELPER */

@@ -86,7 +86,7 @@ static void CLI_APP_Thread (void *arg) {
             }
             #endif /* ENABLE_CUSTOM_CMD */
 
-            if (error_code != eErrorCode_OSOK) {
+            if ((error_code != eErrorCode_OK) && (g_response.data != NULL)) {
                 TRACE_WRN(g_response.data);
             }
             

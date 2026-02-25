@@ -17,7 +17,7 @@ typedef enum eErrorCode {
     eErrorCode_First = 0,
 
     /* Success */
-    eErrorCode_OSOK = eErrorCode_First,        // 0: OK
+    eErrorCode_OK = eErrorCode_First,          // 0: OK
 
     /* CLI / user input shape */
     eErrorCode_SYNTAX,                         // 1: Command syntax error

@@ -17,7 +17,7 @@
  *********************************************************************************************************************/
 
 const static char* g_static_error_messages [eErrorCode_Last] = {
-    [eErrorCode_OSOK]       = "OK",
+    [eErrorCode_OK]         = "OK",
 
     [eErrorCode_SYNTAX]     = "Syntax error",
     [eErrorCode_ARGFEW]     = "Too few args",
