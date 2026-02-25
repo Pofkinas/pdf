@@ -10,7 +10,7 @@
 #endif /* PROJECT_CONFIG_H */
 
 #include PROJECT_CONFIG_H
-#define SYSTEM_MS_TICS (SYSTEM_CLOCK_HZ / 1000)
+#define SYSTEM_MS_TICKS (SYSTEM_CLOCK_HZ / 1000)
 
 /**********************************************************************************************************************
  * Project configuration analysis
@@ -66,6 +66,18 @@
 #if defined(ENABLE_LED_ANIMATION) && !defined(ENABLE_WS2812B)
 #error "ENABLE_LED_ANIMATION requires ENABLE_WS2812B to be defined."
 #endif /* ENABLE_LED_ANIMATION && !ENABLE_WS2812B */
+
+#if defined(USE_MX1508) && defined(USE_TB6612FNG)
+#error "Only one motor driver can be selected at a time."
+#endif /* USE_MX1508 && USE_TB6612FNG */
+
+#if defined(ENABLE_ODOMETRY) && !defined(ENABLE_MOTOR)
+#error "ODOMETRY requires MOTOR to be enabled."
+#endif /* ENABLE_ODOMETRY && !ENABLE_MOTOR */
+
+#if defined(ENABLE_PID_CONTROL) && (!defined(ENABLE_ODOMETRY) || !defined(ENABLE_MOTOR))
+#error "PID_CONTROL requires ODOMETRY and MOTOR to be enabled."
+#endif /* ENABLE_PID_CONTROL && !ENABLE_ODOMETRY */
 
 #if defined(ENABLE_LED_ANIMATION) && !defined(ENABLE_COLOUR)
 #error "ENABLE_LED_ANIMATION requires ENABLE_COLOUR to be defined."
