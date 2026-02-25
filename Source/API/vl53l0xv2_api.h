@@ -1,5 +1,11 @@
 #ifndef SOURCE_API_VL53L0XV2_API_H_
 #define SOURCE_API_VL53L0XV2_API_H_
+/***********************************************************************************************************************
+ * @note Current VL53L0X API requires I2C API and osDelay that is based on RTOS. Make sure to initialize VL53L0X after
+ * the RTOS scheduler has started.
+ * @todo: Refactor osDelay with a timer-based delay
+ *********************************************************************************************************************/
+
 /**********************************************************************************************************************
  * Includes
  *********************************************************************************************************************/
@@ -33,7 +39,7 @@ bool VL53L0X_API_StartMeasuring (const eVl53l0x_t vl53l0x);
 bool VL53L0X_API_StopMeasuring (const eVl53l0x_t vl53l0x);
 bool VL53L0X_API_TurnOff (const eVl53l0x_t vl53l0x);
 bool VL53L0X_API_TurnOn (const eVl53l0x_t vl53l0x);
-bool VL53L0X_API_GetDistance (const eVl53l0x_t vl53l0x, uint16_t *distance, size_t timeout);
+bool VL53L0X_API_GetDistance (const eVl53l0x_t vl53l0x, uint16_t *distance, uint32_t timeout);
 
 #endif /* ENABLE_VL53L0X */
 #endif /* SOURCE_API_VL53L0XV2_API_H_ */
