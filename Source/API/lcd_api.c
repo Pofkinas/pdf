@@ -29,6 +29,13 @@ typedef enum eLcdTxMode {
     eLcdTxMode_Last
 } eLcdTxMode_t;
 
+typedef enum eLcdState {
+    eLcdState_First = 0,
+    eLcdState_Default = eLcdState_First,
+    eLcdState_Init,
+    eLcdState_Last
+} eLcdState_t;
+
 /**********************************************************************************************************************
  * Private constants
  *********************************************************************************************************************/
@@ -43,9 +50,8 @@ CREATE_MODULE_NAME_EMPTY
  * Private variables
  *********************************************************************************************************************/
 
-static bool g_is_lcd_initialized = false;
-
 static sLcdDesc_t g_static_lcd_lut[eLcd_Last] = {0};
+static eLcdState_t g_lcd_state[eLcd_Last] = {eLcdState_Default};
 
 /**********************************************************************************************************************
  * Exported variables and references
@@ -76,13 +82,29 @@ static bool LCD_API_Send (const eLcd_t lcd, const uint8_t data, const eLcdTxMode
     sLcdByte_t lcd_byte = LCD_API_ConvertToLcdByte(data);
 
     uint8_t send_data[4];
+    size_t send_size = 0;
 
-    send_data[0] = lcd_byte.upper_4bits | ((eLcdTxMode_Command == tx_mode) ? COMMAND_HIGH : DATA_HIGH);
-    send_data[1] = lcd_byte.upper_4bits | ((eLcdTxMode_Command == tx_mode) ? COMMAND_LOW : DATA_LOW);
-    send_data[2] = lcd_byte.lower_4bits | ((eLcdTxMode_Command == tx_mode) ? COMMAND_HIGH : DATA_HIGH);
-    send_data[3] = lcd_byte.lower_4bits | ((eLcdTxMode_Command == tx_mode) ? COMMAND_LOW : DATA_LOW);
-
-    return I2C_API_Write(g_static_lcd_lut[lcd].i2c, g_static_lcd_lut[lcd].i2c_address, send_data, sizeof(send_data), 0, 0, LCD_I2C_TIMEOUT);
+    switch (g_lcd_state[lcd]) {
+        case eLcdState_Default: {
+            send_data[0] = lcd_byte.upper_4bits | ((eLcdTxMode_Command == tx_mode) ? COMMAND_HIGH : DATA_HIGH);
+            send_data[1] = lcd_byte.upper_4bits | ((eLcdTxMode_Command == tx_mode) ? COMMAND_LOW : DATA_LOW);
+            send_size = 2;
+        } break;
+        case eLcdState_Init: {
+            send_data[0] = lcd_byte.upper_4bits | ((eLcdTxMode_Command == tx_mode) ? COMMAND_HIGH : DATA_HIGH);
+            send_data[1] = lcd_byte.upper_4bits | ((eLcdTxMode_Command == tx_mode) ? COMMAND_LOW : DATA_LOW);
+            send_data[2] = lcd_byte.lower_4bits | ((eLcdTxMode_Command == tx_mode) ? COMMAND_HIGH : DATA_HIGH);
+            send_data[3] = lcd_byte.lower_4bits | ((eLcdTxMode_Command == tx_mode) ? COMMAND_LOW : DATA_LOW);
+            send_size = 4;
+        } break;
+        default: {
+            TRACE_ERR ("Send: Invalid LCD state [%d] for LCD [%d]\n", g_lcd_state[lcd], lcd);
+            
+            return false;
+        }
+    }
+    
+    return I2C_API_Write(g_static_lcd_lut[lcd].i2c, g_static_lcd_lut[lcd].i2c_address, send_data, send_size, 0, 0, LCD_I2C_TIMEOUT);
 }
 
 static sLcdByte_t LCD_API_ConvertToLcdByte (const uint8_t data) {
@@ -137,8 +159,11 @@ static bool LCD_API_InitDisplay (const eLcd_t lcd) {
         return false;
     }
 
-    bool is_init_successful = true;
+    if (!LCD_API_WakeUpDisplay(lcd)) {
+        return false;
+    }
 
+    bool is_init_successful = true;
     uint8_t command = (LCD_FUNCTION_SET | LCD_FUNCTION_4BIT | LCD_FUNCTION_1LINE | LCD_FUNCTION_5x8DOTS);
 
     if (!LCD_API_Send(lcd, command, eLcdTxMode_Command)) {
@@ -146,6 +171,8 @@ static bool LCD_API_InitDisplay (const eLcd_t lcd) {
     
         is_init_successful = false;
     }
+
+    g_lcd_state[lcd] = eLcdState_Init;
 
     command = (LCD_FUNCTION_SET | LCD_FUNCTION_4BIT | LCD_FUNCTION_2LINE | LCD_FUNCTION_5x8DOTS);
 
@@ -234,22 +261,26 @@ static bool LCD_API_SendBytes (const eLcd_t lcd, const char *data, const size_t 
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-bool LCD_API_InitAllLcd (void) {
-    if (g_is_lcd_initialized) {
-        return true;
-    }
-
-    osDelay(50);
-
-    g_is_lcd_initialized = true;
+bool LCD_API_InitAll (void) {
+    bool is_all_initialized = true;
+    bool wait_before_init = false;
 
     for (eLcd_t lcd = eLcd_First; lcd < eLcd_Last; lcd++) {
+        if (eLcdState_Default != g_lcd_state[lcd]) {
+            continue;
+        }
+
+        if (!wait_before_init) {
+            osDelay(50);
+            wait_before_init = true;
+        }
+        
         const sLcdDesc_t *desc = LCD_Config_GetLcdDesc(lcd);
 
         if (NULL == desc) {
             TRACE_ERR("InitAllLcd: Failed to get LCD [%d] description\n", lcd);
 
-            g_is_lcd_initialized = false;
+            is_all_initialized = false;
             
             return false;
         }
@@ -259,21 +290,18 @@ bool LCD_API_InitAllLcd (void) {
         if (!I2C_API_Init(g_static_lcd_lut[lcd].i2c)) {
             TRACE_ERR("InitAllLcd: Failed to initialize I2C for LCD [%d]\n", lcd);
 
-            g_is_lcd_initialized = false;
+            is_all_initialized = false;
             
             return false;
         }
-        
-        if (!LCD_API_WakeUpDisplay(lcd)) {
-            g_is_lcd_initialized = false;
-        }
 
         if (!LCD_API_InitDisplay(lcd)) {
-            g_is_lcd_initialized = false;
+            is_all_initialized = false;
+            g_lcd_state[lcd] = eLcdState_Default;
         }
     }
 
-    return g_is_lcd_initialized;
+    return is_all_initialized;
 }
 
 bool LCD_API_Clear (const eLcd_t lcd) {
