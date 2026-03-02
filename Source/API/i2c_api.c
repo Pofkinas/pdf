@@ -128,7 +128,7 @@ static void I2C_API_IrsCallback (const eI2c_Flags_t flag, void *context) {
             }
         } break;
         case eI2cState_SendMemAddress: {
-            if (eI2c_Flags_Txe == flag) {
+            if ((eI2c_Flags_Txe == flag) || (eI2c_Flags_ByteTransferFinish == flag)) {
                 if (i2c->mem_address_size > 0) {
                     opperation = I2C_API_SendMemAddress;
 
@@ -154,7 +154,7 @@ static void I2C_API_IrsCallback (const eI2c_Flags_t flag, void *context) {
             }
         } break;
         case eI2cState_SendData: {
-            if (eI2c_Flags_Txe == flag) {
+            if ((eI2c_Flags_Txe == flag) || (eI2c_Flags_ByteTransferFinish == flag)) {
                 opperation = I2C_API_SendData;
             }
         } break;
@@ -166,7 +166,7 @@ static void I2C_API_IrsCallback (const eI2c_Flags_t flag, void *context) {
             }
         } break;
         case eI2cState_ReadData: {
-            if (eI2c_Flags_Rxne == flag) {
+            if ((eI2c_Flags_Rxne == flag) || (eI2c_Flags_ByteTransferFinish == flag)) {
                 opperation = I2C_API_ReadData;
             }
         } break;
