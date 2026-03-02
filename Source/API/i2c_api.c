@@ -69,6 +69,21 @@ CREATE_MODULE_NAME_EMPTY
 static sI2cOsDesc_t g_static_i2c_lut[eI2c_Last] = {0};
 static sI2cDynamicDesc_t g_dynamic_i2c[eI2c_Last] = {0};
 
+#if defined(ENABLE_UART_DEBUG)
+static char* g_i2c_state_string_lut[eI2cState_Last] = {
+    [eI2cState_Off] = "Off",
+    [eI2cState_Idle] = "Idle",
+    [eI2cState_StartComms] = "Start Comms",
+    [eI2cState_SendMemAddress] = "Send Memory Address",
+    [eI2cState_RestartComms] = "Restart Comms",
+    [eI2cState_SendData] = "Send Data",
+    [eI2cState_PrepRead] = "Prepare Read",
+    [eI2cState_ReadData] = "Read Data",
+    [eI2cState_Success] = "Success",
+    [eI2cState_Error] = "Error"
+};
+#endif /* ENABLE_UART_DEBUG */
+
 /**********************************************************************************************************************
  * Exported variables and references
  *********************************************************************************************************************/
@@ -182,33 +197,11 @@ static void I2C_API_IrsCallback (const eI2c_Flags_t flag, void *context) {
 
 #if defined(ENABLE_UART_DEBUG)
 static char *I2C_API_GetStateString (const eI2cState_t state) {
-    char *state_string = NULL;
-    
-    switch (state) {
-        case eI2cState_StartComms: {
-            state_string = "Start Comms";
-        } break;
-        case eI2cState_SendMemAddress: {
-            state_string = "Send Memory Address";
-        } break;
-        case eI2cState_RestartComms: {
-            state_string = "Restart Comms";
-        } break;
-        case eI2cState_SendData: {
-            state_string = "Send Data";
-        } break;
-        case eI2cState_PrepRead: {
-            state_string = "Prepare Read";
-        } break;
-        case eI2cState_ReadData: {
-            state_string = "Read Data";
-        } break;
-        default: {
-            state_string = "Unknown State";
-        } break;
+    if ((state < eI2cState_First) || (state >= eI2cState_Last)) {
+        return "Invalid State";
     }
 
-    return state_string;
+    return g_i2c_state_string_lut[state];
 }
 #endif /* ENABLE_UART_DEBUG */
 
