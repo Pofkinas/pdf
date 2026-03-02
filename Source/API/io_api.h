@@ -28,6 +28,8 @@
  *********************************************************************************************************************/
 
 bool IO_API_Init (const eIo_t device, osEventFlagsId_t event_flags_id);
+bool IO_API_Start (void);
+bool IO_API_Stop (void);
 bool IO_API_ReadPinState (const eIo_t device, bool *pin_state);
 
 #endif /* ENABLE_IO */
