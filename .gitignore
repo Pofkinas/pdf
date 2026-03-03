@@ -1,1 +1,22 @@
-.vscode/
+# Untracked everything by default
+/*
+
+# Explicitly allow files
+!LICENSE
+!README.md
+!.gitignore
+
+# Allow source files and folders
+!source/
+!source/api/
+!source/api/**
+!source/app/
+!source/app/**
+!source/driver/
+!source/driver/**
+!source/libs/
+!source/libs/**
+!source/utility/
+!source/utility/**
+!source/utility/led_animation/
+!source/utility/led_animation/**

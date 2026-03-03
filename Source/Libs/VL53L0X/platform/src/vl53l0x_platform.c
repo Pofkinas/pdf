@@ -42,11 +42,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <windows.h>
 #endif
 
-#include "i2c_api.h"
-#include "cmsis_os2.h"
 #include "framework_config.h"
 
-#ifdef USE_I2C
+#ifdef ENABLE_VL53L0X
+#include "i2c_api.h"
+#include "cmsis_os2.h"
 
 #define LOG_FUNCTION_START(fmt, ... )           _LOG_FUNCTION_START(TRACE_MODULE_PLATFORM, fmt, ##__VA_ARGS__)
 #define LOG_FUNCTION_END(status, ... )          _LOG_FUNCTION_END(TRACE_MODULE_PLATFORM, status, ##__VA_ARGS__)
@@ -100,10 +100,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define VL53L0X_I2C_WRITE_TIMEOUT 2
 #define VL53L0X_I2C_READ_TIMEOUT 2
 
-#ifdef USE_I2C1
-#define IC2_PHERIPH eI2c_1
+#ifdef ENABLE_I2C
+#define IC2_PHERIPH VL53L0X_I2C_PHERIPH
 #else
-#error "I2C pheriph not defined, please define USE_I2C1"
+#error "I2C pheriph not defined"
 #endif
 
 VL53L0X_Error VL53L0X_LockSequenceAccess(VL53L0X_DEV Dev){
@@ -289,4 +289,4 @@ VL53L0X_Error VL53L0X_PollingDelay(VL53L0X_DEV Dev){
     return status;
 }
 
-#endif
+#endif /* ENABLE_VL53L0X */

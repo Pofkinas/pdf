@@ -4,8 +4,7 @@
 
 #include "io_api.h"
 
-#ifdef USE_IO
-
+#ifdef ENABLE_IO
 #include <stdio.h>
 #include "debug_api.h"
 #include "exti_driver.h"
@@ -15,12 +14,7 @@
  * Private definitions and macros
  *********************************************************************************************************************/
 
-//#define DEBUG_IO_API
-
-#define MESSAGE_QUEUE_PRIORITY 0U
-#define MESSAGE_QUEUE_TIMEOUT 5U
 #define MUTEX_TIMEOUT 0U
-#define IO_MESSAGE_CAPACITY 10
 
 /**********************************************************************************************************************
  * Private typedef
@@ -34,33 +28,13 @@ typedef enum eIoDeviceState {
     eIoDeviceState_Last
 } eIoDeviceState_t;
 
-typedef enum eActiceState {
-    eActiveState_First = 0,
-    eActiveState_Low = eActiveState_First,
-    eActiveState_High,
-    eActiveState_Both,
-    eActiveState_Last
-} eActiveState_t;
-
-typedef struct sIoDesc {
-    eGpioPin_t gpio_pin;
-    eActiveState_t active_state;
-    uint32_t tiggered_flag;
-    bool is_debounce_enable;
-    size_t debounce_period;
-    osMutexAttr_t mutex_attributes;
-    osTimerAttr_t debouce_timer_attributes;
-    bool is_exti;
-    eExtiDriver_t exti_device;
-} sIoDesc_t;
-
 typedef struct sIoDynamic {
     eIo_t device;
     eIoDeviceState_t device_state;
     osMutexId_t mutex;
     osEventFlagsId_t callback_flag;
     osTimerId_t debouce_timer;
-    bool io_value;
+    bool io_state;
 } sIoDynamic_t;
 
 /**********************************************************************************************************************
@@ -71,80 +45,7 @@ typedef struct sIoDynamic {
 CREATE_MODULE_NAME (IO_API)
 #else
 CREATE_MODULE_NAME_EMPTY
-#endif
-
-const static osThreadAttr_t g_io_thread_attributes = {
-    .name = "IO_Thread",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t) osPriorityNormal
-};
-
-const static osMessageQueueAttr_t g_io_message_queue_attributes = {
-    .name = "IO_API_MessageQueue", 
-    .attr_bits = 0, 
-    .cb_mem = NULL, 
-    .cb_size = 0, 
-    .mq_mem = NULL, 
-    .mq_size = 0
-};
-
-/* clang-format off */
-const static sIoDesc_t g_static_io_desc_lut[eIo_Last] = {
-    #ifdef USE_START_BUTTON
-    [eIo_StartStopButton] = {
-        .gpio_pin = eGpioPin_StartButton,
-        .active_state = START_BUTTON_ACTIVE_STATE,
-        .tiggered_flag = STARTSTOP_TRIGGERED_EVENT,
-        .is_debounce_enable = START_BUTTON_ENABLE_DEBOUNCE,
-        #ifdef START_BUTTON_ENABLE_DEBOUNCE
-        .debounce_period = STARTSTOP_BUTTON_DEBOUNCE_PERIOD,
-        #endif
-        .mutex_attributes = {.name = "StartStop_Button_Mutex", .attr_bits = osMutexRecursive | osMutexPrioInherit, .cb_mem = NULL, .cb_size = 0U},
-        .debouce_timer_attributes = {.name = "StartStop_Button_Debounce_Timer", .attr_bits = 0, .cb_mem = NULL, .cb_size = 0},
-        .is_exti = START_BUTTON_EXTI,
-        #ifdef START_BUTTON_EXTI
-        .exti_device = eExtiDriver_StartButton
-        #endif
-    },
-    #endif
-
-    #ifdef USE_TCRT5000_RIGHT
-    [eIo_Tcrt5000_Right] = {
-        .gpio_pin = eGpioPin_Tcrt5000_Right,
-        .active_state = TCRT_RIGHT_ACTIVE_STATE,
-        .tiggered_flag = TCRT5000_RIGHT_TRIGGERED_EVENT,
-        .is_debounce_enable = TCRT_RIGHT_ENABLE_DEBOUNCE,
-        #ifdef TCRT_RIGHT_ENABLE_DEBOUNCE
-        .debounce_period = TCRT5000_DEBOUNCE_PERIOD,
-        #endif
-        .mutex_attributes = {.name = "Tcrt5000_Right_Mutex", .attr_bits = osMutexRecursive | osMutexPrioInherit, .cb_mem = NULL, .cb_size = 0U},
-        .debouce_timer_attributes = {.name = "Tcrt5000_Right_Debounce_Timer", .attr_bits = 0, .cb_mem = NULL, .cb_size = 0},
-        .is_exti = TCRT_RIGHT_EXTI,
-        #ifdef TCRT_RIGHT_EXTI
-        .exti_device = eExtiDriver_Tcrt5000_Right
-        #endif
-    },
-    #endif
-
-    #ifdef USE_TCRT5000_LEFT
-    [eIo_Tcrt5000_Left] = {
-        .gpio_pin = eGpioPin_Tcrt5000_Left,
-        .active_state = TCRT_LEFT_ACTICE_STATE,
-        .tiggered_flag = TCRT5000_LEFT_TRIGGERED_EVENT,
-        .is_debounce_enable = TCRT_LEFT_ENABLE_DEBOUNCE,
-        #ifdef TCRT_LEFT_ENABLE_DEBOUNCE
-        .debounce_period = TCRT5000_DEBOUNCE_PERIOD,
-        #endif
-        .mutex_attributes = {.name = "Tcrt5000_Left_Mutex", .attr_bits = osMutexRecursive | osMutexPrioInherit, .cb_mem = NULL, .cb_size = 0U},
-        .debouce_timer_attributes = {.name = "Tcrt5000_Left_Debounce_Timer", .attr_bits = 0, .cb_mem = NULL, .cb_size = 0},
-        .is_exti = TCRT_LEFT_EXTI,
-        #ifdef TCRT_LEFT_EXTI
-        .exti_device = eExtiDriver_Tcrt5000_Left
-        #endif
-    },
-    #endif
-};
-/* clang-format on */
+#endif /* DEBUG_IO_API */
 
 /**********************************************************************************************************************
  * Private variables
@@ -152,41 +53,10 @@ const static sIoDesc_t g_static_io_desc_lut[eIo_Last] = {
 
 static osThreadId_t g_io_thread_id = NULL;
 static osMessageQueueId_t g_io_message_queue_id = NULL;
-static bool g_has_pooled_io = false;
 
-/* clang-format off */
-static sIoDynamic_t g_dynamic_io_lut[eIo_Last] = {
-    #ifdef USE_START_BUTTON
-    [eIo_StartStopButton] = {
-        .device_state = eIoDeviceState_Default,
-        .mutex = NULL,
-        .callback_flag = NULL,
-        .debouce_timer = NULL,
-        .io_value = false
-    },
-    #endif
-
-    #ifdef USE_TCRT5000_RIGHT
-    [eIo_Tcrt5000_Right] = {
-        .device_state = eIoDeviceState_Default,
-        .mutex = NULL,
-        .callback_flag = NULL,
-        .debouce_timer = NULL,
-        .io_value = false
-    },
-    #endif
-
-    #ifdef USE_TCRT5000_LEFT
-    [eIo_Tcrt5000_Left] = {
-        .device_state = eIoDeviceState_Default,
-        .mutex = NULL,
-        .callback_flag = NULL,
-        .debouce_timer = NULL,
-        .io_value = false
-    },
-    #endif
-};
-/* clang-format on */
+static bool g_has_polled_io = false;
+static sIoDesc_t g_static_io_desc_lut[eIo_Last] = {0};
+static sIoDynamic_t g_dynamic_io_lut[eIo_Last] = {0};
 
 /**********************************************************************************************************************
  * Exported variables and references
@@ -210,25 +80,21 @@ static void IO_API_Thread (void *arg) {
     eIo_t device;
     
     while(1) {
-        if (osMessageQueueGet(g_io_message_queue_id, &device, MESSAGE_QUEUE_PRIORITY, MESSAGE_QUEUE_TIMEOUT) == osOK) {    
+        if (osMessageQueueGet(g_io_message_queue_id, &device, IO_MESSAGE_QUEUE_PRIORITY, g_has_polled_io ? osWaitForever : IO_MESSAGE_QUEUE_TIMEOUT) == osOK) {    
             if (g_static_io_desc_lut[device].is_debounce_enable) {
                 IO_API_StartDebounceTimer(device);
-
-                TRACE_INFO("IO [%d] Debounce triggered\n", device);
             }
-        }
 
-        if (!g_has_pooled_io) {
             continue;
         }
 
-        for (device = (eIo_First + 1); device < eIo_Last; device++) {
+        for (device = eIo_First; device < eIo_Last; device++) {
             if (g_static_io_desc_lut[device].is_debounce_enable && (g_dynamic_io_lut[device].device_state == eIoDeviceState_Debounce)) {
                 continue;
             }
 
             if (!IO_API_IsGpioStateCorrect(device)) {
-                TRACE_WRN("GPIO state is incorrect [%d]\n", device);
+                TRACE_WRN("IO_Thread: GPIO state is incorrect [%d]\n", device);
                 
                 continue;
             }
@@ -236,9 +102,9 @@ static void IO_API_Thread (void *arg) {
             if (g_static_io_desc_lut[device].is_debounce_enable) {
                 IO_API_StartDebounceTimer(device);
             } else {
-                TRACE_INFO("IO [%d] triggered\n", device);
+                TRACE_INFO("IO_Thread: IO [%d] triggered\n", device);
 
-                osEventFlagsSet(g_dynamic_io_lut[device].callback_flag, g_static_io_desc_lut[device].tiggered_flag);
+                osEventFlagsSet(g_dynamic_io_lut[device].callback_flag, g_static_io_desc_lut[device].triggered_flag);
             }
         }
 
@@ -250,13 +116,13 @@ static void IO_API_ExtiTriggered (void *context) {
     sIoDynamic_t *device = (sIoDynamic_t*) context;
 
     if (!g_static_io_desc_lut[device->device].is_debounce_enable) {
-        osEventFlagsSet(device->callback_flag, g_static_io_desc_lut[device->device].tiggered_flag);
+        osEventFlagsSet(device->callback_flag, g_static_io_desc_lut[device->device].triggered_flag);
 
         return;
     }
 
     Exti_Driver_Disable_IT(g_static_io_desc_lut[device->device].exti_device);
-    osMessageQueuePut(g_io_message_queue_id, &device->device, MESSAGE_QUEUE_PRIORITY, 0);
+    osMessageQueuePut(g_io_message_queue_id, &device->device, IO_MESSAGE_QUEUE_PRIORITY, 0);
 
     return;
 }
@@ -266,13 +132,13 @@ static void IO_API_DebounceTimerCallback (void *context) {
     bool debounce_status = true;
 
     if (debounce_io->device_state != eIoDeviceState_Debounce) {
-        TRACE_WRN("Debounce callback exited early, state [%d]\n", debounce_io->device_state);
+        TRACE_WRN("DebounceTimerCallback: Debounce callback exited early, state [%d]\n", debounce_io->device_state);
         
         return;
     }
 
     if (!IO_API_IsGpioStateCorrect(debounce_io->device)) {
-        TRACE_WRN("GPIO state is incorrect [%d]\n", debounce_io->device);
+        TRACE_WRN("DebounceTimerCallback: GPIO state is incorrect [%d]\n", debounce_io->device);
         
         debounce_status = false;
     }
@@ -294,14 +160,14 @@ static void IO_API_DebounceTimerCallback (void *context) {
     if (!debounce_status) {  
         osMutexRelease(debounce_io->mutex);
 
-        TRACE_WRN("Button [%d] debounce failed\n", debounce_io->device);
+        TRACE_WRN("DebounceTimerCallback: Button [%d] debounce failed\n", debounce_io->device);
 
         return;
     }
 
-    TRACE_INFO("Button [%d] triggered\n", debounce_io->device);
+    TRACE_INFO("DebounceTimerCallback: Button [%d] triggered\n", debounce_io->device);
 
-    osEventFlagsSet(debounce_io->callback_flag, g_static_io_desc_lut[debounce_io->device].tiggered_flag);
+    osEventFlagsSet(debounce_io->callback_flag, g_static_io_desc_lut[debounce_io->device].triggered_flag);
 
     osMutexRelease(debounce_io->mutex);
 
@@ -309,7 +175,7 @@ static void IO_API_DebounceTimerCallback (void *context) {
 }
 
 static void IO_API_StartDebounceTimer (const eIo_t device) {
-    if (!IO_API_IsCorrectDevice(device)) {
+    if (!IO_Config_IsCorrectIo(device)) {
         return;
     }
 
@@ -331,7 +197,7 @@ static void IO_API_StartDebounceTimer (const eIo_t device) {
 }
 
 static bool IO_API_IsGpioStateCorrect (const eIo_t device) {
-    if (!IO_API_IsCorrectDevice(device)) {
+    if (!IO_Config_IsCorrectIo(device)) {
         return false;
     }
 
@@ -339,18 +205,18 @@ static bool IO_API_IsGpioStateCorrect (const eIo_t device) {
         return false;
     }
 
-    if (!GPIO_Driver_ReadPin(g_static_io_desc_lut[device].gpio_pin, &g_dynamic_io_lut[device].io_value)) {
+    if (!GPIO_Driver_ReadPin(g_static_io_desc_lut[device].gpio_pin, &g_dynamic_io_lut[device].io_state)) {
         return false;
     }
 
     switch (g_static_io_desc_lut[device].active_state) {
         case eActiveState_Low: {
-            if (g_dynamic_io_lut[device].io_value) {
+            if (g_dynamic_io_lut[device].io_state) {
                 return false;
             }
         } break;
         case eActiveState_High: {
-            if (!g_dynamic_io_lut[device].io_value) {
+            if (!g_dynamic_io_lut[device].io_state) {
                 return false;
             }
         } break;
@@ -369,13 +235,21 @@ static bool IO_API_IsGpioStateCorrect (const eIo_t device) {
  *********************************************************************************************************************/
 
 bool IO_API_Init (eIo_t device, osEventFlagsId_t event_flags_id) {
-    if (!IO_API_IsCorrectDevice(device)) {
+    if (!IO_Config_IsCorrectIo(device)) {
         return false;
     }
 
     if (g_dynamic_io_lut[device].device_state != eIoDeviceState_Default) {
         return true;
     }
+
+    const sIoDesc_t *desc = IO_Config_GetIoDesc(device);
+
+    if (desc == NULL) {
+        return false;
+    }
+
+    g_static_io_desc_lut[device] = *desc;
 
     if (!GPIO_Driver_InitAllPins()) {
         return false;
@@ -385,30 +259,40 @@ bool IO_API_Init (eIo_t device, osEventFlagsId_t event_flags_id) {
         return false;
     }
 
+    g_io_thread_id = osThreadNew(IO_API_Thread, NULL, &g_io_thread_attributes);
+
     if (g_io_thread_id == NULL) {
-        g_io_thread_id = osThreadNew(IO_API_Thread, NULL, &g_io_thread_attributes);
+        return false;
     }
 
+    g_io_message_queue_id = osMessageQueueNew(IO_MESSAGE_CAPACITY, sizeof(eIo_t), &g_io_message_queue_attributes);
+
     if (g_io_message_queue_id == NULL) {
-        g_io_message_queue_id = osMessageQueueNew(IO_MESSAGE_CAPACITY, sizeof(eIo_t), &g_io_message_queue_attributes);
+        return false;
     }
 
     if (g_static_io_desc_lut[device].is_debounce_enable) {
-        g_dynamic_io_lut[device].debouce_timer = osTimerNew(IO_API_DebounceTimerCallback, osTimerOnce, &g_dynamic_io_lut[device], &g_static_io_desc_lut[device].debouce_timer_attributes);
+        g_dynamic_io_lut[device].debouce_timer = osTimerNew(IO_API_DebounceTimerCallback, osTimerOnce, &g_dynamic_io_lut[device], &g_static_io_desc_lut[device].debounce_timer_attributes);
+    
+        if (g_dynamic_io_lut[device].debouce_timer == NULL) {
+            return false;
+        }
     }
 
+    g_dynamic_io_lut[device].mutex = osMutexNew(&g_static_io_desc_lut[device].mutex_attributes);
+
     if (g_dynamic_io_lut[device].mutex == NULL) {
-        g_dynamic_io_lut[device].mutex = osMutexNew(&g_static_io_desc_lut[device].mutex_attributes);
+        return false;
     }
 
     g_dynamic_io_lut[device].callback_flag = event_flags_id;
 
-    if (!g_static_io_desc_lut[device].is_exti) {
-        g_has_pooled_io = true;
-    }
-
-    if (!Exti_Driver_Enable_IT(g_static_io_desc_lut[device].exti_device)) {
-        return false;
+    if (g_static_io_desc_lut[device].is_exti) {
+        if (!Exti_Driver_Enable_IT(g_static_io_desc_lut[device].exti_device)) {
+            return false;
+        }
+    } else {
+        g_has_polled_io = true;
     }
 
     g_dynamic_io_lut[device].device_state = eIoDeviceState_Init;
@@ -417,12 +301,12 @@ bool IO_API_Init (eIo_t device, osEventFlagsId_t event_flags_id) {
     return true;
 }
 
-bool IO_API_IsCorrectDevice (const eIo_t button) {
-    return (button > eIo_First) && (button < eIo_Last);
-}
-
 bool IO_API_ReadPinState (const eIo_t device, bool *pin_state) {
-    if (!IO_API_IsCorrectDevice(device)) {
+    if (!IO_Config_IsCorrectIo(device)) {
+        return false;
+    }
+
+    if (pin_state == NULL) {
         return false;
     }
 
@@ -433,4 +317,4 @@ bool IO_API_ReadPinState (const eIo_t device, bool *pin_state) {
     return (GPIO_Driver_ReadPin(g_static_io_desc_lut[device].gpio_pin, pin_state));
 }
 
-#endif
+#endif /* ENABLE_IO */

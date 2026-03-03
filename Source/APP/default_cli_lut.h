@@ -1,11 +1,13 @@
-#ifndef SOURCE_APP_FRAMEWORK_CLI_LUT_H_
-#define SOURCE_APP_FRAMEWORK_CLI_LUT_H_
+#ifndef SOURCE_APP_DEFAULT_CLI_LUT_H_
+#define SOURCE_APP_DEFAULT_CLI_LUT_H_
 /**********************************************************************************************************************
  * Includes
  *********************************************************************************************************************/
 
-#include "cmd_api.h"
 #include "framework_config.h"
+
+#ifdef ENABLE_DEFAULT_CMD
+#include "cmd_api.h"
 
 /**********************************************************************************************************************
  * Exported definitions and macros
@@ -16,40 +18,41 @@
  *********************************************************************************************************************/
 
  /* clang-format off */
-typedef enum eCliFrameworkCmd {
-    eCliFrameworkCmd_First = 0,
+typedef enum eCliDefaultCmd {
+    eCliDefaultCmd_First = 0,
     
-    #ifdef USE_LED
-    eCliFrameworkCmd_Led_Set,
-    eCliFrameworkCmd_Led_Reset,
-    eCliFrameworkCmd_Led_Toggle,
-    eCliFrameworkCmd_Led_Blink,
+    #ifdef ENABLE_LED
+    eCliDefaultCmd_Led_Set,
+    eCliDefaultCmd_Led_Reset,
+    eCliDefaultCmd_Led_Toggle,
+    eCliDefaultCmd_Led_Blink,
     #endif
     
-    #ifdef USE_PWM_LED
-    eCliFrameworkCmd_Pwm_Led_SetBrightness,
-    eCliFrameworkCmd_Pwm_Led_Pulse,
+    #ifdef ENABLE_PWM_LED
+    eCliDefaultCmd_Pwm_Led_SetBrightness,
+    eCliDefaultCmd_Pwm_Led_Pulse,
     #endif
 
-    #ifdef USE_MOTORS
-    eCliFrameworkCmd_Motors_Set,
-    eCliFrameworkCmd_Motors_Stop,
-    #endif
-
-    eCliFrameworkCmd_RgbToHsv,
-    eCliFrameworkCmd_HsvToRgb,
-    eCliFrameworkCmd_Last
-} eCliFrameworkCmd;
+    #ifdef ENABLE_MOTOR
+    eCliDefaultCmd_Motors_Set,
+    eCliDefaultCmd_Motors_Stop,
+    #endif  /* ENABLE_MOTOR */
+    
+    eCliDefaultCmd_RgbToHsv,
+    eCliDefaultCmd_HsvToRgb,
+    eCliDefaultCmd_Last
+} eCliDefaultCmd;
 /* clang-format on */
 
 /**********************************************************************************************************************
  * Exported variables
  *********************************************************************************************************************/
 
-extern sCmdDesc_t g_framework_cli_lut[eCliFrameworkCmd_Last];
+extern sCmdDesc_t g_default_cmd_lut[eCliDefaultCmd_Last];
 
 /**********************************************************************************************************************
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
-#endif /* SOURCE_APP_FRAMEWORK_CLI_LUT_H_ */
+#endif /* ENABLE_DEFAULT_CMD */
+#endif /* SOURCE_APP_DEFAULT_CLI_LUT_H_ */

@@ -4,7 +4,7 @@
 
 #include "debug_api.h"
 
-#ifdef ENABLE_DEBUG
+#ifdef ENABLE_UART_DEBUG
 
 #include "cmsis_os2.h"
 #include "uart_api.h"
@@ -13,11 +13,6 @@
 /**********************************************************************************************************************
  * Private definitions and macros
  *********************************************************************************************************************/
-
-#define DELIMITER "\r\n"
-#define DEBUG_MESSAGE_SIZE 256
-#define DEBUG_MESSAGE_TIMEOUT 1000
-#define DEBUG_MUTEX_TIMEOUT 0U
 
 /**********************************************************************************************************************
  * Private typedef
@@ -58,12 +53,12 @@ static osMutexId_t g_debug_api_mutex = NULL;
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-bool Debug_API_Init (const eUartBaudrate_t baudrate) {
+bool Debug_API_Init (const eBaudrate_t baudrate) {
     if (g_is_initialized) {
         return false;
     }
     
-    if ((baudrate < eUartBaudrate_First) || (baudrate >= eUartBaudrate_Last)) {
+    if ((baudrate < eBaudrate_First) || (baudrate >= eBaudrate_Last)) {
         return false;
     }
 
@@ -71,7 +66,7 @@ bool Debug_API_Init (const eUartBaudrate_t baudrate) {
         g_debug_api_mutex = osMutexNew(&g_debug_api_mutex_attributes);
     }
 
-    g_is_initialized = UART_API_Init(eUart_Debug, baudrate, DELIMITER);
+    g_is_initialized = UART_API_Init(eUart_Debug, baudrate, DEBUG_DELIMITER);
 
     return g_is_initialized;
 }
@@ -124,4 +119,4 @@ bool Debug_API_Print (const eTraceLevel_t trace_level, const char *file_trace, c
     return is_sent;
 }
 
-#endif
+#endif /* ENABLE_UART_DEBUG */

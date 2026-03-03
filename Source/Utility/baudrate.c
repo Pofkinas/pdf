@@ -2,13 +2,7 @@
  * Includes
  *********************************************************************************************************************/
 
-#include "cmd_api_helper.h"
-
-#ifdef ENABLE_CLI
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include "debug_api.h"
+#include "baudrate.h"
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -22,11 +16,22 @@
  * Private constants
  *********************************************************************************************************************/
 
-#ifdef DEBUG_CMD_API_HELPER
-CREATE_MODULE_NAME (CMD_API_HELPER)
-#else
-CREATE_MODULE_NAME_EMPTY
-#endif /* DEBUG_CMD_API_HELPER */
+ /* clang-format off */
+const static uint32_t g_static_baudrate_lut[eBaudrate_Last] = {
+    [eBaudrate_Default] = 0,
+    [eBaudrate_4800] = 4800,
+    [eBaudrate_9600] = 9600,
+    [eBaudrate_19200] = 19200,
+    [eBaudrate_38400] = 38400,
+    [eBaudrate_57600] = 57600,
+    [eBaudrate_115200] = 115200,
+    [eBaudrate_230400] = 230400,
+    [eBaudrate_460800] = 460800,
+    [eBaudrate_921600] = 921600,
+    [eBaudrate_1000000] = 1000000,
+    [eBaudrate_2000000] = 2000000
+};
+/* clang-format on */
 
 /**********************************************************************************************************************
  * Private variables
@@ -39,59 +44,19 @@ CREATE_MODULE_NAME_EMPTY
 /**********************************************************************************************************************
  * Prototypes of private functions
  *********************************************************************************************************************/
-
+ 
 /**********************************************************************************************************************
  * Definitions of private functions
  *********************************************************************************************************************/
-
+ 
 /**********************************************************************************************************************
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-eErrorCode_t CMD_API_Helper_FindNextArgUInt (sMessage_t *argument, size_t *return_argument, char *separator, const size_t separator_lenght, sMessage_t *response) {
-    if ((argument == NULL) || (return_argument == NULL) || (separator == NULL) || (response == NULL)) {
-        TRACE_ERR("Invalid data pointer\n");
-        
-        return eErrorCode_NULLPTR;
+const uint32_t Baudrate_GetValue (const eBaudrate_t baudrate) {
+    if ((baudrate <= eBaudrate_First) || (baudrate >= eBaudrate_Last)) {
+        return 0;
     }
 
-    if ((argument->data == NULL) || (response->data == NULL)) {
-        TRACE_ERR("Invalid argument/response data pointer\n");
-
-        return eErrorCode_NULLPTR;
-    }
-
-    if (argument->size == 0) {
-        snprintf(response->data, response->size, "Missing argument\n");
-
-        return eErrorCode_ARGFEW;
-    }
-
-    char *invalid_character;
-    char *argument_token = strstr(argument->data, separator);
-
-    if (argument_token != NULL) {
-        *argument_token = '\0';
-    }
-
-    *return_argument = strtoul(argument->data, &invalid_character, BASE_10);
-
-    if (*invalid_character != '\0') {
-        snprintf(response->data, response->size, "%s: Invalid argument; Use digits separated by: '%s'\n", invalid_character, separator);
-
-        return eErrorCode_INVAL;
-    }
-
-    if (argument_token == NULL) {
-        argument->size = 0;
-        
-        return eErrorCode_OSOK;
-    }
-
-    argument->size -= (argument_token - argument->data + separator_lenght);
-    argument->data = argument_token + separator_lenght;
-
-    return eErrorCode_OSOK;
+    return g_static_baudrate_lut[baudrate];
 }
-
-#endif /* ENABLE_CLI */

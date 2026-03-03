@@ -2,9 +2,10 @@
  * Includes
  *********************************************************************************************************************/
 
-#include <stdlib.h>
-
 #include "animation_rainbow.h"
+
+#ifdef ENABLE_LED_ANIMATION
+#include <stdlib.h>
 
 /**********************************************************************************************************************
  * Private definitions and macros
@@ -45,7 +46,7 @@ void Animation_Rainbow_FillBuffer (sLedRainbow_t *context) {
         return;
     }
     
-    if (!WS2812B_API_IsCorrectDevice(context->device)) {
+    if (!WS2812B_Config_IsCorrectWs2812b(context->device)) {
         return;
     }
 
@@ -170,3 +171,5 @@ void Animation_Rainbow_Free (void *context) {
 bool Animation_Rainbow_IsCorrectSpeed (const uint8_t speed) {
     return (speed != 0);
 }
+
+#endif /* ENABLE_LED_ANIMATION */

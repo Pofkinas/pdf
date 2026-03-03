@@ -4,9 +4,12 @@
  * Includes
  *********************************************************************************************************************/
 
+#include "framework_config.h"
+
+#ifdef ENABLE_CLI
 #include <stddef.h>
 #include "message.h"
-#include "framework_config.h"
+#include "error_messages.h"
 
 /**********************************************************************************************************************
  * Exported definitions and macros
@@ -24,6 +27,7 @@
  * Prototypes of exported functions
  *********************************************************************************************************************/
 
-int CMD_API_Helper_FindNextArgUInt (sMessage_t *argument, size_t *return_argument, char *separator, const size_t separator_lenght, sMessage_t *response);
+eErrorCode_t CMD_API_Helper_FindNextArgUInt (sMessage_t *argument, size_t *return_argument, char *separator, const size_t separator_lenght, sMessage_t *response);
 
+#endif /* ENABLE_CLI */
 #endif /* SOURCE_API_CMD_API_HELPER_H_ */

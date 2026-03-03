@@ -4,7 +4,7 @@
 
 #include "cli_cmd_handlers.h"
 
-#ifdef ENABLE_CLI
+#ifdef ENABLE_DEFAULT_CMD
 
 #include <stdint.h>
 #include <stddef.h>
@@ -16,17 +16,14 @@
 #include "led_api.h"
 #include "motor_api.h"
 #include "debug_api.h"
-#include "error_messages.h"
+#include "led_config.h"
 #include "led_color.h"
 
 /**********************************************************************************************************************
  * Private definitions and macros
  *********************************************************************************************************************/
 
-#define DEBUG_CLI_APP
-
-#define CMD_SEPARATOR ","
-#define CMD_SEPARATOR_LENGHT (sizeof(CMD_SEPARATOR) - 1)
+#define CMD_SEPARATOR_LENGTH (sizeof(CMD_SEPARATOR) - 1)
 
 /**********************************************************************************************************************
  * Private typedef
@@ -36,11 +33,11 @@
  * Private constants
  *********************************************************************************************************************/
 
-#ifdef DEBUG_CLI_APP
-CREATE_MODULE_NAME (CLI_CMD_HANDLERS)
+#ifdef DEBUG_DEFAULT_CMD
+CREATE_MODULE_NAME (CLI_DEFAULT_CMD)
 #else
 CREATE_MODULE_NAME_EMPTY
-#endif
+#endif /* DEBUG_DEFAULT_CMD */
 
 /**********************************************************************************************************************
  * Private variables
@@ -54,44 +51,51 @@ CREATE_MODULE_NAME_EMPTY
  * Prototypes of private functions
  *********************************************************************************************************************/
 
-static bool CLI_APP_Led_Handlers_Common (sMessage_t arguments, sMessage_t *response, const eLedTask_t task);
+#ifdef ENABLE_LED
+static eErrorCode_t CLI_APP_Led_Handlers_Common (sMessage_t arguments, sMessage_t *response, const eLedTask_t task);
+#endif /* ENABLE_LED */
 
 /**********************************************************************************************************************
  * Definitions of private functions
  *********************************************************************************************************************/
 
-static bool CLI_APP_Led_Handlers_Common (sMessage_t arguments, sMessage_t *response, const eLedTask_t task) {
+#ifdef ENABLE_LED
+static eErrorCode_t CLI_APP_Led_Handlers_Common (sMessage_t arguments, sMessage_t *response, const eLedTask_t task) {
     if (response == NULL) {
         TRACE_ERR("Invalid data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
 
     if ((response->data == NULL)) {
         TRACE_ERR("Invalid response data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
     
     eLed_t led;
     size_t led_value = 0;
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &led_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    eErrorCode_t error = eErrorCode_OSOK;
+
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &led_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
 
     if (arguments.size != 0) {
         snprintf(response->data, response->size, "Too many arguments\n");
 
-        return false;
+        return eErrorCode_ARGMANY;
     }
 
     led = led_value;
 
-    if (!LED_API_IsCorrectLed(led)) {
+    if (!LED_Config_IsCorrectLed(led)) {
         snprintf(response->data, response->size, "%d: Incorrect led\n", led);
 
-        return false;
+        return eErrorCode_INVAL;
     }
 
     sLedCommandDesc_t formated_task = {.task = task, .data = NULL};
@@ -100,7 +104,7 @@ static bool CLI_APP_Led_Handlers_Common (sMessage_t arguments, sMessage_t *respo
     if (task_data == NULL) {
         snprintf(response->data, response->size, "Failed Calloc\n");
         
-        return false;
+        return eErrorCode_NOMEM;
     }
 
     task_data->led = led;
@@ -111,91 +115,99 @@ static bool CLI_APP_Led_Handlers_Common (sMessage_t arguments, sMessage_t *respo
         
         Heap_API_Free(task_data);
 
-        return false;
+        return eErrorCode_FAILED;
     }
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return true;
+    return eErrorCode_OSOK;
 }
+#endif /* ENABLE_LED */
 
 /**********************************************************************************************************************
  * Definitions of exported functions
  *********************************************************************************************************************/
 
-#ifdef USE_LED
-bool CLI_APP_Led_Handlers_Set (sMessage_t arguments, sMessage_t *response) {
+#ifdef ENABLE_LED
+eErrorCode_t CLI_APP_Led_Handlers_Set (sMessage_t arguments, sMessage_t *response) {
     eLedTask_t task = eLedTask_Set;
 
     return CLI_APP_Led_Handlers_Common(arguments, response, task);
 }
 
-bool CLI_APP_Led_Handlers_Reset (sMessage_t arguments, sMessage_t *response) {
+eErrorCode_t CLI_APP_Led_Handlers_Reset (sMessage_t arguments, sMessage_t *response) {
     eLedTask_t task = eLedTask_Reset;
 
     return CLI_APP_Led_Handlers_Common(arguments, response, task);
 }
 
-bool CLI_APP_Led_Handlers_Toggle (sMessage_t arguments, sMessage_t *response) {
+eErrorCode_t CLI_APP_Led_Handlers_Toggle (sMessage_t arguments, sMessage_t *response) {
     eLedTask_t task = eLedTask_Toggle;
 
     return CLI_APP_Led_Handlers_Common(arguments, response, task);
 }
 
-bool CLI_APP_Led_Handlers_Blink (sMessage_t arguments, sMessage_t *response) {
+eErrorCode_t CLI_APP_Led_Handlers_Blink (sMessage_t arguments, sMessage_t *response) {
     if (response == NULL) {
         TRACE_ERR("Invalid data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
 
     if ((response->data == NULL)) {
         TRACE_ERR("Invalid response data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
     
     eLed_t led;
     size_t led_value = 0;
     size_t blink_time = 0;
     size_t blink_frequency = 0;
+    eErrorCode_t error = eErrorCode_OSOK;
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &led_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &led_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+    
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &blink_time, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &blink_time, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+    
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &blink_frequency, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &blink_frequency, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+    
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
     
     if (arguments.size != 0) {
         snprintf(response->data, response->size, "Too many arguments\n");
 
-        return false;
+        return eErrorCode_ARGMANY;
     }
 
     led = led_value;
 
-    if (!LED_API_IsCorrectLed(led)) {
+    if (!LED_Config_IsCorrectLed(led)) {
         snprintf(response->data, response->size, "%d: Incorrect led\n", led);
 
-        return false;
+        return eErrorCode_INVAL;
     }
 
     if (!LED_API_IsCorrectBlinkTime(blink_time)) {
         snprintf(response->data, response->size, "%d: Incorrect blink time\n", blink_time);
 
-        return false;
+        return eErrorCode_INVAL;
     }
 
     if (!LED_API_IsCorrectBlinkFrequency(blink_frequency)) {
         snprintf(response->data, response->size, "%d: Incorrect blink frequency\n", blink_frequency);
 
-        return false;
+        return eErrorCode_INVAL;
     }
 
     sLedCommandDesc_t formated_task = {.task = eLedTask_Blink, .data = NULL};
@@ -204,7 +216,7 @@ bool CLI_APP_Led_Handlers_Blink (sMessage_t arguments, sMessage_t *response) {
     if (task_data == NULL) {
         snprintf(response->data, response->size, "Failed Calloc\n");
         
-        return false;
+        return eErrorCode_NOMEM;
     }
 
     task_data->led = led;
@@ -217,59 +229,64 @@ bool CLI_APP_Led_Handlers_Blink (sMessage_t arguments, sMessage_t *response) {
         
         Heap_API_Free(task_data);
 
-        return false;
+        return eErrorCode_CANCELED;
     }
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return true;
+    return eErrorCode_OSOK;
 }
-#endif
+#endif /* ENABLE_LED */
 
-#ifdef USE_PWM_LED
-bool CLI_APP_Pwm_Led_Handlers_Set_Brightness (sMessage_t arguments, sMessage_t *response) {
+#ifdef ENABLE_PWM_LED
+eErrorCode_t CLI_APP_Pwm_Led_Handlers_Set_Brightness (sMessage_t arguments, sMessage_t *response) {
     if (response == NULL) {
         TRACE_ERR("Invalid data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
 
     if ((response->data == NULL)) {
         TRACE_ERR("Invalid response data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
 
     eLedPwm_t led;
     size_t led_value = 0;
     size_t duty_cycle = 0;
+    eErrorCode_t error = eErrorCode_OSOK;
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &led_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &led_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
     
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &duty_cycle, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &duty_cycle, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
 
     if (arguments.size != 0) {
         snprintf(response->data, response->size, "Too many arguments\n");
 
-        return false;
+        return eErrorCode_ARGMANY;
     }
 
     led = led_value;
 
-    if (!LED_API_IsCorrectPwmLed(led)) {
+    if (!LED_Config_IsCorrectPwmLed(led)) {
         snprintf(response->data, response->size, "%d: Incorrect led\n", led);
 
-        return false;
+        return eErrorCode_INVAL;
     }
 
     if (!LED_API_IsCorrectDutyCycle(led, duty_cycle)) {
         snprintf(response->data, response->size, "%d: Incorrect duty cycle\n", led);
 
-        return false;
+        return eErrorCode_INVAL;
     }
 
     sLedCommandDesc_t formated_task = {.task = eLedTask_Set_Brightness, .data = NULL};
@@ -278,7 +295,7 @@ bool CLI_APP_Pwm_Led_Handlers_Set_Brightness (sMessage_t arguments, sMessage_t *
     if (task_data == NULL) {
         snprintf(response->data, response->size, "Failed Calloc\n");
         
-        return false;
+        return eErrorCode_NOMEM;
     }
 
     task_data->led = led;
@@ -290,68 +307,75 @@ bool CLI_APP_Pwm_Led_Handlers_Set_Brightness (sMessage_t arguments, sMessage_t *
         
         Heap_API_Free(task_data);
 
-        return false;
+        return eErrorCode_FAILED;
     }
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return true;
+    return eErrorCode_OSOK;
 }
 
-bool CLI_APP_Pwm_Led_Handlers_Pulse (sMessage_t arguments, sMessage_t *response) {
+eErrorCode_t CLI_APP_Pwm_Led_Handlers_Pulse (sMessage_t arguments, sMessage_t *response) {
     if (response == NULL) {
         TRACE_ERR("Invalid data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
 
     if ((response->data == NULL)) {
         TRACE_ERR("Invalid response data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
 
     eLedPwm_t led;
     size_t led_value = 0;
     size_t pulse_time = 0;
     size_t pulse_frequency = 0;
+    eErrorCode_t error = eErrorCode_OSOK;
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &led_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &led_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
     
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &pulse_time, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &pulse_time, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &pulse_frequency, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &pulse_frequency, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
 
     if (arguments.size != 0) {
         snprintf(response->data, response->size, "Too many arguments\n");
 
-        return false;
+        return eErrorCode_ARGMANY;
     }
 
     led = led_value;
 
-    if (!LED_API_IsCorrectPwmLed(led)) {
+    if (!LED_Config_IsCorrectPwmLed(led)) {
         snprintf(response->data, response->size, "%d: Incorrect led\n", led);
 
-        return false;
+        return eErrorCode_INVAL;
     }
 
     if (!LED_API_IsCorrectPulseTime(pulse_time)) {
         snprintf(response->data, response->size, "%d: Incorrect pulse time\n", led);
 
-        return false;
+        return eErrorCode_INVAL;
     }
 
     if (!LED_API_IsCorrectPulseFrequency(pulse_frequency)) {
         snprintf(response->data, response->size, "%d: Incorrect pulse frequency\n", led);
 
-        return false;
+        return eErrorCode_INVAL;
     }
 
     sLedCommandDesc_t formated_task = {.task = eLedTask_Pulse, .data = NULL};
@@ -360,7 +384,7 @@ bool CLI_APP_Pwm_Led_Handlers_Pulse (sMessage_t arguments, sMessage_t *response)
     if (task_data == NULL) {
         snprintf(response->data, response->size, "Failed Calloc\n");
         
-        return false;
+        return eErrorCode_NOMEM;
     }
 
     task_data->led = led;
@@ -373,33 +397,33 @@ bool CLI_APP_Pwm_Led_Handlers_Pulse (sMessage_t arguments, sMessage_t *response)
         
         Heap_API_Free(task_data);
 
-        return false;
+        return eErrorCode_FAILED;
     }
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return true;
+    return eErrorCode_OSOK;
 }
-#endif
+#endif /* ENABLE_PWM_LED */
 
-#ifdef USE_MOTORS
-bool CLI_APP_Motors_Handlers_Stop (sMessage_t arguments, sMessage_t *response) {
+#ifdef ENABLE_MOTOR
+eErrorCode_t CLI_APP_Motors_Handlers_Stop (sMessage_t arguments, sMessage_t *response) {
     if (response == NULL) {
         TRACE_ERR("Invalid data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
 
     if ((response->data == NULL)) {
         TRACE_ERR("Invalid response data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
 
     if (arguments.size != 0) {
         snprintf(response->data, response->size, "Too many arguments\n");
 
-        return false;
+        return eErrorCode_ARGMANY;
     }
 
     sMotorCommandDesc_t formated_task = {.task = eMotorTask_Stop, .data = NULL};
@@ -407,57 +431,77 @@ bool CLI_APP_Motors_Handlers_Stop (sMessage_t arguments, sMessage_t *response) {
     if (!Motor_APP_Add_Task(&formated_task)) {
         snprintf(response->data, response->size, "Failed task add\n");
 
-        return false;
+        return eErrorCode_FAILED;
     }
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return true;
+    return eErrorCode_OSOK;
 }
 
-bool CLI_APP_Motors_Handlers_Set (sMessage_t arguments, sMessage_t *response) {
+eErrorCode_t CLI_APP_Motors_Handlers_Set (sMessage_t arguments, sMessage_t *response) {
     if (response == NULL) {
         TRACE_ERR("Invalid data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
 
     if ((response->data == NULL)) {
         TRACE_ERR("Invalid response data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
 
     eMotorDirection_t direction;
+    eMotorControl_t mode;
     size_t speed = 0;
     size_t direction_value = 0;
+    size_t mode_value = 0;
+    eErrorCode_t error = eErrorCode_OSOK;
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &speed, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &speed, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &direction_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &direction_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
+    }
+
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &mode_value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
 
     if (arguments.size != 0) {
         snprintf(response->data, response->size, "Too many arguments\n");
 
-        return false;
+        return eErrorCode_ARGMANY;
     }
 
     direction = direction_value;
+    mode = mode_value;
 
     if (!Motor_API_IsCorrectSpeed(speed)) {
         snprintf(response->data, response->size, "%d: Incorect speed\n", speed);
 
-        return false;
+        return eErrorCode_INVAL;
     }
 
-    if (!Motor_API_IsCorrectDirection(direction)) {
-        snprintf(response->data, response->size, "%d: Incorect motors direction\n", direction);
+    if (!Motor_Config_IsCorrectDirection(direction)) {
+        snprintf(response->data, response->size, "%d: Incorect motor direction\n", direction);
 
-        return false;
+        return eErrorCode_INVAL;
+    }
+
+    if (!Motor_API_IsCorrectMode(mode)) {
+        snprintf(response->data, response->size, "%d: Incorect motor mode\n", mode);
+
+        return eErrorCode_INVAL;
     }
 
     sMotorCommandDesc_t formated_task = {.task = eMotorTask_Set, .data = NULL};
@@ -466,11 +510,12 @@ bool CLI_APP_Motors_Handlers_Set (sMessage_t arguments, sMessage_t *response) {
     if (task_data == NULL) {
         snprintf(response->data, response->size, "Failed Calloc\n");
         
-        return false;
+        return eErrorCode_NOMEM;
     }
 
     task_data->speed = speed;
     task_data->direction = direction;
+    task_data->mode = mode;
     formated_task.data = task_data;
 
     if (!Motor_APP_Add_Task(&formated_task)) {
@@ -478,54 +523,61 @@ bool CLI_APP_Motors_Handlers_Set (sMessage_t arguments, sMessage_t *response) {
         
         Heap_API_Free(task_data);
 
-        return false;
+        return eErrorCode_FAILED;
     }
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return true;
+    return eErrorCode_OSOK;
 }
-#endif
+#endif /* ENABLE_MOTOR */
 
-bool CLI_APP_Led_Handlers_RgbToHsv (sMessage_t arguments, sMessage_t *response) {
+eErrorCode_t CLI_APP_Led_Handlers_RgbToHsv (sMessage_t arguments, sMessage_t *response) {
     if (response == NULL) {
         TRACE_ERR("Invalid data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
 
     if ((response->data == NULL)) {
         TRACE_ERR("Invalid response data pointer\n");
 
-        return false;
+        return eErrorCode_FAILED;
     }
 
     size_t red = 0;
     size_t green = 0;
     size_t blue = 0;
+    eErrorCode_t error = eErrorCode_OSOK;
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &red, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &red, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &green, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &green, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &blue, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &blue, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
     
     if (arguments.size != 0) {
         snprintf(response->data, response->size, "Too many arguments\n");
 
-        return false;
+        return eErrorCode_ARGMANY;
     }
 
     if ((red > 255) || (green > 255) || (blue > 255)) {
         snprintf(response->data, response->size, "Invalid RGB values\n");
 
-        return false;
+        return eErrorCode_INVAL;
     }
 
     sLedColorRgb_t rgb = {0};
@@ -538,48 +590,55 @@ bool CLI_APP_Led_Handlers_RgbToHsv (sMessage_t arguments, sMessage_t *response) 
 
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return true;
+    return eErrorCode_OSOK;
 }
 
-bool CLI_APP_Led_Handlers_HsvToRgb (sMessage_t arguments, sMessage_t *response) {
+eErrorCode_t CLI_APP_Led_Handlers_HsvToRgb (sMessage_t arguments, sMessage_t *response) {
     if (response == NULL) {
         TRACE_ERR("Invalid data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
 
     if ((response->data == NULL)) {
         TRACE_ERR("Invalid response data pointer\n");
 
-        return false;
+        return eErrorCode_NULLPTR;
     }
 
     size_t hue = 0;
     size_t saturation = 0;
     size_t value = 0;
+    eErrorCode_t error = eErrorCode_OSOK;
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &hue, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &hue, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &saturation, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &saturation, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
 
-    if (CMD_API_Helper_FindNextArgUInt(&arguments, &value, CMD_SEPARATOR, CMD_SEPARATOR_LENGHT, response) != eErrorCode_OSOK) {
-        return false;
+    error = CMD_API_Helper_FindNextArgUInt(&arguments, &value, CMD_SEPARATOR, CMD_SEPARATOR_LENGTH, response);
+
+    if (error != eErrorCode_OSOK) {
+        return error;
     }
     
     if (arguments.size != 0) {
         snprintf(response->data, response->size, "Too many arguments\n");
 
-        return false;
+        return eErrorCode_ARGMANY;
     }
 
     if ((hue > 255) || (saturation > 255) || (value > 255)) {
         snprintf(response->data, response->size, "Invalid RGB values\n");
 
-        return false;
+        return eErrorCode_INVAL;
     }
 
     sLedColorHsv_t hsv = {0};
@@ -595,7 +654,7 @@ bool CLI_APP_Led_Handlers_HsvToRgb (sMessage_t arguments, sMessage_t *response) 
     
     snprintf(response->data, response->size, "Operation successful\n");
 
-    return true;
+    return eErrorCode_OSOK;
 }
 
-#endif
+#endif /* ENABLE_DEFAULT_CMD */

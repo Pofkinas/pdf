@@ -4,6 +4,8 @@
  * Includes
  *********************************************************************************************************************/
 
+#include "framework_config.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>

@@ -4,7 +4,7 @@
 
 #include "led_app.h"
 
-#if defined(USE_LED) || defined(USE_PWM_LED)
+#if defined(ENABLE_LED) || defined(ENABLE_PWM_LED)
 
 #include <stddef.h>
 #include "cmsis_os2.h"
@@ -16,9 +16,6 @@
  * Private definitions and macros
  *********************************************************************************************************************/
 
-#define MESSAGE_QUEUE_PRIORITY 0U
-#define MESSAGE_QUEUE_TIMEOUT 0U
-
 /**********************************************************************************************************************
  * Private typedef
  *********************************************************************************************************************/
@@ -27,22 +24,11 @@
  * Private constants
  *********************************************************************************************************************/
 
+#ifdef DEBUG_LED_APP
 CREATE_MODULE_NAME (LED_APP)
-
-const static osThreadAttr_t g_led_thread_attributes = {
-    .name = "LED_APP_Thread",
-    .stack_size = 128 * 6,
-    .priority = (osPriority_t) osPriorityNormal
-};
-
-const static osMessageQueueAttr_t g_led_message_queue_attributes = {
-    .name = "Led_Command_MessageQueue", 
-    .attr_bits = 0, 
-    .cb_mem = NULL, 
-    .cb_size = 0, 
-    .mq_mem = NULL, 
-    .mq_size = 0
-};
+#else
+CREATE_MODULE_NAME_EMPTY
+#endif /* DEBUG_LED_APP */
 
 /**********************************************************************************************************************
  * Private variables
@@ -70,7 +56,7 @@ static void LED_APP_Thread (void *arg);
 
 static void LED_APP_Thread (void *arg) {
     while (1) {
-        if (osMessageQueueGet(g_led_message_queue_id, &g_received_task, MESSAGE_QUEUE_PRIORITY, MESSAGE_QUEUE_TIMEOUT) != osOK) {
+        if (osMessageQueueGet(g_led_message_queue_id, &g_received_task, LED_APP_MESSAGE_QUEUE_PRIORITY, LED_APP_MESSAGE_QUEUE_TIMEOUT) != osOK) {
             continue;
         }
 
@@ -78,7 +64,7 @@ static void LED_APP_Thread (void *arg) {
             TRACE_ERR("No arguments\n");
         }
         switch (g_received_task.task) {
-            #ifdef USE_LED
+            #ifdef ENABLE_LED
             case eLedTask_Set: {
                 sLedCommon_t *arguments = (sLedCommon_t*) g_received_task.data;
 
@@ -89,8 +75,8 @@ static void LED_APP_Thread (void *arg) {
 
                     break;
                 }
-                
-                if (!LED_API_IsCorrectLed(arguments->led)) {
+
+                if (!LED_Config_IsCorrectLed(arguments->led)) {
                     TRACE_ERR("Invalid Led\n");
 
                     Heap_API_Free(arguments);
@@ -121,7 +107,7 @@ static void LED_APP_Thread (void *arg) {
                     break;
                 }
 
-                if (!LED_API_IsCorrectLed(arguments->led)) {
+                if (!LED_Config_IsCorrectLed(arguments->led)) {
                     TRACE_ERR("Invalid Led\n");
 
                     Heap_API_Free(arguments);
@@ -152,7 +138,7 @@ static void LED_APP_Thread (void *arg) {
                     break;
                 }
 
-                if (!LED_API_IsCorrectLed(arguments->led)) {
+                if (!LED_Config_IsCorrectLed(arguments->led)) {
                     TRACE_ERR("Invalid Led\n");
 
                     Heap_API_Free(arguments);
@@ -183,7 +169,7 @@ static void LED_APP_Thread (void *arg) {
                     break;
                 }
 
-                if (!LED_API_IsCorrectLed(arguments->led)) {
+                if (!LED_Config_IsCorrectLed(arguments->led)) {
                     TRACE_ERR("Invalid Led\n");
 
                     Heap_API_Free(arguments);
@@ -219,9 +205,9 @@ static void LED_APP_Thread (void *arg) {
 
                 Heap_API_Free(arguments);
             } break;
-            #endif
+            #endif /* ENABLE_LED */
 
-            #ifdef USE_PWM_LED
+            #ifdef ENABLE_PWM_LED
             case eLedTask_Set_Brightness: {
                 sLedSetBrightness_t *arguments = (sLedSetBrightness_t*) g_received_task.data;
 
@@ -233,7 +219,7 @@ static void LED_APP_Thread (void *arg) {
                     break;
                 }
 
-                if (!LED_API_IsCorrectPwmLed(arguments->led)) {
+                if (!LED_Config_IsCorrectPwmLed(arguments->led)) {
                     TRACE_ERR("Invalid Led\n");
 
                     Heap_API_Free(arguments);
@@ -272,7 +258,7 @@ static void LED_APP_Thread (void *arg) {
                     break;
                 }
 
-                if (!LED_API_IsCorrectPwmLed(arguments->led)) {
+                if (!LED_Config_IsCorrectPwmLed(arguments->led)) {
                     TRACE_ERR("Invalid Led\n");
 
                     Heap_API_Free(arguments);
@@ -308,7 +294,7 @@ static void LED_APP_Thread (void *arg) {
 
                 Heap_API_Free(arguments);
             } break;
-            #endif
+            #endif /* ENABLE_PWM_LED */
             default: {
                 TRACE_ERR("Task not found\n");
             } break;
@@ -330,13 +316,17 @@ bool LED_APP_Init (void) {
     if (!LED_API_Init()) {
         return false;
     }
+
+    g_led_message_queue_id = osMessageQueueNew(CLI_COMMAND_MESSAGE_CAPACITY, sizeof(sLedCommandDesc_t), &g_led_message_queue_attributes);
     
     if (g_led_message_queue_id == NULL) {
-        g_led_message_queue_id = osMessageQueueNew(CLI_COMMAND_MESSAGE_CAPACITY, sizeof(sLedCommandDesc_t), &g_led_message_queue_attributes);
+        return false;
     }
 
+    g_led_thread_id = osThreadNew(LED_APP_Thread, NULL, &g_led_thread_attributes);
+
     if (g_led_thread_id == NULL) {
-        g_led_thread_id = osThreadNew(LED_APP_Thread, NULL, &g_led_thread_attributes);
+        return false;
     }
 
     g_is_initialized = true;
@@ -353,11 +343,11 @@ bool LED_APP_Add_Task (sLedCommandDesc_t *task_to_message_queue) {
         return false;
     }
 
-    if (osMessageQueuePut(g_led_message_queue_id, task_to_message_queue, MESSAGE_QUEUE_PRIORITY, MESSAGE_QUEUE_TIMEOUT) != osOK) {
+    if (osMessageQueuePut(g_led_message_queue_id, task_to_message_queue, LED_APP_MESSAGE_QUEUE_PRIORITY, LED_APP_MESSAGE_QUEUE_TIMEOUT) != osOK) {
         return false;
     }
 
     return true;
 }
 
-#endif
+#endif /* defined(ENABLE_LED) || defined(ENABLE_PWM_LED) */
