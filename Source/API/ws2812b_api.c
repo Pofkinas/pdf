@@ -6,8 +6,8 @@
 
 #ifdef ENABLE_WS2812B
 #include "cmsis_os2.h"
-#include "heap_api.h"
 #include "debug_api.h"
+#include "heap_api.h"
 #include "ws2812b_driver.h"
 #include "timer_driver.h"
 #include "pwm_driver.h"
@@ -47,8 +47,8 @@ typedef struct sWs2812bDynamicDesc {
     uint8_t *led_data;
     size_t led_count;
     eWs2812bState_t led_state;
-    sWs2812bSequence_t *dynamic_animations;
-    sWs2812bSequence_t *current_animation;
+    sWs2812bSequence_t *head;
+    sWs2812bSequence_t *tail;
     osTimerId_t timer;
     osMutexId_t mutex;
     osEventFlagsId_t flag;
@@ -106,23 +106,22 @@ static void WS2812B_API_TimerCallback (void *arg) {
         timer_arg->led_state = eWs2812bState_Running;
     }
 
-    timer_arg->current_animation = timer_arg->dynamic_animations;
+    sWs2812bSequence_t *sequence = timer_arg->head;
 
-    while (timer_arg->current_animation != NULL) {
-        sLedAnimationInstance_t *animation_instance = (sLedAnimationInstance_t *) timer_arg->current_animation->data;
-        
+    while (sequence != NULL) {
+        sLedAnimationInstance_t *animation_instance = (sLedAnimationInstance_t *) sequence->data;
+
         if (animation_instance == NULL) {
             timer_arg->led_state = eWs2812bState_Idle;
 
             osTimerStop(timer_arg->timer);
             osMutexRelease(timer_arg->mutex);
-            
+
             return;
         }
-        
+
         animation_instance->build_animation(animation_instance->context);
-        
-        timer_arg->current_animation = timer_arg->current_animation->next;
+        sequence = sequence->next;
     }
 
     if (!WS2812B_API_Update(timer_arg->device)) {
@@ -317,12 +316,29 @@ static bool WS2812B_API_QueueDynamicAnimation (const sLedAnimationDesc_t *dynami
     new_animation->data = animation_instance;
     new_animation->next = NULL;
 
-    if (g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].current_animation != NULL) {
-        new_animation->next = g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].current_animation;
-    } 
+    if (osMutexAcquire(g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].mutex, MUTEX_TIMEOUT) != osOK) {
+        TRACE_ERR("QueueDynamicAnimation: Failed to acquire mutex for device [%d]\n", dynamic_animation_data->device);
+        return false;
+    }
 
-    g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].dynamic_animations = new_animation;
-    g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].current_animation = new_animation;
+    // Uses FIFO queueing for dynamic animations
+    if (g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].head == NULL) {
+        g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].head = new_animation;
+    } else {
+        if (g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].tail == NULL) {
+            TRACE_ERR("QueueDynamicAnimation: Tail pointer is NULL while head is not NULL\n");
+            
+            osMutexRelease(g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].mutex);
+            
+            return false;
+        }
+
+        g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].tail->next = new_animation;
+    }
+
+    g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].tail = new_animation;
+
+    osMutexRelease(g_ws2812b_api_dynamic_lut[dynamic_animation_data->device].mutex);
 
     return true;
 }
@@ -495,7 +511,7 @@ bool WS2812B_API_ClearAnimations (const eWs2812b_t device) {
         return false;
     }
 
-    if (g_ws2812b_api_dynamic_lut[device].dynamic_animations == NULL) {
+    if (g_ws2812b_api_dynamic_lut[device].head == NULL) {
         return true;
     }
 
@@ -505,8 +521,8 @@ bool WS2812B_API_ClearAnimations (const eWs2812b_t device) {
         return false;
     }
 
-    while (g_ws2812b_api_dynamic_lut[device].dynamic_animations != NULL) {
-        sWs2812bSequence_t *sequence = g_ws2812b_api_dynamic_lut[device].dynamic_animations;
+    while (g_ws2812b_api_dynamic_lut[device].head != NULL) {
+        sWs2812bSequence_t *sequence = g_ws2812b_api_dynamic_lut[device].head;
         sLedAnimationInstance_t *instance = (sLedAnimationInstance_t *) sequence->data;
 
         if (instance == NULL) {
@@ -521,7 +537,7 @@ bool WS2812B_API_ClearAnimations (const eWs2812b_t device) {
             instance->free_animation(instance->context);
         }
         
-        g_ws2812b_api_dynamic_lut[device].dynamic_animations = sequence->next;
+        g_ws2812b_api_dynamic_lut[device].head = sequence->next;
 
         if (!WS2812B_API_FreeData(sequence)) {
             TRACE_ERR("ClearAnimations: Heap API failed\n");
@@ -531,6 +547,8 @@ bool WS2812B_API_ClearAnimations (const eWs2812b_t device) {
             return false;
         }
     }
+
+    g_ws2812b_api_dynamic_lut[device].tail = NULL;
 
     memset(g_ws2812b_api_dynamic_lut[device].led_data, 0, g_ws2812b_api_static_lut[device].max_led * LED_DATA_CHANNELS);
 
