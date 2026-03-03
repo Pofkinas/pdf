@@ -5,6 +5,7 @@
 !LICENSE
 !README.md
 !.gitignore
+!coding_style.md
 
 # Allow source files and folders
 !source/
